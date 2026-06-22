@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/di/injection.dart';
+import '../../core/theme/app_palette.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/focusable_button.dart';
 import '../../data/models/models.dart';
@@ -117,7 +118,7 @@ class _PlaylistTile extends StatelessWidget {
   final Playlist playlist;
   final bool isActive;
   final VoidCallback onTap;
-  final dynamic palette;
+  final AppPalette palette;
   final TextTheme textTheme;
 
   @override
@@ -220,7 +221,7 @@ class _AddPlaylistButton extends StatelessWidget {
   });
 
   final VoidCallback onPressed;
-  final dynamic palette;
+  final AppPalette palette;
   final TextTheme textTheme;
 
   @override
@@ -229,29 +230,56 @@ class _AddPlaylistButton extends StatelessWidget {
     return FocusableButton(
       semanticLabel: 'Add Playlist',
       onPressed: onPressed,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: p.border,
-            style: BorderStyle.solid,
-            width: 1.5,
+      child: CustomPaint(
+        painter: _DashedBorderPainter(color: p.border),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.add_rounded, color: p.fg, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Add Playlist',
+                style: textTheme.labelLarge?.copyWith(color: p.fg),
+              ),
+            ],
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.add_rounded, color: p.fg, size: 20),
-            const SizedBox(width: 8),
-            Text(
-              'Add Playlist',
-              style: textTheme.labelLarge?.copyWith(color: p.fg),
-            ),
-          ],
         ),
       ),
     );
   }
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  _DashedBorderPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    const dashWidth = 6.0;
+    const dashSpace = 4.0;
+    const cornerRadius = 14.0;
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      const Radius.circular(cornerRadius),
+    );
+    final path = Path()..addRRect(rect);
+    final metrics = path.computeMetrics();
+    for (final metric in metrics) {
+      double distance = 0;
+      while (distance < metric.length) {
+        canvas.drawPath(
+            metric.extractPath(distance, distance + dashWidth), paint);
+        distance += dashWidth + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedBorderPainter old) => old.color != color;
 }

@@ -17,14 +17,16 @@ class PlaylistsState extends Equatable {
     this.loading = false,
   });
 
+  static const _absent = Object();
+
   PlaylistsState copyWith({
     List<Playlist>? playlists,
-    String? activeId,
+    Object? activeId = _absent,
     bool? loading,
   }) {
     return PlaylistsState(
       playlists: playlists ?? this.playlists,
-      activeId: activeId ?? this.activeId,
+      activeId: activeId == _absent ? this.activeId : activeId as String?,
       loading: loading ?? this.loading,
     );
   }

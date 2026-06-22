@@ -22,16 +22,18 @@ class ImportState extends Equatable {
     this.done = false,
   });
 
+  static const _absent = Object();
+
   ImportState copyWith({
     ImportTab? tab,
     bool? submitting,
-    String? error,
+    Object? error = _absent,
     bool? done,
   }) {
     return ImportState(
       tab: tab ?? this.tab,
       submitting: submitting ?? this.submitting,
-      error: error ?? this.error,
+      error: error == _absent ? this.error : error as String?,
       done: done ?? this.done,
     );
   }

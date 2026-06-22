@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/di/injection.dart';
+import '../../core/theme/app_palette.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/focusable_button.dart';
 import '../../data/repositories/repositories.dart';
@@ -242,7 +243,7 @@ class _TabSelector extends StatelessWidget {
 
   final ImportTab selected;
   final void Function(ImportTab) onSelect;
-  final dynamic palette;
+  final AppPalette palette;
   final TextTheme textTheme;
 
   @override
@@ -305,7 +306,7 @@ class _TextField extends StatelessWidget {
 
   final TextEditingController controller;
   final String label;
-  final dynamic palette;
+  final AppPalette palette;
   final TextTheme textTheme;
   final bool obscureText;
 
