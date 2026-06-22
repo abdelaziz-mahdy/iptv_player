@@ -131,9 +131,9 @@ Integration pass wires Browse/Details/Player/Live to the live data layer and ver
 
 ## 10. Reference assets
 
-Pull into `design/` as the visual source of truth:
-- `ClearView IPTV.dc.html` (the prototype, includes all bindings/copy/colors)
-- `screenshots/live.png`, `screenshots/player.png`, `screenshots/phone-player.png`
+Visual source of truth:
+- `design/ClearView IPTV.dc.html` — the full prototype (all bindings, copy, colors, layout). Saved locally; this is the authoritative reference for every screen.
+- Reference screenshots (`screenshots/live.png`, `player.png`, `phone-player.png`) live in the claude.ai/design project and can be fetched on demand via the design connector if a rendered view is needed.
 
 ## 11. Build order
 
