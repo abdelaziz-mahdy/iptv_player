@@ -71,6 +71,7 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   uses-material-design: true
+  generate: true
 
   fonts:
     # Hanken Grotesk is a variable font (wght axis); weight is selected at

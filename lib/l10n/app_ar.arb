@@ -1,0 +1,18 @@
+{
+  "@@locale": "ar",
+  "brand": "نور",
+  "home": "الرئيسية",
+  "favorites": "المفضلة",
+  "live": "البث المباشر",
+  "movies": "أفلام",
+  "series": "مسلسلات",
+  "search": "بحث",
+  "settings": "الإعدادات",
+  "accessibility": "إمكانية الوصول",
+  "playlists": "قوائم التشغيل",
+  "play": "تشغيل",
+  "moreInfo": "المزيد",
+  "back": "رجوع",
+  "synopsis": "القصة",
+  "episodes": "الحلقات"
+}

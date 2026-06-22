@@ -1,0 +1,18 @@
+{
+  "@@locale": "en",
+  "brand": "NOOR",
+  "home": "Home",
+  "favorites": "Favorites",
+  "live": "Live TV",
+  "movies": "Movies",
+  "series": "Series",
+  "search": "Search",
+  "settings": "Settings",
+  "accessibility": "Accessibility",
+  "playlists": "Playlists",
+  "play": "Play",
+  "moreInfo": "More Info",
+  "back": "Back",
+  "synopsis": "Synopsis",
+  "episodes": "Episodes"
+}
