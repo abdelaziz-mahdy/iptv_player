@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Flutter `3.44.2` stable; Dart SDK `>=3.9.0 <4.0.0` (match `flutter create` default — verify and copy actual value).
+- Flutter `3.44.2` stable; Dart SDK `^3.12.2` (actual value from `flutter create`, confirmed in `pubspec.yaml`).
 - Platforms enabled: `android`, `macos`, `windows`, `linux`. No iOS, no web.
 - Brand name: `NOOR`. Two locales: English (`en`, LTR) and Arabic (`ar`, RTL).
 - Fonts: Latin UI `Hanken Grotesk`; Arabic `IBM Plex Sans Arabic`; high-legibility option `Atkinson Hyperlegible`. Loaded via `google_fonts`.
