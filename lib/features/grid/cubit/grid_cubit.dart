@@ -22,6 +22,8 @@ class GridEntry extends Equatable {
   final String? subtitle;
   final String? posterUrl;
   final String? badge;
+  final String? streamUrl;
+  final bool isSeries;
 
   const GridEntry({
     required this.id,
@@ -29,10 +31,12 @@ class GridEntry extends Equatable {
     this.subtitle,
     this.posterUrl,
     this.badge,
+    this.streamUrl,
+    this.isSeries = false,
   });
 
   @override
-  List<Object?> get props => [id, title, subtitle, posterUrl, badge];
+  List<Object?> get props => [id, title, subtitle, posterUrl, badge, streamUrl, isSeries];
 }
 
 // ---------------------------------------------------------------------------
@@ -122,6 +126,8 @@ class GridCubit extends Cubit<GridState> {
             subtitle: m.year,
             posterUrl: m.posterUrl,
             badge: m.categoryId, // used for filtering; no visible badge for movies
+            streamUrl: m.streamUrl,
+            isSeries: false,
           ),
         )
         .toList();
@@ -139,6 +145,8 @@ class GridCubit extends Cubit<GridState> {
             subtitle: s.year,
             posterUrl: s.posterUrl,
             badge: s.categoryId,
+            streamUrl: null,
+            isSeries: true,
           ),
         )
         .toList();

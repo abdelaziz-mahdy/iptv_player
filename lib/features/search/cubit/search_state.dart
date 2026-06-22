@@ -9,6 +9,7 @@ class SearchEntry extends Equatable {
     this.subtitle,
     this.posterUrl,
     required this.kind,
+    this.streamUrl,
   });
 
   final String id;
@@ -16,9 +17,10 @@ class SearchEntry extends Equatable {
   final String? subtitle;
   final String? posterUrl;
   final SearchEntryKind kind;
+  final String? streamUrl;
 
   @override
-  List<Object?> get props => [id, title, subtitle, posterUrl, kind];
+  List<Object?> get props => [id, title, subtitle, posterUrl, kind, streamUrl];
 }
 
 class SearchState extends Equatable {

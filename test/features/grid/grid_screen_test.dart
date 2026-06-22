@@ -11,7 +11,7 @@ import '../../support/fake_hydrated_storage.dart';
 
 Widget _buildTestApp({
   GridKind kind = GridKind.movies,
-  void Function(String)? onOpen,
+  void Function(GridEntry)? onOpen,
 }) {
   return MaterialApp(
     theme: buildTheme(
@@ -79,7 +79,7 @@ void main() {
     var tapped = false;
     await _pumpAndIgnoreOverflow(
       tester,
-      _buildTestApp(onOpen: (_) => tapped = true),
+      _buildTestApp(onOpen: (GridEntry _) => tapped = true),
     );
 
     final previousHandler = FlutterError.onError;

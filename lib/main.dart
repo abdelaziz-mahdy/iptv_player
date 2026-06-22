@@ -11,6 +11,6 @@ Future<void> main() async {
       (await getApplicationSupportDirectory()).path,
     ),
   );
-  await configureDependencies();
+  await configureProductionDependencies();
   runApp(const NoorApp());
 }

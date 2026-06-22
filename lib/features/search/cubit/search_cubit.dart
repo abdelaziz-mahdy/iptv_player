@@ -33,6 +33,7 @@ class SearchCubit extends Cubit<SearchState> {
           subtitle: m.year,
           posterUrl: m.posterUrl,
           kind: SearchEntryKind.movie,
+          streamUrl: m.streamUrl,
         ),
       ),
       ...series.map(
@@ -42,6 +43,7 @@ class SearchCubit extends Cubit<SearchState> {
           subtitle: s.year,
           posterUrl: s.posterUrl,
           kind: SearchEntryKind.series,
+          streamUrl: null,
         ),
       ),
       ...channels.map(
@@ -51,6 +53,7 @@ class SearchCubit extends Cubit<SearchState> {
           subtitle: c.number,
           posterUrl: c.logoUrl,
           kind: SearchEntryKind.channel,
+          streamUrl: c.streamUrl,
         ),
       ),
     ];

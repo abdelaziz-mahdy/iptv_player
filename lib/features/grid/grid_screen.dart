@@ -17,7 +17,7 @@ class GridScreen extends StatelessWidget {
   });
 
   final GridKind kind;
-  final void Function(String id) onOpen;
+  final void Function(GridEntry entry) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +36,7 @@ class _GridView extends StatelessWidget {
   const _GridView({required this.kind, required this.onOpen});
 
   final GridKind kind;
-  final void Function(String id) onOpen;
+  final void Function(GridEntry entry) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +129,7 @@ class _GridView extends StatelessWidget {
                         title: entry.title,
                         subtitle: entry.subtitle,
                         imageUrl: entry.posterUrl,
-                        onTap: () => onOpen(entry.id),
+                        onTap: () => onOpen(entry),
                       );
                     },
                     childCount: displayed.length,

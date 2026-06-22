@@ -1,15 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/_placeholder/placeholder_screen.dart';
+
+import '../../data/models/models.dart';
+import '../../data/repositories/repositories.dart';
+import '../../features/details/details_screen.dart';
+import '../../features/favorites/favorites_screen.dart';
+import '../../features/grid/cubit/grid_cubit.dart';
+import '../../features/grid/grid_screen.dart';
+import '../../features/home/home_screen.dart';
+import '../../features/import/import_screen.dart';
+import '../../features/live/live_screen.dart';
+import '../../features/onboarding/onboarding_screen.dart';
+import '../../features/player/player_screen.dart';
+import '../../features/player/video_controller.dart';
+import '../../features/playlists/playlists_screen.dart';
+import '../../features/search/cubit/search_cubit.dart';
+import '../../features/search/search_screen.dart';
+import '../../features/settings/settings_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../di/injection.dart';
 import '../widgets/adaptive_shell.dart';
 
-/// The shell branch routes, in nav order.
-const _branchRoutes = ['/home', '/favorites', '/live', '/movies', '/series', '/search'];
+// ---------------------------------------------------------------------------
+// Pushed-route argument classes
+// ---------------------------------------------------------------------------
+
+class PlayerArgs {
+  final String itemKey, url, title;
+  final String? subtitle;
+  const PlayerArgs({
+    required this.itemKey,
+    required this.url,
+    required this.title,
+    this.subtitle,
+  });
+}
 
 /// Builds the app router: a [StatefulShellRoute] hosting the six main tabs in
-/// the [AdaptiveShell], plus pushed routes for settings and playlists. Feature
-/// plans replace the placeholder builders with real screens.
+/// the [AdaptiveShell], plus pushed routes for player, details, settings, etc.
 GoRouter buildRouter() {
   return GoRouter(
     initialLocation: '/home',
@@ -34,42 +62,239 @@ GoRouter buildRouter() {
           );
         },
         branches: [
-          for (final r in _branchRoutes)
-            StatefulShellBranch(
-              routes: [
-                GoRoute(path: r, builder: (context, state) => PlaceholderScreen(title: _titleFor(context, r))),
-              ],
-            ),
+          // /home
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/home',
+                builder: (context, state) => HomeScreen(
+                  onOpenMovie: (m) =>
+                      context.push('/details/movie', extra: m),
+                  onOpenSeries: (s) =>
+                      context.push('/details/series', extra: s),
+                  onOpenChannel: (c) => context.push(
+                    '/player',
+                    extra: PlayerArgs(
+                      itemKey: 'channel:${c.id}',
+                      url: c.streamUrl,
+                      title: c.name,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // /favorites
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/favorites',
+                builder: (context, state) => FavoritesScreen(
+                  onOpen: (_) {
+                    // TODO: resolve favorite to detail (needs full object, not just id)
+                  },
+                ),
+              ),
+            ],
+          ),
+          // /live
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/live',
+                builder: (context, state) => LiveScreen(
+                  onPlayChannel: (c) => context.push(
+                    '/player',
+                    extra: PlayerArgs(
+                      itemKey: 'channel:${c.id}',
+                      url: c.streamUrl,
+                      title: c.name,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // /movies
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/movies',
+                builder: (context, state) => GridScreen(
+                  kind: GridKind.movies,
+                  onOpen: (e) => _openGridEntry(context, e),
+                ),
+              ),
+            ],
+          ),
+          // /series
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/series',
+                builder: (context, state) => GridScreen(
+                  kind: GridKind.series,
+                  onOpen: (e) => _openGridEntry(context, e),
+                ),
+              ),
+            ],
+          ),
+          // /search
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/search',
+                builder: (context, state) => SearchScreen(
+                  onOpen: (e) => _openSearchEntry(context, e),
+                ),
+              ),
+            ],
+          ),
         ],
+      ),
+
+      // -----------------------------------------------------------------------
+      // Pushed routes (outside the shell)
+      // -----------------------------------------------------------------------
+
+      GoRoute(
+        path: '/details/movie',
+        builder: (context, state) {
+          final movie = state.extra as VodItem;
+          return DetailsScreen.movie(
+            movie,
+            onBack: () => context.pop(),
+            onPlay: (m) => context.push(
+              '/player',
+              extra: PlayerArgs(
+                itemKey: 'movie:${m.id}',
+                url: m.streamUrl,
+                title: m.title,
+              ),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/details/series',
+        builder: (context, state) {
+          final series = state.extra as Series;
+          return DetailsScreen.series(
+            series,
+            onBack: () => context.pop(),
+            onPlayEpisode: (ep) => context.push(
+              '/player',
+              extra: PlayerArgs(
+                itemKey: 'episode:${ep.id}',
+                url: ep.streamUrl,
+                title: ep.title,
+              ),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/player',
+        builder: (context, state) {
+          final a = state.extra as PlayerArgs;
+          return PlayerScreen(
+            controller: VideoPlayerControllerAdapter(),
+            itemKey: a.itemKey,
+            url: a.url,
+            title: a.title,
+            subtitle: a.subtitle,
+            onBack: () => context.pop(),
+            playbackRepository: sl<PlaybackRepository>(),
+          );
+        },
       ),
       GoRoute(
         path: '/settings',
-        builder: (context, state) => PlaceholderScreen(title: AppLocalizations.of(context)!.settings),
+        builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/playlists',
-        builder: (context, state) => PlaceholderScreen(title: AppLocalizations.of(context)!.playlists),
+        builder: (context, state) => PlaylistsScreen(
+          onAddPlaylist: () => context.push('/import'),
+          onSelected: (p) => context.go('/home'),
+        ),
+      ),
+      GoRoute(
+        path: '/import',
+        builder: (context, state) => ImportScreen(
+          onImported: () => context.go('/home'),
+        ),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => OnboardingScreen(
+          onGetStarted: () => context.go('/import'),
+        ),
       ),
     ],
   );
 }
 
-String _titleFor(BuildContext context, String route) {
-  final t = AppLocalizations.of(context)!;
-  switch (route) {
-    case '/home':
-      return t.home;
-    case '/favorites':
-      return t.favorites;
-    case '/live':
-      return t.live;
-    case '/movies':
-      return t.movies;
-    case '/series':
-      return t.series;
-    case '/search':
-      return t.search;
-    default:
-      return t.home;
+// ---------------------------------------------------------------------------
+// Navigation helpers
+// ---------------------------------------------------------------------------
+
+void _openGridEntry(BuildContext c, GridEntry e) {
+  if (e.isSeries) {
+    c.push(
+      '/details/series',
+      extra: Series(
+        id: e.id,
+        playlistId: 'p1',
+        title: e.title,
+        posterUrl: e.posterUrl,
+      ),
+    );
+  } else {
+    c.push(
+      '/details/movie',
+      extra: VodItem(
+        id: e.id,
+        playlistId: 'p1',
+        title: e.title,
+        posterUrl: e.posterUrl,
+        streamUrl: e.streamUrl ?? '',
+      ),
+    );
+  }
+}
+
+void _openSearchEntry(BuildContext c, SearchEntry e) {
+  switch (e.kind) {
+    case SearchEntryKind.movie:
+      c.push(
+        '/details/movie',
+        extra: VodItem(
+          id: e.id,
+          playlistId: 'p1',
+          title: e.title,
+          posterUrl: e.posterUrl,
+          streamUrl: e.streamUrl ?? '',
+        ),
+      );
+    case SearchEntryKind.series:
+      c.push(
+        '/details/series',
+        extra: Series(
+          id: e.id,
+          playlistId: 'p1',
+          title: e.title,
+          posterUrl: e.posterUrl,
+        ),
+      );
+    case SearchEntryKind.channel:
+      c.push(
+        '/player',
+        extra: PlayerArgs(
+          itemKey: 'channel:${e.id}',
+          url: e.streamUrl ?? '',
+          title: e.title,
+        ),
+      );
   }
 }
