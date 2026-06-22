@@ -17,11 +17,13 @@ class HomeScreen extends StatelessWidget {
     required this.onOpenMovie,
     required this.onOpenSeries,
     required this.onOpenChannel,
+    required this.onAddPlaylist,
   });
 
   final void Function(VodItem) onOpenMovie;
   final void Function(Series) onOpenSeries;
   final void Function(Channel) onOpenChannel;
+  final VoidCallback onAddPlaylist;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +37,7 @@ class HomeScreen extends StatelessWidget {
         onOpenMovie: onOpenMovie,
         onOpenSeries: onOpenSeries,
         onOpenChannel: onOpenChannel,
+        onAddPlaylist: onAddPlaylist,
       ),
     );
   }
@@ -45,11 +48,18 @@ class _HomeView extends StatelessWidget {
     required this.onOpenMovie,
     required this.onOpenSeries,
     required this.onOpenChannel,
+    required this.onAddPlaylist,
   });
 
   final void Function(VodItem) onOpenMovie;
   final void Function(Series) onOpenSeries;
   final void Function(Channel) onOpenChannel;
+  final VoidCallback onAddPlaylist;
+
+  bool _hasContent(HomeState state) =>
+      state.movies.isNotEmpty ||
+      state.series.isNotEmpty ||
+      state.channels.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +67,33 @@ class _HomeView extends StatelessWidget {
       builder: (context, state) {
         if (state.loading) {
           return const Center(child: CircularProgressIndicator());
+        }
+        if (!_hasContent(state)) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('No content yet'),
+                const SizedBox(height: 16),
+                FocusableButton(
+                  semanticLabel: 'Set up a playlist',
+                  onPressed: onAddPlaylist,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Set up a playlist',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
         }
         return CustomScrollView(
           slivers: [

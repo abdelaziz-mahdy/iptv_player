@@ -4,7 +4,8 @@ import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
 import 'package:noor_iptv/core/widgets/adaptive_shell.dart';
 
-Widget _wrap(Size size) => MaterialApp(
+Widget _wrap(Size size, {VoidCallback? onOpenSettings, VoidCallback? onOpenPlaylists}) =>
+    MaterialApp(
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       home: MediaQuery(
         data: MediaQueryData(size: size),
@@ -17,6 +18,8 @@ Widget _wrap(Size size) => MaterialApp(
             NavDestinationData(Icons.tv, 'Live'),
           ],
           body: const Text('BODY'),
+          onOpenSettings: onOpenSettings,
+          onOpenPlaylists: onOpenPlaylists,
         ),
       ),
     );
@@ -32,5 +35,31 @@ void main() {
     await tester.pumpWidget(_wrap(const Size(400, 800)));
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.byType(NavigationRail), findsNothing);
+  });
+
+  testWidgets('wide layout shows Settings icon and tapping it calls onOpenSettings',
+      (tester) async {
+    var settingsCalled = false;
+    await tester.pumpWidget(_wrap(
+      const Size(1280, 800),
+      onOpenSettings: () => settingsCalled = true,
+    ));
+    expect(find.byIcon(Icons.settings), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.settings));
+    await tester.pump();
+    expect(settingsCalled, isTrue);
+  });
+
+  testWidgets('narrow layout shows Settings icon and tapping it calls onOpenSettings',
+      (tester) async {
+    var settingsCalled = false;
+    await tester.pumpWidget(_wrap(
+      const Size(400, 800),
+      onOpenSettings: () => settingsCalled = true,
+    ));
+    expect(find.byIcon(Icons.settings), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.settings));
+    await tester.pump();
+    expect(settingsCalled, isTrue);
   });
 }

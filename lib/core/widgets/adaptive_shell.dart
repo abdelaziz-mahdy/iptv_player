@@ -11,12 +11,18 @@ class NavDestinationData {
 /// Adaptive navigation scaffold: a [NavigationRail] with the brand wordmark on
 /// wide layouts (TV/desktop/tablet) and a [NavigationBar] on narrow (phone),
 /// switching at [NoorBreakpoints.rail].
+///
+/// When [onOpenSettings] or [onOpenPlaylists] are provided, affordances are
+/// rendered so the user can reach those screens from every tab.
 class AdaptiveShell extends StatelessWidget {
   final Widget body;
   final int currentIndex;
   final ValueChanged<int> onSelect;
   final List<NavDestinationData> destinations;
   final String brand;
+  final VoidCallback? onOpenSettings;
+  final VoidCallback? onOpenPlaylists;
+
   const AdaptiveShell({
     super.key,
     required this.body,
@@ -24,6 +30,8 @@ class AdaptiveShell extends StatelessWidget {
     required this.onSelect,
     required this.destinations,
     required this.brand,
+    this.onOpenSettings,
+    this.onOpenPlaylists,
   });
 
   @override
@@ -41,6 +49,45 @@ class AdaptiveShell extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Text(brand, style: Theme.of(context).textTheme.titleLarge),
               ),
+              trailing: (onOpenSettings != null || onOpenPlaylists != null)
+                  ? Expanded(
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (onOpenPlaylists != null)
+                                Tooltip(
+                                  message: 'Playlists',
+                                  child: Semantics(
+                                    label: 'Playlists',
+                                    button: true,
+                                    child: IconButton(
+                                      icon: const Icon(Icons.playlist_play),
+                                      onPressed: onOpenPlaylists,
+                                    ),
+                                  ),
+                                ),
+                              if (onOpenSettings != null)
+                                Tooltip(
+                                  message: 'Settings',
+                                  child: Semantics(
+                                    label: 'Settings',
+                                    button: true,
+                                    child: IconButton(
+                                      icon: const Icon(Icons.settings),
+                                      onPressed: onOpenSettings,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                  : null,
               destinations: [
                 for (final d in destinations)
                   NavigationRailDestination(icon: Icon(d.icon), label: Text(d.label)),
@@ -52,8 +99,49 @@ class AdaptiveShell extends StatelessWidget {
         ),
       );
     }
+
+    // Narrow layout: slim top bar + body + bottom nav
     return Scaffold(
-      body: body,
+      body: Column(
+        children: [
+          if (onOpenSettings != null || onOpenPlaylists != null)
+            SafeArea(
+              bottom: false,
+              child: Row(
+                children: [
+                  const SizedBox(width: 16),
+                  Text(brand, style: Theme.of(context).textTheme.titleMedium),
+                  const Spacer(),
+                  if (onOpenPlaylists != null)
+                    Tooltip(
+                      message: 'Playlists',
+                      child: Semantics(
+                        label: 'Playlists',
+                        button: true,
+                        child: IconButton(
+                          icon: const Icon(Icons.playlist_play),
+                          onPressed: onOpenPlaylists,
+                        ),
+                      ),
+                    ),
+                  if (onOpenSettings != null)
+                    Tooltip(
+                      message: 'Settings',
+                      child: Semantics(
+                        label: 'Settings',
+                        button: true,
+                        child: IconButton(
+                          icon: const Icon(Icons.settings),
+                          onPressed: onOpenSettings,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          Expanded(child: body),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: onSelect,

@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 
 /// A button that shows a high-contrast focus ring (the prototype's `--focus`
 /// outline) when focused — for TV remote / D-pad navigation — and exposes a
 /// semantics label for screen readers.
+///
+/// Responds to Enter, Space, Select, and GameButtonA (TV remote centre/select)
+/// in addition to tap, so it works correctly with Android TV D-pad navigation.
 class FocusableButton extends StatefulWidget {
   final Widget child;
   final VoidCallback onPressed;
   final String? semanticLabel;
+  final bool autofocus;
   const FocusableButton({
     super.key,
     required this.child,
     required this.onPressed,
     this.semanticLabel,
+    this.autofocus = false,
   });
 
   @override
@@ -27,8 +33,23 @@ class _FocusableButtonState extends State<FocusableButton> {
     return Semantics(
       button: true,
       label: widget.semanticLabel,
-      child: Focus(
-        onFocusChange: (f) => setState(() => _focused = f),
+      child: FocusableActionDetector(
+        autofocus: widget.autofocus,
+        onShowFocusHighlight: (f) => setState(() => _focused = f),
+        shortcuts: const {
+          SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
+          SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
+          SingleActivator(LogicalKeyboardKey.select): ActivateIntent(),
+          SingleActivator(LogicalKeyboardKey.gameButtonA): ActivateIntent(),
+        },
+        actions: {
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              widget.onPressed();
+              return null;
+            },
+          ),
+        },
         child: GestureDetector(
           onTap: widget.onPressed,
           child: Container(

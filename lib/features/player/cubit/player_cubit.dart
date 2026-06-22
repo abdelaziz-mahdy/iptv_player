@@ -52,6 +52,8 @@ class PlayerCubit extends Cubit<PlayerUiState> {
   final String url;
   final String title;
   final String? subtitle;
+  final MediaKind kind;
+  final String playlistId;
 
   StreamSubscription<PlayerStatus>? _statusSub;
 
@@ -62,6 +64,8 @@ class PlayerCubit extends Cubit<PlayerUiState> {
     required this.url,
     required this.title,
     this.subtitle,
+    required this.kind,
+    required this.playlistId,
   }) : super(const PlayerUiState());
 
   /// Initializes the player, seeks to resume position if available, and starts.
@@ -134,8 +138,8 @@ class PlayerCubit extends Cubit<PlayerUiState> {
     await _playback.saveProgress(
       WatchProgress(
         itemKey: itemKey,
-        playlistId: 'default',
-        kind: MediaKind.movie,
+        playlistId: playlistId,
+        kind: kind,
         positionSec: _controller.position.inSeconds,
         durationSec: _controller.duration.inSeconds,
         updatedAt: DateTime.now().toUtc(),

@@ -7,6 +7,7 @@ import '../../core/a11y/accessibility_settings.dart';
 import '../../core/a11y/caption_style.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/focusable_button.dart';
+import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
 import 'cubit/player_cubit.dart';
 import 'video_controller.dart';
@@ -23,6 +24,8 @@ class PlayerScreen extends StatefulWidget {
   final String? subtitle;
   final VoidCallback onBack;
   final PlaybackRepository playbackRepository;
+  final MediaKind kind;
+  final String playlistId;
 
   const PlayerScreen({
     super.key,
@@ -33,6 +36,8 @@ class PlayerScreen extends StatefulWidget {
     this.subtitle,
     required this.onBack,
     required this.playbackRepository,
+    required this.kind,
+    required this.playlistId,
   });
 
   @override
@@ -53,6 +58,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
         url: widget.url,
         title: widget.title,
         subtitle: widget.subtitle,
+        kind: widget.kind,
+        playlistId: widget.playlistId,
       );
       _cubit!.start();
     }

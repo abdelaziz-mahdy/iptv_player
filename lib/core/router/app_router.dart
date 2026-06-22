@@ -28,11 +28,15 @@ import '../widgets/adaptive_shell.dart';
 class PlayerArgs {
   final String itemKey, url, title;
   final String? subtitle;
+  final MediaKind kind;
+  final String playlistId;
   const PlayerArgs({
     required this.itemKey,
     required this.url,
     required this.title,
     this.subtitle,
+    required this.kind,
+    required this.playlistId,
   });
 }
 
@@ -59,6 +63,8 @@ GoRouter buildRouter() {
             onSelect: navigationShell.goBranch,
             destinations: dests,
             body: navigationShell,
+            onOpenSettings: () => context.push('/settings'),
+            onOpenPlaylists: () => context.push('/playlists'),
           );
         },
         branches: [
@@ -78,8 +84,11 @@ GoRouter buildRouter() {
                       itemKey: 'channel:${c.id}',
                       url: c.streamUrl,
                       title: c.name,
+                      kind: MediaKind.channel,
+                      playlistId: c.playlistId,
                     ),
                   ),
+                  onAddPlaylist: () => context.push('/import'),
                 ),
               ),
             ],
@@ -109,6 +118,8 @@ GoRouter buildRouter() {
                       itemKey: 'channel:${c.id}',
                       url: c.streamUrl,
                       title: c.name,
+                      kind: MediaKind.channel,
+                      playlistId: c.playlistId,
                     ),
                   ),
                 ),
@@ -160,7 +171,13 @@ GoRouter buildRouter() {
       GoRoute(
         path: '/details/movie',
         builder: (context, state) {
-          final movie = state.extra as VodItem;
+          final movie = state.extra as VodItem?;
+          if (movie == null) {
+            return Scaffold(
+              appBar: AppBar(),
+              body: const Center(child: Text('Movie not found')),
+            );
+          }
           return DetailsScreen.movie(
             movie,
             onBack: () => context.pop(),
@@ -170,6 +187,8 @@ GoRouter buildRouter() {
                 itemKey: 'movie:${m.id}',
                 url: m.streamUrl,
                 title: m.title,
+                kind: MediaKind.movie,
+                playlistId: m.playlistId,
               ),
             ),
           );
@@ -178,7 +197,13 @@ GoRouter buildRouter() {
       GoRoute(
         path: '/details/series',
         builder: (context, state) {
-          final series = state.extra as Series;
+          final series = state.extra as Series?;
+          if (series == null) {
+            return Scaffold(
+              appBar: AppBar(),
+              body: const Center(child: Text('Series not found')),
+            );
+          }
           return DetailsScreen.series(
             series,
             onBack: () => context.pop(),
@@ -188,6 +213,8 @@ GoRouter buildRouter() {
                 itemKey: 'episode:${ep.id}',
                 url: ep.streamUrl,
                 title: ep.title,
+                kind: MediaKind.episode,
+                playlistId: 'p1',
               ),
             ),
           );
@@ -196,7 +223,13 @@ GoRouter buildRouter() {
       GoRoute(
         path: '/player',
         builder: (context, state) {
-          final a = state.extra as PlayerArgs;
+          final a = state.extra as PlayerArgs?;
+          if (a == null) {
+            return Scaffold(
+              appBar: AppBar(),
+              body: const Center(child: Text('Nothing to play')),
+            );
+          }
           return PlayerScreen(
             controller: VideoPlayerControllerAdapter(),
             itemKey: a.itemKey,
@@ -205,6 +238,8 @@ GoRouter buildRouter() {
             subtitle: a.subtitle,
             onBack: () => context.pop(),
             playbackRepository: sl<PlaybackRepository>(),
+            kind: a.kind,
+            playlistId: a.playlistId,
           );
         },
       ),
@@ -294,6 +329,8 @@ void _openSearchEntry(BuildContext c, SearchEntry e) {
           itemKey: 'channel:${e.id}',
           url: e.streamUrl ?? '',
           title: e.title,
+          kind: MediaKind.channel,
+          playlistId: 'p1',
         ),
       );
   }

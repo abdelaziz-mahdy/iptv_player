@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:noor_iptv/data/models/models.dart';
 import 'package:noor_iptv/features/player/cubit/player_cubit.dart';
 import 'package:noor_iptv/data/repositories/fakes/fake_repositories.dart';
 
@@ -19,6 +20,8 @@ void main() {
         itemKey: 'movie:m1',
         url: 'http://x',
         title: 'Dune',
+        kind: MediaKind.movie,
+        playlistId: 'p1',
       );
     });
 
@@ -51,6 +54,11 @@ void main() {
       expect(cubit.state.captionsOn, isTrue);
       cubit.toggleCaptions();
       expect(cubit.state.captionsOn, isFalse);
+    });
+
+    test('kind and playlistId are stored on the cubit', () {
+      expect(cubit.kind, MediaKind.movie);
+      expect(cubit.playlistId, 'p1');
     });
   });
 }

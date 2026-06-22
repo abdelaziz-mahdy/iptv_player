@@ -13,6 +13,7 @@ Widget _buildTestApp({
   void Function(VodItem)? onOpenMovie,
   void Function(Series)? onOpenSeries,
   void Function(Channel)? onOpenChannel,
+  VoidCallback? onAddPlaylist,
 }) {
   return MaterialApp(
     theme: buildTheme(
@@ -26,6 +27,7 @@ Widget _buildTestApp({
       onOpenMovie: onOpenMovie ?? (_) {},
       onOpenSeries: onOpenSeries ?? (_) {},
       onOpenChannel: onOpenChannel ?? (_) {},
+      onAddPlaylist: onAddPlaylist ?? () {},
     ),
   );
 }

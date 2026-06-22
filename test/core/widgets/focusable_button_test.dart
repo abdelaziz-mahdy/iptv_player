@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
@@ -25,5 +26,28 @@ void main() {
     expect(node.label, contains('Play'));
     expect(node.getSemanticsData().flagsCollection.isButton, isTrue);
     semantics.dispose();
+  });
+
+  testWidgets('invokes onPressed when Enter key is sent while focused',
+      (tester) async {
+    var pressed = false;
+    await tester.pumpWidget(MaterialApp(
+      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
+      home: Scaffold(
+        body: FocusableButton(
+          autofocus: true,
+          semanticLabel: 'Play',
+          onPressed: () => pressed = true,
+          child: const Text('Play'),
+        ),
+      ),
+    ));
+    await tester.pump();
+
+    // Send Enter key — the FocusableActionDetector shortcut should fire onPressed
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+
+    expect(pressed, isTrue);
   });
 }

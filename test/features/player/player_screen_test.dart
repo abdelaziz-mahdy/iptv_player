@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noor_iptv/core/a11y/accessibility_cubit.dart';
 import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
+import 'package:noor_iptv/data/models/models.dart';
 import 'package:noor_iptv/data/repositories/fakes/fake_repositories.dart';
 import 'package:noor_iptv/features/player/player_screen.dart';
 import 'package:noor_iptv/l10n/generated/app_localizations.dart';
@@ -11,11 +12,7 @@ import 'package:noor_iptv/l10n/generated/app_localizations.dart';
 import '../../support/fake_hydrated_storage.dart';
 import 'fake_player_controller.dart';
 
-void main() {
-  setUpAll(() => installFakeHydratedStorage());
-
-  testWidgets('renders title and play/pause control', (tester) async {
-    await tester.pumpWidget(MaterialApp(
+Widget _buildPlayer({VoidCallback? onBack}) => MaterialApp(
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -26,11 +23,19 @@ void main() {
           itemKey: 'movie:m1',
           url: 'http://x',
           title: 'Dune',
-          onBack: () {},
+          onBack: onBack ?? () {},
           playbackRepository: FakePlaybackRepository(),
+          kind: MediaKind.movie,
+          playlistId: 'p1',
         ),
       ),
-    ));
+    );
+
+void main() {
+  setUpAll(() => installFakeHydratedStorage());
+
+  testWidgets('renders title and play/pause control', (tester) async {
+    await tester.pumpWidget(_buildPlayer());
     await tester.pump(); // let start() complete
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -41,22 +46,7 @@ void main() {
 
   testWidgets('tapping back invokes onBack', (tester) async {
     bool backCalled = false;
-    await tester.pumpWidget(MaterialApp(
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: BlocProvider(
-        create: (_) => AccessibilityCubit(),
-        child: PlayerScreen(
-          controller: FakePlayerController(),
-          itemKey: 'movie:m1',
-          url: 'http://x',
-          title: 'Dune',
-          onBack: () => backCalled = true,
-          playbackRepository: FakePlaybackRepository(),
-        ),
-      ),
-    ));
+    await tester.pumpWidget(_buildPlayer(onBack: () => backCalled = true));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
