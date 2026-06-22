@@ -117,5 +117,62 @@ void main() {
 
       expect(result, everyElement(isA<EpgProgramme>()));
     });
+
+    // ------------------------------------------------------------------
+    // Robustness: malformed timestamps must not crash the parser
+    // ------------------------------------------------------------------
+
+    test(
+        'document with one malformed programme (start="") and one good '
+        'programme parses to exactly one EpgProgramme', () {
+      const xmltv = '''<?xml version="1.0" encoding="UTF-8"?>
+<tv>
+  <programme start="" stop="" channel="bad">
+    <title>Bad Entry</title>
+  </programme>
+  <programme start="20260621200000 +0000" stop="20260621210000 +0000" channel="bbc1">
+    <title>News</title>
+  </programme>
+</tv>''';
+      final result = source.parse(xmltv);
+
+      expect(result, hasLength(1));
+      expect(result[0].channelId, 'bbc1');
+      expect(result[0].title, 'News');
+    });
+
+    test(
+        'document with one programme whose start is too short (e.g. "2026") '
+        'and one good programme parses to exactly one EpgProgramme', () {
+      const xmltv = '''<?xml version="1.0" encoding="UTF-8"?>
+<tv>
+  <programme start="2026" stop="2026" channel="short">
+    <title>Short Timestamp</title>
+  </programme>
+  <programme start="20260621210000 +0000" stop="20260621220000 +0000" channel="bbc2">
+    <title>Sport</title>
+  </programme>
+</tv>''';
+      final result = source.parse(xmltv);
+
+      expect(result, hasLength(1));
+      expect(result[0].channelId, 'bbc2');
+      expect(result[0].title, 'Sport');
+    });
+
+    test('document where all programmes are malformed returns empty list', () {
+      const xmltv = '''<?xml version="1.0" encoding="UTF-8"?>
+<tv>
+  <programme start="" stop="20260621210000 +0000" channel="ch1">
+    <title>No Start</title>
+  </programme>
+  <programme start="20260621200000 +0000" stop="" channel="ch2">
+    <title>No Stop</title>
+  </programme>
+</tv>''';
+      final result = source.parse(xmltv);
+
+      expect(result, isEmpty);
+    });
   });
 }

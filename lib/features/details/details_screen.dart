@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -209,16 +211,23 @@ class _MyListButton extends StatefulWidget {
 
 class _MyListButtonState extends State<_MyListButton> {
   bool _inList = false;
+  StreamSubscription<dynamic>? _favSub;
 
   @override
   void initState() {
     super.initState();
-    sl<ContentRepository>().favorites(widget.playlistId).listen((favs) {
+    _favSub = sl<ContentRepository>().favorites(widget.playlistId).listen((favs) {
       if (!mounted) return;
       setState(() {
         _inList = favs.any((f) => f.itemKey == widget.itemKey);
       });
     });
+  }
+
+  @override
+  void dispose() {
+    _favSub?.cancel();
+    super.dispose();
   }
 
   @override

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:noor_iptv/core/a11y/accessibility_cubit.dart';
 import 'package:noor_iptv/core/di/injection.dart';
 import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
@@ -19,15 +21,18 @@ Future<void> _pumpLive(WidgetTester tester, Widget widget) async {
 }
 
 Widget _buildTestApp({void Function(Channel)? onPlayChannel}) {
-  return MaterialApp(
-    theme: buildTheme(
-      palette: AppPalette.standard,
-      hyperlegible: false,
-      rtl: false,
+  return BlocProvider(
+    create: (_) => AccessibilityCubit(),
+    child: MaterialApp(
+      theme: buildTheme(
+        palette: AppPalette.standard,
+        hyperlegible: false,
+        rtl: false,
+      ),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: LiveScreen(onPlayChannel: onPlayChannel ?? (_) {}),
     ),
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
-    supportedLocales: AppLocalizations.supportedLocales,
-    home: LiveScreen(onPlayChannel: onPlayChannel ?? (_) {}),
   );
 }
 

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/a11y/accessibility_cubit.dart';
 import '../../core/di/injection.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/focusable_button.dart';
 import '../../core/widgets/live_badge.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
@@ -62,10 +64,14 @@ class _LiveView extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
         ),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: LiveBadge(label: 'LIVE', reduceMotion: false),
+            padding: const EdgeInsets.only(right: 16),
+            child: LiveBadge(
+              label: 'LIVE',
+              reduceMotion:
+                  context.watch<AccessibilityCubit>().state.reduceMotion,
+            ),
           ),
         ],
       ),
@@ -257,8 +263,9 @@ class _ChannelRow extends StatelessWidget {
       child: Row(
         children: [
           // --- Sticky channel info cell ---
-          GestureDetector(
-            onTap: () => onPlayChannel(channel),
+          FocusableButton(
+            semanticLabel: channel.name,
+            onPressed: () => onPlayChannel(channel),
             child: Container(
               width: _kChannelColWidth,
               height: _kRowHeight,
@@ -577,7 +584,11 @@ class _ProgrammeCell extends StatelessWidget {
     );
 
     if (onTap != null) {
-      return GestureDetector(onTap: onTap, child: cell);
+      return FocusableButton(
+        semanticLabel: title,
+        onPressed: onTap!,
+        child: cell,
+      );
     }
     return cell;
   }
