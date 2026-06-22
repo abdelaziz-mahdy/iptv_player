@@ -5,3 +5,7 @@ build/
 .DS_Store
 *.g.dart
 *.freezed.dart
+.flutter-plugins
+.flutter-plugins-dependencies
+migrate_working_dir/
+.dart_tool/package_config.json
