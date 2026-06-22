@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Hanken+Grotesk:wght@500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  button { font: inherit; color: inherit; background: none; border: none; margin: 0; padding: 0; cursor: pointer; text-align: inherit; }
+  input { font: inherit; }
+  *:focus { outline: none; }
+  *:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  [data-focusable]:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  @keyframes cvpulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  .cvscroll::-webkit-scrollbar { height: 6px; width: 6px; }
+</style>
+</helmet>
+<div style="{{ rootStyle }}">
+
+  <!-- ===== PROTOTYPE TOOLBAR (demo scaffolding, not part of the app) ===== -->
+  <div dir="ltr" style="display:flex;align-items:center;gap:16px;padding:12px 22px;flex-wrap:wrap;background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.07)">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:30px;height:30px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#05070a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      </div>
+      <span style="font-family:'Hanken Grotesk',sans-serif;font-weight:800;letter-spacing:1px;font-size:16px;color:var(--fg)">NOOR</span>
+      <span style="color:rgba(255,255,255,.3);font-size:12px;font-weight:700;margin-inline-start:4px">PROTOTYPE</span>
+    </div>
+
+    <div style="display:flex;background:rgba(255,255,255,0.06);border-radius:10px;padding:3px;gap:2px">
+      <button onClick="{{ onPhone }}" style="{{ segPhoneStyle }}">Phone</button>
+      <button onClick="{{ onTV }}" style="{{ segTVStyle }}">TV</button>
+    </div>
+
+    <div style="display:flex;background:rgba(255,255,255,0.06);border-radius:10px;padding:3px;gap:2px">
+      <button onClick="{{ onEN }}" style="{{ segENStyle }}">EN</button>
+      <button onClick="{{ onAR }}" style="{{ segARStyle }}">عربي</button>
+    </div>
+
+    <div style="margin-inline-start:auto;display:flex;gap:10px;align-items:center">
+      <button onClick="{{ onFlutter }}" style="{{ flutterBtnStyle }}">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3 5 12l3 3 9-9z"></path><path d="m9 16 3 3 9-9-3-3"></path></svg>
+        Flutter notes
+      </button>
+      <button onClick="{{ onPanel }}" style="{{ a11yBtnStyle }}">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8.5 10.5h7"></path></svg>
+        Accessibility
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== STAGE ===== -->
+  <div style="display:flex;justify-content:safe center;align-items:flex-start;padding:38px 24px 60px;min-height:60vh;overflow-x:auto">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+
+      <!-- DEVICE FRAME -->
+      <div ref="{{ setDev }}" dir="{{ dir }}" style="{{ frameStyle }}">
+
+        <sc-if value="{{ showNotch }}" hint-placeholder-val="{{ true }}">
+          <div style="position:absolute;top:9px;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#000;border-radius:16px;z-index:40"></div>
+        </sc-if>
+
+        <!-- TV SIDEBAR -->
+        <sc-if value="{{ isTV }}" hint-placeholder-val="{{ true }}">
+          <nav aria-label="Main" style="width:212px;flex:none;background:var(--bg2);border-inline-end:1px solid var(--border);display:flex;flex-direction:column;padding:22px 14px;gap:3px">
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 8px 18px">
+              <div style="width:26px;height:26px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex:none">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#05070a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </div>
+              <span style="font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif;font-weight:800;font-size:calc(15px*var(--ts));letter-spacing:.5px;color:var(--fg)">{{ brand }}</span>
+            </div>
+            <sc-for list="{{ sideItems }}" as="n" hint-placeholder-count="7">
+              <button data-focusable="true" aria-label="{{ n.label }}" onClick="{{ n.onClick }}" style="{{ n.style }}">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="{{ n.fill }}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ n.d }}"></path><path d="{{ n.d2 }}"></path></svg>
+                <span style="font-size:calc(15px*var(--ts))">{{ n.label }}</span>
+              </button>
+            </sc-for>
+            <button data-focusable="true" aria-label="{{ tr.playlists }}" onClick="{{ onPlaylists }}" style="margin-top:auto;display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:11px;background:var(--surface)">
+              <span style="{{ plChipStyle }}">{{ plInitial }}</span>
+              <div style="display:flex;flex-direction:column;min-width:0">
+                <span style="font-size:calc(13px*var(--ts));color:var(--fg);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ plName }}</span>
+                <span style="font-size:calc(11px*var(--ts));color:var(--dim)">{{ plCount }}</span>
+              </div>
+            </button>
+          </nav>
+        </sc-if>
+
+        <!-- MAIN COLUMN -->
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0;position:relative;overflow:hidden">
+
+          <!-- slim phone header -->
+          <sc-if value="{{ showPhoneTop }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:44px 16px 10px;flex:none;z-index:20;gap:10px">
+              <button data-focusable="true" aria-label="{{ tr.playlists }}" onClick="{{ onPlaylists }}" style="display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--border);border-radius:30px;padding:6px 12px 6px 6px;min-width:0">
+                <span style="{{ plChipSmStyle }}">{{ plInitial }}</span>
+                <span style="font-size:calc(13px*var(--ts));color:var(--fg);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px">{{ plName }}</span>
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--dim)" stroke-width="2.5"><path d="M6 9l6 6 6-6"></path></svg>
+              </button>
+              <div style="display:flex;gap:8px;align-items:center;flex:none">
+                <button data-focusable="true" aria-label="{{ tr.search }}" onClick="{{ onSearch }}" style="width:40px;height:40px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--fg)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></button>
+                <button data-focusable="true" aria-label="{{ tr.accessibility }}" onClick="{{ onPanel }}" style="width:40px;height:40px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--fg)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8.5 10.5h7"></path></svg></button>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- phone sub-screen back header -->
+          <sc-if value="{{ showPhoneBack }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;gap:10px;padding:44px 16px 4px;flex:none;z-index:20">
+              <button data-focusable="true" aria-label="{{ tr.back }}" onClick="{{ onPhoneBack }}" style="width:40px;height:40px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--fg);flex:none">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="{{ backIconStyle }}"><path d="M15 6l-6 6 6 6"></path><path d=""></path></svg>
+              </button>
+            </div>
+          </sc-if>
+
+          <!-- SCROLL BODY -->
+          <main style="{{ bodyStyle }}" class="cvscroll">
+
+            <!-- ============ HOME ============ -->
+            <sc-if value="{{ scHome }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:26px;padding-bottom:30px">
+                <div style="{{ heroStyle }}">
+                  <div style="position:absolute;inset:0;background:linear-gradient(var(--heroFade),var(--bg) 4%,rgba(0,0,0,0.15) 60%,transparent),linear-gradient(0deg,var(--bg),transparent 55%)"></div>
+                  <div style="position:relative;max-width:560px;display:flex;flex-direction:column;gap:14px">
+                    <span style="font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif;font-weight:800;font-size:calc(var(--heroT)*var(--ts));line-height:1.05;color:#fff;letter-spacing:-.5px">{{ hero.title }}</span>
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                      <span style="color:var(--accent);font-weight:700;font-size:calc(14px*var(--ts))">{{ hero.match }}</span>
+                      <span style="color:var(--dim);font-size:calc(14px*var(--ts))">{{ hero.meta }}</span>
+                      <span style="border:1.5px solid var(--border);border-radius:5px;padding:1px 7px;font-size:calc(12px*var(--ts));color:var(--dim);font-weight:700">CC</span>
+                      <span style="border:1.5px solid var(--border);border-radius:5px;padding:1px 7px;font-size:calc(12px*var(--ts));color:var(--dim);font-weight:700">AD</span>
+                    </div>
+                    <p style="margin:0;color:var(--fg);opacity:.92;font-size:calc(15px*var(--ts));line-height:1.5;max-width:480px;text-wrap:pretty">{{ hero.desc }}</p>
+                    <div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap">
+                      <button data-focusable="true" onClick="{{ hero.onPlay }}" style="display:flex;align-items:center;gap:9px;background:var(--fg);color:var(--bg);font-weight:700;padding:12px 26px;border-radius:10px;font-size:calc(15px*var(--ts))">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 5v14l12-7z"></path></svg> {{ tr.play }}
+                      </button>
+                      <button data-focusable="true" onClick="{{ hero.onInfo }}" style="display:flex;align-items:center;gap:9px;background:var(--surface2);color:var(--fg);font-weight:700;padding:12px 22px;border-radius:10px;font-size:calc(15px*var(--ts))">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg> {{ tr.moreInfo }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <sc-for list="{{ rows }}" as="row" hint-placeholder-count="4">
+                  <div style="display:flex;flex-direction:column;gap:11px;padding:0 var(--gut)">
+                    <span style="font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif;font-weight:700;font-size:calc(18px*var(--ts));color:var(--fg)">{{ row.title }}</span>
+                    <div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:8px" class="cvscroll">
+                      <sc-for list="{{ row.items }}" as="it" hint-placeholder-count="6">
+                        <button data-focusable="true" aria-label="{{ it.title }}" onClick="{{ it.onClick }}" style="{{ it.cardStyle }}">
+                          <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.85),transparent 55%)"></div>
+                          <sc-if value="{{ it.isLive }}" hint-placeholder-val="{{ true }}">
+                            <span style="position:absolute;top:9px;inset-inline-start:9px;display:flex;align-items:center;gap:5px;background:var(--live);color:#fff;font-weight:800;font-size:calc(10px*var(--ts));padding:3px 7px;border-radius:5px;letter-spacing:.5px"><span style="width:6px;height:6px;border-radius:50%;background:#fff;animation:cvpulse calc(1.6s*var(--mo)) infinite"></span>{{ tr.liveBadge }}</span>
+                          </sc-if>
+                          <div style="position:absolute;inset-inline:10px;bottom:9px;display:flex;flex-direction:column;gap:6px">
+                            <span style="color:#fff;font-weight:700;font-size:calc(13px*var(--ts));line-height:1.15;text-shadow:0 1px 3px rgba(0,0,0,.6)">{{ it.title }}</span>
+                            <span style="color:rgba(255,255,255,.8);font-size:calc(11px*var(--ts))">{{ it.sub }}</span>
+                            <sc-if value="{{ it.hasProgress }}" hint-placeholder-val="{{ true }}">
+                              <div style="height:4px;border-radius:3px;background:rgba(255,255,255,.28)"><div style="{{ it.progressStyle }}"></div></div>
+                            </sc-if>
+                          </div>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <!-- ============ FAVORITES ============ -->
+            <sc-if value="{{ scFavorites }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:var(--padTop) var(--gut) 30px;display:flex;flex-direction:column;gap:18px">
+                <span style="font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif;font-weight:800;font-size:calc(24px*var(--ts));color:var(--fg)">{{ tr.favorites }}</span>
+                <sc-if value="{{ favEmpty }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:54px 20px;text-align:center">
+                    <div style="width:64px;height:64px;border-radius:18px;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--dim)"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.4-9.4-8.8A4.6 4.6 0 0 1 12 6a4.6 4.6 0 0 1 9.4 5.2C19 15.6 12 20 12 20z"></path><path d=""></path></svg></div>
+                    <span style="color:var(--fg);font-weight:700;font-size:calc(17px*var(--ts))">{{ tr.favEmpty }}</span>
+                    <span style="color:var(--dim);font-size:calc(14px*var(--ts))">{{ tr.favEmptySub }}</span>
+                  </div>
+                </sc-if>
+                <div style="{{ gridWrapStyle }}">
+                  <sc-for list="{{ favItems }}" as="it" hint-placeholder-count="4">
+                    <button data-focusable="true" aria-label="{{ it.title }}" onClick="{{ it.onClick }}" style="display:flex;flex-direction:column;gap:8px;min-width:0">
+                      <div style="{{ it.cardStyle }}">
+                        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.55),transparent 60%)"></div>
+                        <span style="position:absolute;top:8px;inset-inline-end:8px;background:rgba(0,0,0,.55);color:#fff;font-size:calc(10px*var(--ts));font-weight:700;padding:2px 6px;border-radius:5px">{{ it.badge }}</span>
+                      </div>
+                      <span style="color:var(--fg);font-weight:700;font-size:calc(13px*var(--ts));line-height:1.2">{{ it.title }}</span>
+                      <span style="color:var(--dim);font-size:calc(11px*var(--ts))">{{ it.sub }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ============ MOVIES / SERIES GRID ============ -->
+            <sc-if value="{{ scGrid }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:var(--padTop) var(--gut) 30px;display:flex;flex-direction:column;gap:18px">
+                <span style="font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif;font-weight:800;font-size:calc(24px*var(--ts));color:var(--fg)">{{ gridTitle }}</span>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <sc-for list="{{ gridChips }}" as="c" hint-placeholder-count="6">
+                    <button data-focusable="true" onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button>
+                  </sc-for>
+                </div>
+                <div style="{{ gridWrapStyle }}">
+                  <sc-for list="{{ gridItems }}" as="it" hint-placeholder-count="8">
+                    <button data-focusable="true" aria-label="{{ it.title }}" onClick="{{ it.onClick }}" style="display:flex;flex-direction:column;gap:8px;min-width:0">
+                      <div style="{{ it.cardStyle }}">
+                        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.55),transparent 60%)"></div>
+                        <span style="position:absolute;top:8px;inset-inline-end:8px;background:rgba(0,0,0,.55);color:#fff;font-size:calc(10px*var(--ts));font-weight:700;padding:2px 6px;border-radius:5px">{{ it.badge }}</span>
+                      </div>
+                      <span style="color:var(--fg);font-weight:700;font-size:calc(13px*var(--ts));line-height:1.2">{{ it.title }}</span>
+                      <span style="color:var(--dim);font-size:calc(11px*var(--ts))">{{ it.sub }}</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ============ DETAILS / INFO ============ -->
+            <sc-if value="{{ scDetails }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;padding-bottom:30px">
+                <div style="{{ detailHeroStyle }}">
+                  <div style="position:absolute;inset:0;background:linear-gradient(0deg,var(--bg),transparent 70%),linear-gradient(var(--heroFade),var(--bg),transparent 60%)"></div>
+                  <button data-focusable="true" aria-label="{{ tr.back }}" onClick="{{ onBackNav }}" style="position:absolute;top:16px;inset-inline-start:16px;width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;color:#fff;z-index:5;backdrop-filter:blur(6px)">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="{{ backIconStyle }}"><path d="M15 6l-6 6 6 6"></path><path d=""></path></svg>
+                  </button>
+                </div>
+                <div style="padding:0 var(--gut);margin-top:-40px;position:relative;z-index:2;display:flex;flex-direction:column;gap:16px;max-width:760px">
+                  <span style="font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif;font-weight:800;font-size:calc(30px*var(--ts));color:#fff;line-height:1.05">{{ detail.title }}</span>
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <span style="color:var(--accent);font-weight:700;font-size:calc(14px*var(--ts))">{{ detail.match }}</span>
+                    <span style="color:var(--dim);font-size:calc(14px*var(--ts))">{{ detail.meta }}</span>
+                    <span style="border:1.5px solid var(--border);border-radius:5px;padding:1px 7px;font-size:calc(12px*var(--ts));color:var(--dim);font-weight:700">CC</span>
+                    <span style="border:1.5px solid var(--border);border-radius:5px;padding:1px 7px;font-size:calc(12px*var(--ts));color:var(--dim);font-weight:700">AD</span>
+                  </div>
+                  <div style="display:flex;gap:12px;flex-wrap:wrap">
+                    <button data-focusable="true" onClick="{{ detail.onPlay }}" style="display:flex;align-items:center;gap:9px;background:var(--accent);color:#05070a;font-weight:800;padding:13px 30px;border-radius:10px;font-size:calc(15px*var(--ts))">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 5v14l12-7z"></path></svg> {{ detail.playLabel }}
+                    </button>
+                    <button data-focusable="true" aria-label="{{ detail.listLabel }}" onClick="{{ detail.onToggleList }}" style="{{ detail.listStyle }}">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="{{ detail.listFill }}" stroke="currentColor" stroke-width="2.4"><path d="{{ detail.listIcon }}"></path><path d=""></path></svg> {{ detail.listLabel }}
+                    </button>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+                    <span style="color:var(--dim);font-weight:700;font-size:calc(13px*var(--ts))">{{ tr.synopsis }}</span>
+                    <p style="margin:0;color:var(--fg);opacity:.92;font-size:calc(15px*var(--ts));line-height:1.55;text-wrap:pretty">{{ detail.desc }}</p>
+                  </div>
+
+                  <sc-if value="{{ detail.isSeries }}" hint-placeholder-val="{{ true }}">
+                    <div style="display:flex;flex-direction:column;gap:14px;margin-top:8px">
+                      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                        <span style="color:var(--fg);font-weight:700;font-size:calc(17px*var(--ts));font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif;margin-inline-end:6px">{{ tr.episodes }}</span>
+                        <sc-for list="{{ detail.seasonChips }}" as="c" hint-placeholder-count="2">
+                          <button data-focusable="true" onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button>
+                        </sc-for>
+                      </div>
+                      <sc-for list="{{ detail.episodes }}" as="e" hint-placeholder-count="5">
+                        <button data-focusable="true" aria-label="{{ e.aria }}" onClick="{{ e.onClick }}" style="display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:12px;text-align:start">
+                          <div style="{{ e.thumbStyle }}">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><path d="M7 5v14l12-7z"></path></svg>
+                          </div>
+                          <div style="flex:1;display:flex;flex-direction:column;gap:3px;min-width:0">
+                            <span style="color:var(--fg);font-weight:700;font-size:calc(14px*var(--ts))">{{ e.title }}</span>
+                            <span style="color:var(--dim);font-size:calc(12px*var(--ts))">{{ e.dur }}</span>
+                          </div>
+                          <span style="color:var(--dim);font-weight:800;font-size:calc(15px*var(--ts));font-family:'Hanken Grotesk',sans-serif">{{ e.num }}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ============ LIVE / EPG ============ -->
+            <sc-if value="{{ scLive }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;height:100%;min-height:0">
+                <div style="padding:var(--padTop) var(--gut) 14px;flex:none">
+                  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px">
+                    <span style="font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif;font-weight:800;font-size:calc(24px*var(--ts));color:var(--fg)">{{ tr.liveGuide }}</span>
+                    <span style="color:var(--dim);font-size:calc(14px*var(--ts))">{{ epgDate }}</span>
+                  </div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <sc-for list="{{ epgChips }}" as="c" hint-placeholder-count="6">
+                      <button data-focusable="true" onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="flex:1;overflow:auto;min-height:0" class="cvscroll">
+                  <div style="min-width:var(--epgW)">
+                    <div style="display:flex;position:sticky;top:0;z-index:6;background:var(--bg)">
+                      <div style="width:var(--chW);flex:none;border-inline-end:1px solid var(--border)"></div>
+                      <sc-for list="{{ epgTimes }}" as="t" hint-placeholder-count="6">
+                        <div style="width:var(--slotW);flex:none;padding:9px 12px;color:var(--dim);font-weight:700;font-size:calc(13px*var(--ts));border-bottom:1px solid var(--border)">{{ t }}</div>
+                      </sc-for>
+                    </div>
+                    <sc-for list="{{ epgChannels }}" as="ch" hint-placeholder-count="6">
+                      <div style="display:flex;border-bottom:1px solid var(--border)">
+                        <div style="width:var(--chW);flex:none;display:flex;align-items:center;gap:9px;padding:10px 12px;border-inline-end:1px solid var(--border);background:var(--bg2)">
+                          <span style="{{ ch.logoStyle }}">{{ ch.abbr }}</span>
+                          <div style="display:flex;flex-direction:column;min-width:0;flex:1">
+                            <span style="color:var(--fg);font-weight:700;font-size:calc(13px*var(--ts));white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ch.name }}</span>
+                            <span style="color:var(--dim);font-size:calc(11px*var(--ts))">{{ ch.num }}</span>
+                          </div>
+                          <button data-focusable="true" aria-label="{{ ch.favLabel }}" onClick="{{ ch.onFav }}" style="flex:none;color:{{ ch.favColor }};display:flex"><svg viewBox="0 0 24 24" width="18" height="18" fill="{{ ch.favFill }}" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-9.4-8.8A4.6 4.6 0 0 1 12 6a4.6 4.6 0 0 1 9.4 5.2C19 15.6 12 20 12 20z"></path><path d=""></path></svg></button>
+                        </div>
+                        <div style="display:flex">
+                          <sc-for list="{{ ch.lane }}" as="p" hint-placeholder-count="4">
+                            <button data-focusable="true" aria-label="{{ p.title }}" onClick="{{ p.onClick }}" style="{{ p.style }}">
+                              <sc-if value="{{ p.live }}" hint-placeholder-val="{{ true }}">
+                                <span style="display:inline-flex;align-items:center;gap:4px;color:var(--live);font-weight:800;font-size:calc(10px*var(--ts));margin-bottom:3px"><span style="width:5px;height:5px;border-radius:50%;background:var(--live)"></span>{{ tr.onNow }}</span>
+                              </sc-if>
+                              <span style="color:var(--fg);font-weight:700;font-size:calc(13px*var(--ts));line-height:1.15;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.title }}</span>
+                              <span style="color:var(--dim);font-size:calc(11px*var(--ts))">{{ p.time }}</span>
+                            </button>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ============ PLAYER ============ -->
+            <sc-if value="{{ scPlayer }}" hint-placeholder-val="{{ true }}">
+              <div style="{{ playerSurfaceStyle }}">
+                <div style="position:absolute;top:0;inset-inline:0;padding:14px 16px;display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,rgba(0,0,0,.7),transparent);z-index:10">
+                  <button data-focusable="true" aria-label="{{ tr.back }}" onClick="{{ onBackNav }}" style="width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;color:#fff;backdrop-filter:blur(6px);flex:none">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="{{ backIconStyle }}"><path d="M15 6l-6 6 6 6"></path><path d=""></path></svg>
+                  </button>
+                  <div style="display:flex;flex-direction:column;min-width:0">
+                    <span style="color:#fff;font-weight:700;font-size:calc(15px*var(--ts));white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ np.title }}</span>
+                    <span style="color:rgba(255,255,255,.7);font-size:calc(12px*var(--ts))">{{ np.sub }}</span>
+                  </div>
+                  <div style="margin-inline-start:auto;display:flex;align-items:center;flex:none">
+                    <div aria-label="Stream quality and download speed" dir="ltr" style="display:flex;align-items:center;gap:6px;color:#fff;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:6px 10px;font-size:calc(12px*var(--ts));font-weight:700;backdrop-filter:blur(6px);font-variant-numeric:tabular-nums">
+                      <span style="width:7px;height:7px;border-radius:50%;background:var(--accent2)"></span>{{ qualityLabel }}
+                      <span style="opacity:.45">·</span>
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 13l6 6 6-6"></path></svg>{{ downSpeed }}
+                    </div>
+                  </div>
+                </div>
+
+                <button data-focusable="true" aria-label="Play or pause" onClick="{{ onPlayPause }}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:74px;height:74px;border-radius:50%;background:rgba(255,255,255,.16);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;color:#fff;z-index:8;border:2px solid rgba(255,255,255,.4)">
+                  <sc-if value="{{ playing }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"></path></svg></sc-if>
+                  <sc-if value="{{ paused }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg></sc-if>
+                </button>
+
+                <sc-if value="{{ captionsOn }}" hint-placeholder-val="{{ true }}">
+                  <div style="position:absolute;inset-inline:0;bottom:var(--capBottom);display:flex;justify-content:center;padding:0 20px;z-index:9;pointer-events:none">
+                    <span style="{{ capStyle }}">{{ capText }}</span>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ audioMenu }}" hint-placeholder-val="{{ true }}">
+                  <div style="position:absolute;inset-inline-end:16px;bottom:96px;width:240px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;z-index:12;box-shadow:0 18px 50px rgba(0,0,0,.5)">
+                    <span style="display:block;color:var(--dim);font-weight:700;font-size:calc(12px*var(--ts));margin-bottom:8px;letter-spacing:.4px">{{ trU.subtitles }}</span>
+                    <sc-for list="{{ subOptions }}" as="o" hint-placeholder-count="3">
+                      <button data-focusable="true" onClick="{{ o.onClick }}" style="{{ o.style }}"><span>{{ o.label }}</span><sc-if value="{{ o.on }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="3"><path d="M5 12l5 5L20 6"></path><path d=""></path></svg></sc-if></button>
+                    </sc-for>
+                    <span style="display:block;color:var(--dim);font-weight:700;font-size:calc(12px*var(--ts));margin:12px 0 8px;letter-spacing:.4px">{{ trU.audio }}</span>
+                    <sc-for list="{{ audioOptions }}" as="o" hint-placeholder-count="3">
+                      <button data-focusable="true" onClick="{{ o.onClick }}" style="{{ o.style }}"><span>{{ o.label }}</span><sc-if value="{{ o.on }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="3"><path d="M5 12l5 5L20 6"></path><path d=""></path></svg></sc-if></button>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ epMenuOpen }}" hint-placeholder-val="{{ true }}">
+                  <div style="position:absolute;inset-inline-end:16px;bottom:96px;width:300px;max-height:64%;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;z-index:12;box-shadow:0 18px 50px rgba(0,0,0,.5)" class="cvscroll">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px">
+                      <span style="color:var(--fg);font-weight:800;font-size:calc(14px*var(--ts));font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ npEpTitle }}</span>
+                      <span style="color:var(--dim);font-size:calc(12px*var(--ts));flex:none">{{ npSeasonLabel }}</span>
+                    </div>
+                    <sc-for list="{{ epMenuItems }}" as="o" hint-placeholder-count="4">
+                      <button data-focusable="true" onClick="{{ o.onClick }}" style="{{ o.style }}"><span style="text-align:start">{{ o.label }}</span><sc-if value="{{ o.on }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="3" style="flex:none"><path d="M5 12l5 5L20 6"></path><path d=""></path></svg></sc-if></button>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <div style="position:absolute;inset-inline:0;bottom:0;padding:16px 18px;background:linear-gradient(0deg,rgba(0,0,0,.82),transparent);z-index:10;display:flex;flex-direction:column;gap:12px">
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <span style="color:#fff;font-size:calc(12px*var(--ts));font-variant-numeric:tabular-nums">{{ np.cur }}</span>
+                    <div dir="ltr" style="flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.25);position:relative">
+                      <div style="position:absolute;left:0;top:0;bottom:0;width:34%;background:var(--accent);border-radius:4px"></div>
+                      <div style="position:absolute;left:34%;top:50%;transform:translate(-50%,-50%);width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(0,0,0,.3)"></div>
+                    </div>
+                    <span style="color:#fff;font-size:calc(12px*var(--ts));font-variant-numeric:tabular-nums">{{ np.dur }}</span>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:center;gap:22px">
+                    <button data-focusable="true" aria-label="Rewind 10 seconds" onClick="{{ onSkipBack }}" style="position:relative;color:#fff;display:flex;align-items:center;justify-content:center;width:46px;height:46px"><svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4 7 7l4 3"></path><path d="M7 7h5a7 7 0 1 1-7 7"></path></svg><span style="position:absolute;font-size:10px;font-weight:800;margin-top:1px">10</span></button>
+                    <button data-focusable="true" aria-label="Play or pause" onClick="{{ onPlayPause }}" style="width:52px;height:52px;border-radius:50%;background:#fff;color:#05070a;display:flex;align-items:center;justify-content:center">
+                      <sc-if value="{{ playing }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7 5h4v14H7zM13 5h4v14h-4z"></path></svg></sc-if>
+                      <sc-if value="{{ paused }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg></sc-if>
+                    </button>
+                    <button data-focusable="true" aria-label="Forward 10 seconds" onClick="{{ onSkipFwd }}" style="position:relative;color:#fff;display:flex;align-items:center;justify-content:center;width:46px;height:46px"><svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l4 3-4 3"></path><path d="M17 7h-5a7 7 0 1 0 7 7"></path></svg><span style="position:absolute;font-size:10px;font-weight:800;margin-top:1px">10</span></button>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:9px;justify-content:flex-end;flex-wrap:wrap">
+                    <sc-if value="{{ npHasNext }}" hint-placeholder-val="{{ true }}">
+                      <button data-focusable="true" aria-label="{{ tr.nextEp }}" onClick="{{ onNextEp }}" style="display:flex;align-items:center;gap:7px;color:#05070a;background:#fff;padding:7px 13px;border-radius:9px;font-size:calc(13px*var(--ts));font-weight:700"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M6 5v14l9-7zM16 5h2v14h-2z"></path></svg>{{ tr.nextEp }}</button>
+                    </sc-if>
+                    <sc-if value="{{ npHasEps }}" hint-placeholder-val="{{ true }}">
+                      <button data-focusable="true" aria-label="{{ tr.episodes }}" onClick="{{ onEpMenu }}" style="display:flex;align-items:center;gap:7px;color:#fff;padding:7px 12px;border-radius:9px;background:rgba(255,255,255,.12);font-size:calc(13px*var(--ts));font-weight:700"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path><path d=""></path></svg>{{ tr.episodes }}</button>
+                    </sc-if>
+                    <sc-if value="{{ npHasFav }}" hint-placeholder-val="{{ true }}">
+                      <button data-focusable="true" aria-pressed="{{ npFav }}" aria-label="{{ npFavLabel }}" onClick="{{ onToggleNpFav }}" style="width:38px;height:38px;border-radius:9px;background:rgba(255,255,255,.12);color:{{ npFavColor }};display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="19" height="19" fill="{{ npFavFill }}" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.4-9.4-8.8A4.6 4.6 0 0 1 12 6a4.6 4.6 0 0 1 9.4 5.2C19 15.6 12 20 12 20z"></path><path d=""></path></svg></button>
+                    </sc-if>
+                    <button data-focusable="true" aria-pressed="{{ captionsOn }}" aria-label="Captions" onClick="{{ onToggleCC }}" style="{{ ccBtnStyle }}">CC</button>
+                    <button data-focusable="true" aria-label="Audio and subtitles" onClick="{{ onAudioMenu }}" style="width:38px;height:38px;border-radius:9px;background:rgba(255,255,255,.12);color:#fff;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10v4h4l5 5V5L7 10z"></path><path d="M16 8a5 5 0 0 1 0 8"></path></svg></button>
+                    <button data-focusable="true" aria-label="Caption style settings" onClick="{{ onPanel }}" style="width:38px;height:38px;border-radius:9px;background:rgba(255,255,255,.12);color:#fff;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 3v3M12 18v3M21 12h-3M6 12H3M18.4 5.6l-2 2M7.6 16.4l-2 2M18.4 18.4l-2-2M7.6 7.6l-2-2"></path></svg></button>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ============ SEARCH ============ -->
+            <sc-if value="{{ scSearch }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:var(--padTop) var(--gut) 30px;display:flex;flex-direction:column;gap:20px">
+                <span style="font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif;font-weight:800;font-size:calc(24px*var(--ts));color:var(--fg)">{{ tr.search }}</span>
+
+                <sc-if value="{{ isPhone }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--dim)" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+                    <input data-focusable="true" value="{{ query }}" onInput="{{ onType }}" placeholder="{{ tr.typeToSearch }}" aria-label="{{ tr.search }}" style="flex:1;background:none;border:none;color:var(--fg);font-size:calc(16px*var(--ts));outline:none" />
+                    <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ true }}"><button data-focusable="true" aria-label="Clear" onClick="{{ onClear }}" style="color:var(--dim)">✕</button></sc-if>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ isTV }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;gap:24px;align-items:flex-start">
+                    <div style="flex:none;width:340px;display:flex;flex-direction:column;gap:12px">
+                      <div style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;min-height:54px">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--dim)" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+                        <span style="color:var(--fg);font-size:calc(17px*var(--ts))">{{ queryDisplay }}</span>
+                      </div>
+                      <div dir="ltr" style="display:flex;flex-direction:column;gap:7px">
+                        <sc-for list="{{ keyRows }}" as="krow" hint-placeholder-count="3">
+                          <div style="display:flex;gap:7px">
+                            <sc-for list="{{ krow }}" as="k" hint-placeholder-count="8">
+                              <button data-focusable="true" onClick="{{ k.onClick }}" style="flex:1;aspect-ratio:1;min-width:0;background:var(--surface);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-weight:700;font-size:calc(16px*var(--ts));display:flex;align-items:center;justify-content:center">{{ k.label }}</button>
+                            </sc-for>
+                          </div>
+                        </sc-for>
+                        <div style="display:flex;gap:7px">
+                          <button data-focusable="true" onClick="{{ onSpace }}" style="flex:3;background:var(--surface);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-weight:700;padding:12px;font-size:calc(14px*var(--ts))">{{ tr.space }}</button>
+                          <button data-focusable="true" onClick="{{ onBackspace }}" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--fg);font-weight:700;padding:12px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6H9l-5 6 5 6h11z"></path><path d="M14 10l-4 4M10 10l4 4"></path></svg></button>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="flex:1;min-width:0">
+                      <span style="display:block;color:var(--dim);font-weight:700;font-size:calc(14px*var(--ts));margin-bottom:12px">{{ resultsLabel }}</span>
+                      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+                        <sc-for list="{{ results }}" as="it" hint-placeholder-count="6">
+                          <button data-focusable="true" aria-label="{{ it.title }}" onClick="{{ it.onClick }}" style="{{ it.gridStyle }}">
+                            <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.8),transparent 55%)"></div>
+                            <span style="position:absolute;inset-inline:10px;bottom:9px;color:#fff;font-weight:700;font-size:calc(13px*var(--ts));text-shadow:0 1px 3px rgba(0,0,0,.6)">{{ it.title }}</span>
+                          </button>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ isPhone }}" hint-placeholder-val="{{ true }}">
+                  <div>
+                    <span style="display:block;color:var(--dim);font-weight:700;font-size:calc(14px*var(--ts));margin-bottom:12px">{{ resultsLabel }}</span>
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+                      <sc-for list="{{ results }}" as="it" hint-placeholder-count="6">
+                        <button data-focusable="true" aria-label="{{ it.title }}" onClick="{{ it.onClick }}" style="{{ it.gridStyle }}">
+                          <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.8),transparent 55%)"></div>
+                          <span style="position:absolute;inset-inline:10px;bottom:9px;color:#fff;font-weight:700;font-size:calc(13px*var(--ts));text-shadow:0 1px 3px rgba(0,0,0,.6)">{{ it.title }}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <!-- ============ SETTINGS ============ -->
+            <sc-if value="{{ scSettings }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:var(--padTop) var(--gut) 30px;display:flex;flex-direction:column;gap:18px;max-width:720px">
+                <span style="font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif;font-weight:800;font-size:calc(24px*var(--ts));color:var(--fg)">{{ tr.settings }}</span>
+
+                <button data-focusable="true" onClick="{{ onPanel }}" style="text-align:start;background:linear-gradient(120deg,var(--surface2),var(--surface));border:1.5px solid var(--accent);border-radius:16px;padding:20px;display:flex;gap:16px;align-items:flex-start">
+                  <div style="width:46px;height:46px;border-radius:12px;background:var(--accent);flex:none;display:flex;align-items:center;justify-content:center;color:#05070a">
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8.5 10.5h7"></path></svg>
+                  </div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+                    <span style="color:var(--fg);font-weight:700;font-size:calc(17px*var(--ts))">{{ tr.accessibility }}</span>
+                    <span style="color:var(--dim);font-size:calc(14px*var(--ts));line-height:1.45">{{ a11ySummary }}</span>
+                    <span style="color:var(--accent);font-weight:700;font-size:calc(14px*var(--ts));margin-top:2px">{{ tr.openA11y }}</span>
+                  </div>
+                </button>
+
+                <sc-for list="{{ settingsRows }}" as="r" hint-placeholder-count="4">
+                  <button data-focusable="true" onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:16px 18px;text-align:start">
+                    <div style="width:38px;height:38px;border-radius:10px;background:var(--surface2);flex:none;display:flex;align-items:center;justify-content:center;color:var(--accent)">
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ r.d }}"></path><path d="{{ r.d2 }}"></path></svg>
+                    </div>
+                    <div style="flex:1;display:flex;flex-direction:column">
+                      <span style="color:var(--fg);font-weight:700;font-size:calc(15px*var(--ts))">{{ r.title }}</span>
+                      <span style="color:var(--dim);font-size:calc(13px*var(--ts))">{{ r.sub }}</span>
+                    </div>
+                    <span style="color:var(--dim);font-size:calc(18px*var(--ts))">{{ chevron }}</span>
+                  </button>
+                </sc-for>
+
+                <div style="display:flex;gap:9px;align-items:flex-start;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-top:4px">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--dim)" stroke-width="2" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg>
+                  <span style="color:var(--dim);font-size:calc(12px*var(--ts));line-height:1.5">{{ tr.noContent }}</span>
+                </div>
+                <button data-focusable="true" onClick="{{ onPlaylists }}" style="align-self:flex-start;color:var(--live);font-weight:700;font-size:calc(15px*var(--ts));padding:6px 0">{{ tr.removePlaylist }}</button>
+              </div>
+            </sc-if>
+
+            <!-- ============ ADD PLAYLIST (import) ============ -->
+            <sc-if value="{{ scImport }}" hint-placeholder-val="{{ true }}">
+              <div style="position:relative;min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:var(--gut)">
+                <div style="position:absolute;inset:0;background:radial-gradient(900px 500px at 70% 20%,rgba(91,108,255,.22),transparent),radial-gradient(700px 500px at 10% 90%,rgba(255,176,32,.14),transparent),var(--bg)"></div>
+                <div style="position:relative;max-width:440px;width:100%;align-self:center;display:flex;flex-direction:column;gap:18px">
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <div style="width:44px;height:44px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex:none">
+                      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#05070a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </div>
+                    <div style="display:flex;flex-direction:column">
+                      <span style="font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif;font-weight:800;font-size:calc(22px*var(--ts));color:var(--fg)">{{ tr.importTitle }}</span>
+                      <span style="color:var(--dim);font-size:calc(13px*var(--ts))">{{ tr.importSub }}</span>
+                    </div>
+                  </div>
+
+                  <div style="display:flex;background:var(--surface);border-radius:11px;padding:3px;gap:2px">
+                    <sc-for list="{{ importTabs }}" as="t" hint-placeholder-count="3">
+                      <button data-focusable="true" onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+                    </sc-for>
+                  </div>
+
+                  <div style="display:flex;flex-direction:column;gap:14px">
+                    <sc-for list="{{ importFields }}" as="f" hint-placeholder-count="3">
+                      <label style="display:flex;flex-direction:column;gap:7px">
+                        <span style="color:var(--dim);font-size:calc(13px*var(--ts));font-weight:700">{{ f.label }}</span>
+                        <input data-focusable="true" type="{{ f.type }}" placeholder="{{ f.ph }}" style="background:var(--surface);border:1.5px solid var(--border);border-radius:11px;padding:14px;color:var(--fg);font-size:calc(16px*var(--ts));outline:none" />
+                      </label>
+                    </sc-for>
+                    <sc-if value="{{ importIsFile }}" hint-placeholder-val="{{ true }}">
+                      <button data-focusable="true" style="display:flex;flex-direction:column;align-items:center;gap:10px;background:var(--surface);border:2px dashed var(--border);border-radius:13px;padding:30px;color:var(--dim)">
+                        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"></path><path d="M5 16v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3"></path></svg>
+                        <span style="font-weight:700;font-size:calc(14px*var(--ts))">{{ tr.chooseFile }}</span>
+                      </button>
+                    </sc-if>
+                    <button data-focusable="true" onClick="{{ onImport }}" style="background:var(--accent);color:#05070a;font-weight:800;padding:15px;border-radius:11px;font-size:calc(16px*var(--ts));margin-top:4px">{{ tr.addPlaylist }}</button>
+                    <p style="margin:2px 0 0;color:var(--dim);font-size:calc(12px*var(--ts));line-height:1.5;display:flex;gap:8px;align-items:flex-start"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><path d="M12 3l8 3v6c0 4.5-3.2 7.5-8 9-4.8-1.5-8-4.5-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg><span>{{ tr.noContent }}</span></p>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- ============ YOUR PLAYLISTS ============ -->
+            <sc-if value="{{ scPlaylists }}" hint-placeholder-val="{{ true }}">
+              <div style="min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:var(--gut);gap:28px">
+                <span style="font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif;font-weight:800;font-size:calc(28px*var(--ts));color:var(--fg)">{{ tr.yourPlaylists }}</span>
+                <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:460px">
+                  <sc-for list="{{ playlists }}" as="p" hint-placeholder-count="3">
+                    <button data-focusable="true" aria-label="{{ p.name }}" onClick="{{ p.onClick }}" style="{{ p.rowStyle }}">
+                      <span style="{{ p.tileStyle }}">{{ p.initial }}</span>
+                      <div style="flex:1;display:flex;flex-direction:column;min-width:0;text-align:start">
+                        <span style="color:var(--fg);font-weight:700;font-size:calc(16px*var(--ts))">{{ p.name }}</span>
+                        <span style="color:var(--dim);font-size:calc(12px*var(--ts));white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.server }}</span>
+                      </div>
+                      <span style="color:var(--dim);font-size:calc(12px*var(--ts));flex:none">{{ p.count }}</span>
+                      <sc-if value="{{ p.active }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--accent)" stroke-width="3" style="flex:none"><path d="M5 12l5 5L20 6"></path><path d=""></path></svg></sc-if>
+                    </button>
+                  </sc-for>
+                  <button data-focusable="true" onClick="{{ onAddPlaylist }}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:transparent;border:1.5px dashed var(--border);border-radius:14px;padding:18px;color:var(--accent);font-weight:700;font-size:calc(15px*var(--ts))">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"></path></svg> {{ tr.addPlaylist }}
+                  </button>
+                  <p style="margin:4px 2px 0;color:var(--dim);font-size:calc(12px*var(--ts));line-height:1.5;text-align:center">{{ tr.noContent }}</p>
+                </div>
+              </div>
+            </sc-if>
+
+          </main>
+
+          <!-- phone bottom tabs -->
+          <sc-if value="{{ showPhoneTabs }}" hint-placeholder-val="{{ true }}">
+            <nav aria-label="Main" style="flex:none;display:flex;background:var(--bg2);border-top:1px solid var(--border);padding:8px 4px 22px;z-index:20">
+              <sc-for list="{{ tabItems }}" as="n" hint-placeholder-count="5">
+                <button data-focusable="true" aria-label="{{ n.label }}" onClick="{{ n.onClick }}" style="{{ n.style }}">
+                  <svg viewBox="0 0 24 24" width="23" height="23" fill="{{ n.fill }}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ n.d }}"></path><path d="{{ n.d2 }}"></path></svg>
+                  <span style="font-size:calc(10.5px*var(--ts));font-weight:700">{{ n.label }}</span>
+                </button>
+              </sc-for>
+            </nav>
+          </sc-if>
+
+        </div>
+      </div>
+
+      <sc-if value="{{ isTV }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div style="width:90px;height:24px;background:linear-gradient(180deg,#0a0d12,#05070a);clip-path:polygon(28% 0,72% 0,100% 100%,0 100%)"></div>
+          <div style="width:200px;height:9px;border-radius:6px;background:#0a0d12"></div>
+        </div>
+      </sc-if>
+
+      <span dir="ltr" style="color:rgba(255,255,255,.35);font-size:13px;margin-top:4px">{{ deviceHint }}</span>
+    </div>
+  </div>
+
+  <!-- ===== ACCESSIBILITY PANEL ===== -->
+  <sc-if value="{{ panelOpen }}" hint-placeholder-val="{{ true }}">
+    <div style="position:fixed;inset:0;z-index:100;display:flex;justify-content:flex-end">
+      <div onClick="{{ onClosePanel }}" style="position:absolute;inset:0;background:rgba(0,0,0,.55)"></div>
+      <div dir="{{ dir }}" role="dialog" aria-label="{{ tr.accessibility }}" style="position:relative;width:380px;max-width:92vw;height:100%;background:var(--bg2);border-inline-start:1px solid var(--border);overflow-y:auto;padding:24px;font-family:'Atkinson Hyperlegible','IBM Plex Sans Arabic',sans-serif" class="cvscroll">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+          <span style="font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif;font-weight:800;font-size:calc(20px*var(--ts));color:var(--fg)">{{ tr.accessibility }}</span>
+          <button data-focusable="true" aria-label="Close" onClick="{{ onClosePanel }}" style="width:36px;height:36px;border-radius:50%;background:var(--surface);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:18px">✕</button>
+        </div>
+
+        <div style="margin-bottom:24px">
+          <span style="display:block;color:var(--fg);font-weight:700;font-size:calc(14px*var(--ts));margin-bottom:4px">{{ tr.textSize }}</span>
+          <span style="display:block;color:var(--dim);font-size:calc(12px*var(--ts));margin-bottom:10px">{{ tr.textSizeSub }}</span>
+          <div style="display:flex;gap:6px">
+            <sc-for list="{{ scaleOpts }}" as="o" hint-placeholder-count="4">
+              <button data-focusable="true" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <sc-for list="{{ toggles }}" as="t" hint-placeholder-count="4">
+          <button data-focusable="true" role="switch" aria-checked="{{ t.on }}" onClick="{{ t.onClick }}" style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)">
+            <div style="flex:1;display:flex;flex-direction:column;text-align:start">
+              <span style="color:var(--fg);font-weight:700;font-size:calc(14px*var(--ts))">{{ t.title }}</span>
+              <span style="color:var(--dim);font-size:calc(12px*var(--ts))">{{ t.sub }}</span>
+            </div>
+            <span dir="ltr" style="{{ t.trackStyle }}"><span style="{{ t.knobStyle }}"></span></span>
+          </button>
+        </sc-for>
+
+        <div style="margin-top:24px">
+          <span style="display:block;color:var(--fg);font-weight:700;font-size:calc(15px*var(--ts));margin-bottom:14px;font-family:'Hanken Grotesk','IBM Plex Sans Arabic',sans-serif">{{ tr.captionStyle }}</span>
+          <div style="background:linear-gradient(120deg,#1a2840,#0e1726);border:1px solid var(--border);border-radius:12px;padding:26px 16px;display:flex;justify-content:center;margin-bottom:16px">
+            <span style="{{ capStyle }}">{{ capText }}</span>
+          </div>
+          <span style="display:block;color:var(--dim);font-size:calc(12px*var(--ts));font-weight:700;margin-bottom:8px">{{ tr.capSize }}</span>
+          <div style="display:flex;gap:6px;margin-bottom:16px">
+            <sc-for list="{{ capSizeOpts }}" as="o" hint-placeholder-count="3"><button data-focusable="true" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button></sc-for>
+          </div>
+          <span style="display:block;color:var(--dim);font-size:calc(12px*var(--ts));font-weight:700;margin-bottom:8px">{{ tr.capBg }}</span>
+          <div style="display:flex;gap:6px;margin-bottom:16px">
+            <sc-for list="{{ capBgOpts }}" as="o" hint-placeholder-count="3"><button data-focusable="true" onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button></sc-for>
+          </div>
+          <span style="display:block;color:var(--dim);font-size:calc(12px*var(--ts));font-weight:700;margin-bottom:8px">{{ tr.capColor }}</span>
+          <div style="display:flex;gap:8px">
+            <sc-for list="{{ capColorOpts }}" as="o" hint-placeholder-count="3"><button data-focusable="true" aria-label="{{ o.label }}" onClick="{{ o.onClick }}" style="{{ o.style }}"></button></sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===== FLUTTER NOTES PANEL ===== -->
+  <sc-if value="{{ flutterOpen }}" hint-placeholder-val="{{ true }}">
+    <div dir="ltr" style="position:fixed;inset:0;z-index:100;display:flex;justify-content:flex-start">
+      <div onClick="{{ onCloseFlutter }}" style="position:absolute;inset:0;background:rgba(0,0,0,.55)"></div>
+      <div role="dialog" aria-label="Flutter implementation suggestions" style="position:relative;width:440px;max-width:94vw;height:100%;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:24px" class="cvscroll">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-family:'Hanken Grotesk',sans-serif;font-weight:800;font-size:20px;color:var(--fg)">Flutter — suggestions</span>
+          <button data-focusable="true" aria-label="Close" onClick="{{ onCloseFlutter }}" style="width:36px;height:36px;border-radius:50%;background:var(--surface);color:var(--fg);display:flex;align-items:center;justify-content:center;font-size:18px">✕</button>
+        </div>
+        <p style="color:var(--dim);font-size:13px;line-height:1.5;margin:0 0 18px">Suggestions, not prescriptions — you or your coding agent make the final package &amp; schema decisions per requirement. Mapping for adaptive TV + mobile, RTL and accessibility.</p>
+        <sc-for list="{{ flutterRows }}" as="f" hint-placeholder-count="12">
+          <div style="border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;background:var(--surface)">
+            <span style="display:block;color:var(--fg);font-weight:700;font-size:14px;margin-bottom:6px">{{ f.feature }}</span>
+            <span style="display:block;color:var(--dim);font-size:13px;line-height:1.5;margin-bottom:7px">{{ f.detail }}</span>
+            <span style="display:inline-block;font-family:'Hanken Grotesk',sans-serif;font-weight:700;background:var(--surface2);color:var(--accent);font-size:12px;padding:4px 9px;border-radius:6px">{{ f.pkg }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1200, &quot;height&quot;: 820}}">
+class Component extends DCLogic {
+  state = {
+    device: 'tv', lang: 'en', screen: 'home',
+    panel: false, flutter: false, playing: true, audioMenu: false, epMenu: false,
+    query: '', epgFilter: 'All', movieGenre: 'All', importTab: 'xtream',
+    detailId: null, detailType: 'movie', detailSeason: 0, playlistIdx: 0,
+    net: 12.4, history: [],
+    favs: { 'movie:glass': true, 'series:road': true, 'live:PS': true },
+    a11y: { textScale: 1, contrast: false, motion: false, colorBlind: false, captionsOn: true, capSize: 24, capBg: 0.75, capColor: '#ffffff' }
+  };
+
+  T = {
+    en: { brand: 'NOOR', home: 'Home', live: 'Live TV', movies: 'Movies', series: 'Series', search: 'Search', settings: 'Settings', favorites: 'Favorites',
+      playlists: 'Playlists', accessibility: 'Accessibility', play: 'Play', resume: 'Resume', moreInfo: 'More info',
+      continueW: 'Continue watching', trending: 'Trending live now', recommended: 'Recommended for you', docs: 'Documentaries',
+      liveGuide: 'Live TV Guide', onNow: 'On now', liveBadge: 'LIVE', nextEp: 'Next episode',
+      addPlaylist: 'Add playlist', yourPlaylists: 'Your playlists', importTitle: 'Add a playlist', importSub: 'Connect your IPTV source',
+      synopsis: 'Synopsis', episodes: 'Episodes', season: 'Season', removePlaylist: 'Remove this playlist', trendingNow: 'Trending now',
+      typeToSearch: 'Shows, movies, channels…', back: 'Back', textSize: 'Text size', textSizeSub: 'Scales every label across the app',
+      captionStyle: 'Caption style', capSize: 'SIZE', capBg: 'BACKGROUND', capColor: 'COLOR', space: 'Space', myList: 'My list', inList: 'In my list',
+      favEmpty: 'No favorites yet', favEmptySub: 'Add movies, series or channels to find them here.',
+      noContent: 'Noor hosts no content. You only stream from the playlists you add — nothing is provided or stored by the app.',
+      openA11y: 'Open accessibility controls →', chooseFile: 'Choose .m3u file', subtitles: 'SUBTITLES', audioU: 'AUDIO',
+      serverUrl: 'Server URL', username: 'Username', password: 'Password', m3uUrl: 'M3U playlist URL', plName: 'Playlist name', xtream: 'Xtream Codes', m3u: 'M3U URL', upload: 'File',
+      results: 'result', resultsP: 'results', for: 'for',
+      sPlaylists: 'Playlists & sources', sPlayback: 'Playback & quality', sParental: 'Parental controls', sLanguage: 'Language',
+      sPlaybackSub: 'Always best · auto quality', sParentalSub: 'Kids profile locked', langName: 'English' },
+    ar: { brand: 'نور', home: 'الرئيسية', live: 'البث المباشر', movies: 'أفلام', series: 'مسلسلات', search: 'بحث', settings: 'الإعدادات', favorites: 'المفضلة',
+      playlists: 'قوائم التشغيل', accessibility: 'إمكانية الوصول', play: 'تشغيل', resume: 'متابعة', moreInfo: 'مزيد من التفاصيل',
+      continueW: 'متابعة المشاهدة', trending: 'الأكثر مشاهدة الآن', recommended: 'موصى به لك', docs: 'أفلام وثائقية',
+      liveGuide: 'دليل القنوات', onNow: 'يُعرض الآن', liveBadge: 'مباشر', nextEp: 'الحلقة التالية',
+      addPlaylist: 'إضافة قائمة', yourPlaylists: 'قوائمك', importTitle: 'إضافة قائمة تشغيل', importSub: 'اربط مصدر IPTV الخاص بك',
+      synopsis: 'القصة', episodes: 'الحلقات', season: 'الموسم', removePlaylist: 'إزالة هذه القائمة', trendingNow: 'الأكثر رواجًا',
+      typeToSearch: 'مسلسلات، أفلام، قنوات…', back: 'رجوع', textSize: 'حجم النص', textSizeSub: 'يُكبّر كل النصوص في التطبيق',
+      captionStyle: 'نمط الترجمة', capSize: 'الحجم', capBg: 'الخلفية', capColor: 'اللون', space: 'مسافة', myList: 'قائمتي', inList: 'في قائمتي',
+      favEmpty: 'لا توجد مفضلة بعد', favEmptySub: 'أضف الأفلام أو المسلسلات أو القنوات لتجدها هنا.',
+      noContent: 'تطبيق نور لا يستضيف أي محتوى. أنت تشاهد فقط من القوائم التي تضيفها — التطبيق لا يوفّر أو يخزّن أي محتوى.',
+      openA11y: '← فتح إعدادات الوصول', chooseFile: 'اختر ملف m3u.', subtitles: 'الترجمة', audioU: 'الصوت',
+      serverUrl: 'رابط الخادم', username: 'اسم المستخدم', password: 'كلمة المرور', m3uUrl: 'رابط قائمة M3U', plName: 'اسم القائمة', xtream: 'Xtream Codes', m3u: 'رابط M3U', upload: 'ملف',
+      results: 'نتيجة', resultsP: 'نتيجة', for: 'لـ',
+      sPlaylists: 'القوائم والمصادر', sPlayback: 'التشغيل والجودة', sParental: 'الرقابة الأبوية', sLanguage: 'اللغة',
+      sPlaybackSub: 'دائمًا الأفضل · جودة تلقائية', sParentalSub: 'ملف الأطفال مقفل', langName: 'العربية' }
+  };
+
+  G = { sci: ['#1e4a6b', '#0e2738'], drama: ['#2b3a67', '#1b2447'], thr: ['#46307a', '#241640'], adv: ['#7a4a1e', '#3a2410'],
+    doc: ['#1d3b34', '#0e2a26'], fam: ['#3a5a2a', '#1b2e14'], red: ['#5b2333', '#2d1b2e'], teal: ['#1e6b5a', '#0e2a26'] };
+
+  MOVIES = [
+    { id: 'aurora', t: { en: 'Aurora Drift', ar: 'انجراف الشفق' }, gen: { en: 'Sci-Fi Thriller', ar: 'خيال علمي' }, genKey: 'Sci-Fi', meta: '2025 · 1h 58m · 4K HDR', g: this.G.sci, match: '97%',
+      d: { en: 'A deep-space salvage crew intercepts a signal that should not exist — a taut thriller about trust at the edge of the known.', ar: 'طاقم إنقاذ في أعماق الفضاء يلتقط إشارة لا يُفترض أن توجد، في إثارة محكمة عن الثقة عند حدود المجهول.' } },
+    { id: 'glass', t: { en: 'City of Glass', ar: 'مدينة الزجاج' }, gen: { en: 'Drama', ar: 'دراما' }, genKey: 'Drama', meta: '2024 · 2h 05m · 4K', g: this.G.drama, match: '92%',
+      d: { en: 'A human drama about an architect rebuilding his life — and the city that never sleeps around him.', ar: 'دراما إنسانية عن مهندس معماري يعيد بناء حياته في مدينة لا تنام.' } },
+    { id: 'wild', t: { en: 'Wild Frontier', ar: 'الحدود البرية' }, gen: { en: 'Adventure', ar: 'مغامرة' }, genKey: 'Adventure', meta: '2023 · 1h 47m', g: this.G.adv, match: '88%',
+      d: { en: 'An expedition across untouched wilderness that pushes a small team to its limits.', ar: 'رحلة مغامرة عبر أراضٍ برية لم تطأها قدم، تدفع فريقًا صغيرًا إلى أقصى حدوده.' } },
+    { id: 'deep', t: { en: 'Deep Blue', ar: 'الأزرق العميق' }, gen: { en: 'Documentary', ar: 'وثائقي' }, genKey: 'Documentary', meta: '2024 · 1h 12m · 4K', g: this.G.sci, match: '95%',
+      d: { en: 'A breathtaking documentary journey into the deepest oceans and the creatures that live there.', ar: 'رحلة وثائقية آسرة إلى أعماق المحيطات وكائناتها المدهشة.' } },
+    { id: 'mid', t: { en: 'Midnight Signal', ar: 'إشارة منتصف الليل' }, gen: { en: 'Thriller', ar: 'إثارة' }, genKey: 'Thriller', meta: '2025 · 1h 55m', g: this.G.thr, match: '90%',
+      d: { en: 'A mystery thriller that begins with a single phone call at midnight.', ar: 'إثارة غامضة تبدأ بمكالمة هاتفية واحدة في منتصف الليل.' } },
+    { id: 'paper', t: { en: 'Paper Lanterns', ar: 'فوانيس ورقية' }, gen: { en: 'Family', ar: 'عائلي' }, genKey: 'Family', meta: '2023 · 1h 38m', g: this.G.fam, match: '86%',
+      d: { en: 'A warm family tale of reunion on the night of the festival.', ar: 'حكاية عائلية دافئة عن لمّ الشمل في ليلة المهرجان.' } },
+    { id: 'earth', t: { en: 'Living Earth', ar: 'الأرض الحية' }, gen: { en: 'Documentary', ar: 'وثائقي' }, genKey: 'Documentary', meta: '2022 · 1h 20m · 4K', g: this.G.doc, match: '93%',
+      d: { en: 'An exploration of the incredible diversity of life on our planet.', ar: 'استكشاف للتنوّع المذهل للحياة على كوكبنا.' } },
+    { id: 'origins', t: { en: 'Origins', ar: 'الأصول' }, gen: { en: 'Science', ar: 'علوم' }, genKey: 'Documentary', meta: '2024 · 1h 30m', g: this.G.thr, match: '89%',
+      d: { en: 'A scientific journey to the very beginning of the universe.', ar: 'رحلة علمية إلى بدايات الكون الأولى.' } },
+  ];
+
+  SERIES = [
+    { id: 'road', t: { en: 'The Long Road', ar: 'الطريق الطويل' }, gen: { en: 'Drama', ar: 'دراما' }, genKey: 'Drama', meta: { en: '2 seasons · Drama', ar: 'موسمان · دراما' }, g: this.G.red, match: '94%',
+      d: { en: 'A family\u2019s journey down a long road toward a new home — and each other.', ar: 'رحلة عائلة عبر طريق طويل نحو وطن جديد، ونحو بعضهم البعض.' },
+      seasons: [
+        { eps: [{ en: 'The Departure', ar: 'الرحيل' }, { en: 'Crossroads', ar: 'مفترق الطرق' }, { en: 'The Storm', ar: 'العاصفة' }, { en: 'Strangers', ar: 'غرباء' }, { en: 'Homecoming', ar: 'العودة' }] },
+        { eps: [{ en: 'New Horizons', ar: 'آفاق جديدة' }, { en: 'The Letter', ar: 'الرسالة' }, { en: 'Fault Lines', ar: 'خطوط الصدع' }, { en: 'The Return', ar: 'الرجوع' }, { en: 'Reckoning', ar: 'الحساب' }] } ] },
+    { id: 'quantum', t: { en: 'Quantum Shore', ar: 'الشاطئ الكمومي' }, gen: { en: 'Sci-Fi', ar: 'خيال علمي' }, genKey: 'Sci-Fi', meta: { en: '2 seasons · Sci-Fi', ar: 'موسمان · خيال علمي' }, g: this.G.teal, match: '91%',
+      d: { en: 'A team of scientists discovers a phenomenon that rewrites our understanding of time.', ar: 'فريق من العلماء يكتشف ظاهرة تعيد كتابة فهمنا للزمن.' },
+      seasons: [
+        { eps: [{ en: 'First Contact', ar: 'اللقاء الأول' }, { en: 'The Anomaly', ar: 'الشذوذ' }, { en: 'Echoes', ar: 'أصداء' }, { en: 'The Shore', ar: 'الشاطئ' }] },
+        { eps: [{ en: 'Entanglement', ar: 'التشابك' }, { en: 'Paradox', ar: 'المفارقة' }, { en: 'The Tide', ar: 'المدّ' }, { en: 'Collapse', ar: 'الانهيار' }] } ] },
+    { id: 'sky', t: { en: 'Skylines', ar: 'آفاق المدن' }, gen: { en: 'Documentary', ar: 'وثائقي' }, genKey: 'Documentary', meta: { en: '1 season · Docu', ar: 'موسم واحد · وثائقي' }, g: this.G.drama, match: '90%',
+      d: { en: 'A documentary series on the cities that shaped history.', ar: 'سلسلة وثائقية عن المدن التي شكّلت التاريخ.' },
+      seasons: [ { eps: [{ en: 'Foundations', ar: 'الأسس' }, { en: 'The Rise', ar: 'الصعود' }, { en: 'Reinvention', ar: 'إعادة الابتكار' }] } ] },
+    { id: 'makers', t: { en: 'The Makers', ar: 'الصُنّاع' }, gen: { en: 'Culture', ar: 'ثقافة' }, genKey: 'Documentary', meta: { en: '1 season · Culture', ar: 'موسم واحد · ثقافة' }, g: this.G.red, match: '87%',
+      d: { en: 'Conversations with makers and creators from around the world.', ar: 'لقاءات مع صنّاع ومبدعين من حول العالم.' },
+      seasons: [ { eps: [{ en: 'The Potter', ar: 'الخزّاف' }, { en: 'The Coder', ar: 'المبرمج' }, { en: 'The Chef', ar: 'الطاهي' }] } ] },
+  ];
+
+  CHANNELS = [
+    { name: { en: 'Globe News 24', ar: 'غلوب نيوز ٢٤' }, num: 'CH 101', abbr: 'GN', cat: 'News', hue: '#1e6bb8', lane: [[{ en: 'World Report', ar: 'تقرير العالم' }, 60, true], [{ en: 'The Briefing', ar: 'الموجز' }, 60], [{ en: 'Markets Tonight', ar: 'الأسواق الليلة' }, 60]] },
+    { name: { en: 'Prime Sports', ar: 'برايم سبورت' }, num: 'CH 204', abbr: 'PS', cat: 'Sports', hue: '#2f9d4e', lane: [[{ en: 'Match Day Live', ar: 'مباشر المباريات' }, 90, true], [{ en: 'Post-Game', ar: 'ما بعد المباراة' }, 30], [{ en: 'Pro Tennis', ar: 'التنس المحترف' }, 60]] },
+    { name: { en: 'Cine Classics', ar: 'كلاسيكيات السينما' }, num: 'CH 312', abbr: 'CC', cat: 'Movies', hue: '#b8392f', lane: [[{ en: 'Aurora Drift', ar: 'انجراف الشفق' }, 120, true], [{ en: 'City of Glass', ar: 'مدينة الزجاج' }, 60]] },
+    { name: { en: 'Nature One', ar: 'عالم الطبيعة' }, num: 'CH 418', abbr: 'N1', cat: 'Movies', hue: '#2f8d7a', lane: [[{ en: 'Deep Blue', ar: 'الأزرق العميق' }, 60, true], [{ en: 'Living Earth', ar: 'الأرض الحية' }, 60], [{ en: 'Wild Frontier', ar: 'الحدود البرية' }, 60]] },
+    { name: { en: 'Pulse Music', ar: 'نبض الموسيقى' }, num: 'CH 530', abbr: 'PM', cat: 'Music', hue: '#7a4ab8', lane: [[{ en: 'Live Session', ar: 'جلسة مباشرة' }, 60, true], [{ en: 'Top 40', ar: 'أفضل ٤٠' }, 60], [{ en: 'Late Mix', ar: 'مكس الليل' }, 60]] },
+    { name: { en: 'Kids Zone', ar: 'ركن الأطفال' }, num: 'CH 622', abbr: 'KZ', cat: 'Kids', hue: '#d98a2b', lane: [[{ en: 'Story Hour', ar: 'ساعة القصة' }, 30, true], [{ en: 'Cartoon Pals', ar: 'أصدقاء الكرتون' }, 30], [{ en: 'Learn & Play', ar: 'تعلّم والعب' }, 60], [{ en: 'Bedtime', ar: 'وقت النوم' }, 30]] },
+  ];
+
+  PLAYLISTS = [
+    { name: { en: 'My Provider', ar: 'مزوّدي' }, server: 'mega.iptv.tv:8080', count: 1240, hue: '#5b6cff', initial: 'M' },
+    { name: { en: 'Sports Pack', ar: 'باقة الرياضة' }, server: 'sports.streamline.io', count: 86, hue: '#2f9d8a', initial: 'S' },
+    { name: { en: 'Family Bundle', ar: 'باقة العائلة' }, server: 'm3u file · family.m3u', count: 320, hue: '#e0a431', initial: 'F' },
+  ];
+
+  ICONS = {
+    search: ['M10 4a6 6 0 1 0 0 12 6 6 0 0 0 0-12z', 'M20 20l-4.3-4.3'],
+    home: ['M3 11.5 12 4l9 7.5', 'M5 10v10h6v-6h2v6h6V10'],
+    heart: ['M12 20s-7-4.4-9.4-8.8A4.6 4.6 0 0 1 12 6a4.6 4.6 0 0 1 9.4 5.2C19 15.6 12 20 12 20z', ''],
+    live: ['M3 7h18v12H3z', 'M8 3l4 4 4-4'],
+    film: ['M3 5h18v14H3z', 'M7 5v14M17 5v14M3 9.7h4M17 9.7h4M3 14.3h4M17 14.3h4'],
+    stack: ['M12 3 3 7.5 12 12l9-4.5z', 'M4 12l8 4 8-4M4 16.5l8 4 8-4'],
+    settings: ['M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', 'M19 12a7 7 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1l-.4-2.5H9.6l-.4 2.5a7 7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.4 2.5h4.8l.4-2.5a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6a7 7 0 0 0 .1-1z'],
+    list: ['M8 6h13M8 12h13M8 18h13', 'M3 6h.01M3 12h.01M3 18h.01'],
+    play: ['M7 5v14l12-7z', ''],
+    shield: ['M12 3l8 3v6c0 4.5-3.2 7.5-8 9-4.8-1.5-8-4.5-8-9V6z', ''],
+    globe: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', 'M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18'],
+  };
+
+  componentDidMount() {
+    window.addEventListener('keydown', this.onKey);
+    try { const h = JSON.parse(localStorage.getItem('noor_history') || '[]'); if (Array.isArray(h) && h.length) { this._history = h; this.setState({ history: h }); } } catch (e) {}
+    this._netTimer = setInterval(() => { if (this.state.screen === 'player') { this.setState({ net: Math.round((9 + Math.random() * 6) * 10) / 10 }); } }, 1600);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); clearInterval(this._netTimer); }
+  setDev = (el) => { this.dev = el; };
+  focusFirst = () => { requestAnimationFrame(() => { const r = this.dev; if (!r) return; const m = r.querySelector('main') || r; const el = m.querySelector('[data-focusable]'); if (el) el.focus(); }); };
+
+  onKey = (e) => {
+    const ae = document.activeElement; const tag = (ae && ae.tagName) || '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    const map = { ArrowRight: 'r', ArrowLeft: 'l', ArrowUp: 'u', ArrowDown: 'd' };
+    const dir = map[e.key]; if (!dir) return;
+    const root = this.dev; if (!root) return;
+    const els = [...root.querySelectorAll('[data-focusable]')].filter(el => el.offsetParent !== null);
+    if (!els.length) return;
+    if (!ae || !root.contains(ae)) { e.preventDefault(); els[0].focus(); return; }
+    const cr = ae.getBoundingClientRect(); const cx = cr.left + cr.width / 2, cy = cr.top + cr.height / 2;
+    let best = null, bestScore = Infinity;
+    for (const el of els) { if (el === ae) continue;
+      const r = el.getBoundingClientRect(); const ex = r.left + r.width / 2, ey = r.top + r.height / 2;
+      const dx = ex - cx, dy = ey - cy; let valid, primary, off;
+      if (dir === 'r') { valid = dx > 6; primary = dx; off = Math.abs(dy); }
+      else if (dir === 'l') { valid = dx < -6; primary = -dx; off = Math.abs(dy); }
+      else if (dir === 'd') { valid = dy > 6; primary = dy; off = Math.abs(dx); }
+      else { valid = dy < -6; primary = -dy; off = Math.abs(dx); }
+      if (!valid) continue; const score = primary + off * 2.4;
+      if (score < bestScore) { bestScore = score; best = el; } }
+    if (best) { e.preventDefault(); best.focus(); }
+  };
+
+  go = (s) => this.setState({ screen: s, audioMenu: false, epMenu: false }, this.focusFirst);
+  setDevice = (d) => this.setState({ device: d }, this.focusFirst);
+  setLang = (l) => this.setState({ lang: l }, this.focusFirst);
+  play = (item) => { this.pushHistory(item); this.setState({ nowPlaying: item, screen: 'player', playing: true, audioMenu: false, epMenu: false }, this.focusFirst); };
+  pushHistory = (item) => { try { if (item.live) return; const cur = this._history || this.state.history || []; const h = cur.filter(x => x.title !== item.title); h.unshift({ title: item.title, sub: item.sub, g: item.g, favKey: item.favKey, seriesId: item.seriesId, season: item.season, epIndex: item.epIndex, progress: item.progress || 0.08, ts: Date.now() }); this._history = h.slice(0, 12); localStorage.setItem('noor_history', JSON.stringify(this._history)); this.setState({ history: this._history }); } catch (e) {} };
+  playEpisode = (seriesId, season, i) => { const sr = this.SERIES.find(x => x.id === seriesId); if (!sr) return; const lang = this.state.lang; const Lm = (o) => (o && typeof o === 'object' ? (o[lang] || o.en) : o); const e = sr.seasons[season].eps[i]; this.play({ title: Lm(sr.t) + ' \u00b7 ' + Lm(e), sub: (lang === 'ar' ? 'الموسم ' : 'Season ') + (season + 1), g: sr.g, favKey: 'series:' + sr.id, seriesId, season, epIndex: i }); };
+  openDetails = (id, type) => this.setState({ detailId: id, detailType: type, detailSeason: 0, screen: 'details' }, this.focusFirst);
+  toggleFavKey = (key) => this.setState(st => { const f = { ...st.favs }; if (f[key]) delete f[key]; else f[key] = true; return { favs: f }; });
+  setA = (patch) => this.setState(s => ({ a11y: { ...s.a11y, ...patch } }));
+  toggleA = (k) => this.setState(s => ({ a11y: { ...s.a11y, [k]: !s.a11y[k] } }));
+
+  pill(active, opts) {
+    return Object.assign({ padding: '8px 14px', borderRadius: '9px', fontWeight: 700, fontSize: 'calc(13px*var(--ts))', whiteSpace: 'nowrap',
+      background: active ? 'var(--accent)' : 'var(--surface)', color: active ? '#05070a' : 'var(--dim)',
+      border: active ? '1.5px solid var(--accent)' : '1.5px solid var(--border)' }, opts || {});
+  }
+
+  renderVals() {
+    const s = this.state, a = s.a11y, lang = s.lang;
+    const tr = this.T[lang];
+    const isPhone = s.device === 'phone', isTV = s.device === 'tv', isRTL = lang === 'ar';
+    const hc = a.contrast, cb = a.colorBlind;
+    const L = (o) => (o && typeof o === 'object' ? (o[lang] || o.en) : o);
+    const arNum = (v) => isRTL ? String(v).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[d]) : String(v);
+
+    const theme = hc ? {
+      '--bg': '#000', '--bg2': '#000', '--surface': '#0c0c0c', '--surface2': '#1c1c1c',
+      '--border': '#ffffff', '--fg': '#ffffff', '--dim': '#eaeaea', '--accent': '#ffe000', '--accent2': '#00e5ff', '--focus': '#ffe000', '--live': '#ff5252'
+    } : {
+      '--bg': '#0a0d13', '--bg2': '#10141d', '--surface': '#171c28', '--surface2': '#222a3b',
+      '--border': 'rgba(255,255,255,0.11)', '--fg': '#f3f6fb', '--dim': '#97a3b7',
+      '--accent': cb ? '#5ab0ff' : '#ffb020', '--accent2': cb ? '#ffa600' : '#46d18a', '--focus': '#5ab0ff', '--live': cb ? '#ff8c42' : '#ff4d4d'
+    };
+    const rootStyle = Object.assign({}, theme, {
+      '--ts': a.textScale, '--mo': a.motion ? 0 : 1, '--gut': isTV ? '34px' : '18px', '--padTop': isTV ? '26px' : '6px',
+      '--heroT': isTV ? '46px' : '30px', '--heroFade': isRTL ? '270deg' : '90deg',
+      width: '100%', minHeight: '100vh', fontFamily: "'Atkinson Hyperlegible','IBM Plex Sans Arabic',system-ui,sans-serif",
+      background: 'radial-gradient(1200px 700px at 50% -10%, #0d1220, #04060a 70%)', color: 'var(--fg)'
+    });
+
+    const phonePlayer = isPhone && s.screen === 'player';
+    const frameStyle = isPhone ? (phonePlayer ? {
+      width: '780px', height: '384px', borderRadius: '38px', border: '12px solid #05070a', background: '#000',
+      overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', boxShadow: '0 40px 90px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05)'
+    } : {
+      width: '382px', height: '812px', borderRadius: '46px', border: '12px solid #05070a', background: 'var(--bg)',
+      overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column', boxShadow: '0 40px 90px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05)'
+    }) : {
+      width: '1080px', height: '620px', borderRadius: '16px', border: '14px solid #05070a', background: 'var(--bg)',
+      overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'row', boxShadow: '0 40px 100px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.05)'
+    };
+    const bodyStyle = { flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0,
+      '--chW': isTV ? '184px' : '128px', '--slotW': isTV ? '200px' : '150px', '--epgW': isTV ? '1180px' : '1020px', '--capBottom': '92px' };
+
+    const navDefs = [ { id: 'home', ic: 'home' }, { id: 'favorites', ic: 'heart' }, { id: 'live', ic: 'live' }, { id: 'movies', ic: 'film' }, { id: 'series', ic: 'stack' }, { id: 'search', ic: 'search' }, { id: 'settings', ic: 'settings' } ];
+    const sideItems = navDefs.map(n => { const active = s.screen === n.id; return { label: tr[n.id], d: this.ICONS[n.ic][0], d2: this.ICONS[n.ic][1], fill: (n.ic === 'heart' && active) ? 'currentColor' : 'none', onClick: () => this.go(n.id),
+      style: { display: 'flex', alignItems: 'center', gap: '13px', padding: '11px 13px', borderRadius: '11px', color: active ? '#05070a' : 'var(--fg)', background: active ? 'var(--accent)' : 'transparent', fontWeight: 700, transition: 'background calc(140ms*var(--mo))' } }; });
+    const tabItems = navDefs.slice(0, 5).map(n => { const active = s.screen === n.id; return { label: tr[n.id], d: this.ICONS[n.ic][0], d2: this.ICONS[n.ic][1], fill: (n.ic === 'heart' && active) ? 'currentColor' : 'none', onClick: () => this.go(n.id),
+      style: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', padding: '7px 3px', color: active ? 'var(--accent)' : 'var(--dim)' } }; });
+
+    const pl = this.PLAYLISTS[s.playlistIdx];
+    const plChipStyle = { width: '34px', height: '34px', borderRadius: '9px', flex: 'none', background: pl.hue, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 'calc(14px*var(--ts))' };
+    const plChipSmStyle = Object.assign({}, plChipStyle, { width: '30px', height: '30px', borderRadius: '50%', fontSize: 'calc(13px*var(--ts))' });
+
+    const poster = (g, kind) => { const size = kind === 'land' ? { width: isTV ? '260px' : '210px', height: isTV ? '146px' : '118px' } : { width: isTV ? '150px' : '128px', height: isTV ? '218px' : '186px' };
+      return Object.assign({ flex: 'none', position: 'relative', borderRadius: '12px', overflow: 'hidden', background: `linear-gradient(150deg, ${g[0]}, ${g[1]})`, border: '1px solid var(--border)' }, size); };
+    const portCard = (g) => ({ position: 'relative', aspectRatio: '2/3', borderRadius: '11px', overflow: 'hidden', background: `linear-gradient(150deg, ${g[0]}, ${g[1]})`, border: '1px solid var(--border)' });
+
+    // continue watching — VOD only, from history (fallback to seed)
+    const seedCont = [ { ref: this.MOVIES[2], p: 0.62, left: { en: '34 min left', ar: 'بقيت ٣٤ دقيقة' } },
+      { sId: 'quantum', p: 0.28, sub: { en: 'S2 E4', ar: 'م٢ ح٤' } },
+      { ref: this.MOVIES[5], p: 0.84, left: { en: '12 min left', ar: 'بقيت ١٢ دقيقة' } }, { ref: this.MOVIES[3], p: 0.4, left: { en: 'E2', ar: 'ح٢' } } ];
+    const seedContItems = seedCont.map(c => { const it = c.ref || this.SERIES.find(x => x.id === c.sId); const isSeries = !!c.sId;
+      return { title: L(it.t), sub: c.left ? L(c.left) : (c.sub ? L(c.sub) : L(it.gen)), isLive: false, hasProgress: true, progressStyle: { height: '100%', borderRadius: '3px', background: 'var(--accent)', width: Math.round((c.p || 0) * 100) + '%' }, cardStyle: poster(it.g, 'land'),
+        onClick: () => isSeries ? this.playEpisode(it.id, 1, 3) : this.play({ title: L(it.t), sub: L(it.gen), g: it.g, favKey: 'movie:' + it.id, progress: c.p }) }; });
+    const histItems = (s.history || []).map(h => ({ title: h.title, sub: h.sub || (isRTL ? 'متابعة' : 'Resume'), isLive: false, hasProgress: true, progressStyle: { height: '100%', borderRadius: '3px', background: 'var(--accent)', width: Math.round((h.progress || 0.08) * 100) + '%' }, cardStyle: poster(h.g || this.G.sci, 'land'), onClick: () => this.play({ title: h.title, sub: h.sub, g: h.g, favKey: h.favKey, seriesId: h.seriesId, season: h.season, epIndex: h.epIndex, progress: h.progress }) }));
+    const contRow = histItems.length ? histItems : seedContItems;
+
+    const liveItems = this.CHANNELS.map(ch => ({ title: L(ch.name), sub: L(ch.lane[0][0]), isLive: true, hasProgress: false, cardStyle: poster([ch.hue, '#0e1726'], 'land'), onClick: () => this.play({ title: L(ch.name), sub: L(ch.name), g: [ch.hue, '#0e1726'], live: true, favKey: 'live:' + ch.abbr }) }));
+    const recItems = [this.MOVIES[1], this.MOVIES[4], this.MOVIES[2], this.SERIES[0], this.MOVIES[0], this.SERIES[1]].map(it => { const isSeries = !!it.seasons; return { title: L(it.t), sub: L(it.gen), isLive: false, hasProgress: false, cardStyle: poster(it.g, 'port'), onClick: () => this.openDetails(it.id, isSeries ? 'series' : 'movie') }; });
+    const docItems = this.MOVIES.filter(m => m.genKey === 'Documentary').concat([this.SERIES[2]]).map(it => { const isSeries = !!it.seasons; return { title: L(it.t), sub: L(it.gen), isLive: false, hasProgress: false, cardStyle: poster(it.g, 'port'), onClick: () => this.openDetails(it.id, isSeries ? 'series' : 'movie') }; });
+    const rows = [ { title: tr.continueW, items: contRow }, { title: tr.trending, items: liveItems }, { title: tr.recommended, items: recItems }, { title: tr.docs, items: docItems } ];
+
+    const heroM = this.MOVIES[0];
+    const hero = { title: L(heroM.t), match: arNum(heroM.match) + (isRTL ? ' تطابق' : ' match'), meta: arNum(heroM.meta), desc: L(heroM.d), onPlay: () => this.play({ title: L(heroM.t), sub: L(heroM.gen), g: heroM.g, favKey: 'movie:' + heroM.id }), onInfo: () => this.openDetails(heroM.id, 'movie') };
+    const heroStyle = { position: 'relative', minHeight: isTV ? '320px' : '380px', display: 'flex', alignItems: 'flex-end', padding: isTV ? '40px 34px' : '24px 18px', background: 'linear-gradient(125deg,#26405f,#3a2742 55%,#142033)' };
+
+    const isSeriesScreen = s.screen === 'series';
+    const catalog = isSeriesScreen ? this.SERIES : this.MOVIES;
+    const genreSet = ['All']; catalog.forEach(c => { if (!genreSet.includes(c.genKey)) genreSet.push(c.genKey); });
+    const genreLabel = { All: { en: 'All', ar: 'الكل' }, Drama: { en: 'Drama', ar: 'دراما' }, 'Sci-Fi': { en: 'Sci-Fi', ar: 'خيال علمي' }, Thriller: { en: 'Thriller', ar: 'إثارة' }, Documentary: { en: 'Documentary', ar: 'وثائقي' }, Family: { en: 'Family', ar: 'عائلي' }, Adventure: { en: 'Adventure', ar: 'مغامرة' } };
+    const gridChips = genreSet.map(gk => ({ label: L(genreLabel[gk] || { en: gk, ar: gk }), onClick: () => this.setState({ movieGenre: gk }, this.focusFirst), style: this.pill(s.movieGenre === gk) }));
+    const filteredCat = catalog.filter(c => s.movieGenre === 'All' || c.genKey === s.movieGenre);
+    const gridWrapStyle = { display: 'grid', gridTemplateColumns: isTV ? 'repeat(5,1fr)' : 'repeat(3,1fr)', gap: isTV ? '18px' : '12px' };
+    const gridItems = filteredCat.map(it => { const isSeries = !!it.seasons; return { title: L(it.t), sub: L(it.gen), badge: isSeries ? (isRTL ? 'مسلسل' : 'Series') : (isRTL ? 'فيلم' : 'Film'), cardStyle: portCard(it.g), onClick: () => this.openDetails(it.id, isSeries ? 'series' : 'movie') }; });
+    const gridTitle = isSeriesScreen ? tr.series : tr.movies;
+
+    const favCh = this.CHANNELS.filter(ch => s.favs['live:' + ch.abbr]).map(ch => ({ title: L(ch.name), sub: isRTL ? 'مباشر' : 'Live', badge: isRTL ? 'مباشر' : 'Live', cardStyle: portCard([ch.hue, '#0e1726']), onClick: () => this.play({ title: L(ch.name), sub: L(ch.name), g: [ch.hue, '#0e1726'], live: true, favKey: 'live:' + ch.abbr }) }));
+    const favVod = [...this.MOVIES.map(m => ({ it: m, type: 'movie' })), ...this.SERIES.map(m => ({ it: m, type: 'series' }))].filter(x => s.favs[x.type + ':' + x.it.id]).map(x => ({ title: L(x.it.t), sub: L(x.it.gen), badge: x.type === 'series' ? (isRTL ? 'مسلسل' : 'Series') : (isRTL ? 'فيلم' : 'Film'), cardStyle: portCard(x.it.g), onClick: () => this.openDetails(x.it.id, x.type) }));
+    const favItems = [...favCh, ...favVod];
+    const favEmpty = favItems.length === 0;
+
+    const dItem = (s.detailType === 'series' ? this.SERIES : this.MOVIES).find(x => x.id === s.detailId) || this.MOVIES[0];
+    const dIsSeries = !!dItem.seasons;
+    const detailHeroStyle = { position: 'relative', height: isTV ? '300px' : '260px', background: `linear-gradient(140deg, ${dItem.g[0]}, ${dItem.g[1]})` };
+    const dSeasons = dIsSeries ? dItem.seasons : [];
+    const dSeasonIdx = Math.min(s.detailSeason, Math.max(0, dSeasons.length - 1));
+    const seasonChips = dSeasons.map((sn, i) => ({ label: tr.season + ' ' + arNum(i + 1), onClick: () => this.setState({ detailSeason: i }, this.focusFirst), style: this.pill(dSeasonIdx === i, { padding: '6px 14px' }) }));
+    const curEps = dIsSeries ? dSeasons[dSeasonIdx].eps : [];
+    const episodes = curEps.map((e, i) => ({ num: arNum(i + 1), title: arNum(i + 1) + '. ' + L(e), aria: L(e), dur: arNum(42 + i * 3) + (isRTL ? ' دقيقة' : ' min'),
+      thumbStyle: { width: '74px', height: '46px', flex: 'none', borderRadius: '8px', background: `linear-gradient(150deg, ${dItem.g[0]}, ${dItem.g[1]})`, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+      onClick: () => this.playEpisode(dItem.id, dSeasonIdx, i) }));
+    const dFavKey = s.detailType + ':' + dItem.id; const dFav = !!s.favs[dFavKey];
+    const detail = { title: L(dItem.t), match: arNum(dItem.match) + (isRTL ? ' تطابق' : ' match'), meta: arNum(L(dItem.meta)), desc: L(dItem.d), isSeries: dIsSeries, seasonChips, episodes,
+      playLabel: dIsSeries ? tr.play + ' \u00b7 ' + (isRTL ? 'م' + arNum(dSeasonIdx + 1) + ' ح١' : 'S' + (dSeasonIdx + 1) + ' E1') : tr.play,
+      onPlay: () => dIsSeries ? this.playEpisode(dItem.id, dSeasonIdx, 0) : this.play({ title: L(dItem.t), sub: L(dItem.gen), g: dItem.g, favKey: 'movie:' + dItem.id, progress: 0.05 }),
+      listLabel: dFav ? tr.inList : tr.myList, listIcon: dFav ? 'M5 12l5 5L20 6' : 'M12 5v14M5 12h14', listFill: 'none',
+      listStyle: { display: 'flex', alignItems: 'center', gap: '9px', background: dFav ? 'var(--surface)' : 'var(--surface2)', color: dFav ? 'var(--accent)' : 'var(--fg)', fontWeight: 700, padding: '13px 22px', borderRadius: '10px', fontSize: 'calc(15px*var(--ts))', border: dFav ? '1.5px solid var(--accent)' : '1.5px solid transparent' },
+      onToggleList: () => this.toggleFavKey(dFavKey) };
+
+    const chipDefs = [['All', { en: 'All', ar: 'الكل' }], ['News', { en: 'News', ar: 'أخبار' }], ['Sports', { en: 'Sports', ar: 'رياضة' }], ['Movies', { en: 'Movies', ar: 'أفلام' }], ['Music', { en: 'Music', ar: 'موسيقى' }], ['Kids', { en: 'Kids', ar: 'أطفال' }]];
+    const epgChips = chipDefs.map(([k, lab]) => ({ label: L(lab), onClick: () => this.setState({ epgFilter: k }, this.focusFirst), style: this.pill(s.epgFilter === k) }));
+    const visibleCh = this.CHANNELS.filter(c => s.epgFilter === 'All' || c.cat === s.epgFilter);
+    const slotW = isTV ? 200 : 150;
+    const epgChannels = visibleCh.map(ch => { const favOn = !!s.favs['live:' + ch.abbr]; return { name: L(ch.name), num: arNum(ch.num), abbr: ch.abbr,
+      logoStyle: { width: '38px', height: '38px', flex: 'none', borderRadius: '9px', background: ch.hue, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 'calc(13px*var(--ts))', fontFamily: "'Hanken Grotesk',sans-serif" },
+      favFill: favOn ? 'currentColor' : 'none', favColor: favOn ? 'var(--accent)' : 'var(--dim)', favLabel: favOn ? tr.inList : tr.myList, onFav: () => this.toggleFavKey('live:' + ch.abbr),
+      lane: ch.lane.map(([title, dur, live]) => ({ title: L(title), time: live ? tr.onNow : arNum(dur) + (isRTL ? ' دقيقة' : ' min'), live: !!live, onClick: () => this.play({ title: L(title), sub: L(ch.name), g: [ch.hue, '#0e1726'], live: true, favKey: 'live:' + ch.abbr }),
+        style: { width: (slotW * (dur / 60)) + 'px', flex: 'none', borderInlineEnd: '1px solid var(--border)', padding: '11px 13px', background: live ? 'var(--surface2)' : 'transparent', overflow: 'hidden', borderInlineStart: live ? '3px solid var(--live)' : '3px solid transparent', display: 'flex', flexDirection: 'column', gap: '2px' } })) }; });
+    const epgTimes = ['7:00', '8:00', '9:00', '10:00', '11:00', '12:00'].map(t => arNum(t));
+
+    // player
+    const np0 = s.nowPlaying || { title: L(heroM.t), sub: L(heroM.gen), g: heroM.g, favKey: 'movie:' + heroM.id };
+    const np = { title: np0.title, sub: np0.sub || (isRTL ? 'يُعرض الآن' : 'Now playing'), cur: np0.live ? '' : arNum('0:42:18'), dur: np0.live ? (isRTL ? 'مباشر' : 'LIVE') : arNum('1:58:00') };
+    const playerSurfaceStyle = { position: 'relative', width: '100%', height: '100%', minHeight: '100%', background: `linear-gradient(135deg, ${(np0.g && np0.g[0]) || '#26405f'}, ${(np0.g && np0.g[1]) || '#142033'})`, overflow: 'hidden' };
+    const qualityLabel = '1080p';
+    const downSpeed = arNum((s.net != null ? s.net : 12.4).toFixed(1)) + ' Mbps';
+    const capStyle = { fontFamily: "'Atkinson Hyperlegible','IBM Plex Sans Arabic',sans-serif", fontWeight: 700, fontSize: `calc(${a.capSize}px * var(--ts))`, color: a.capColor, background: `rgba(0,0,0,${a.capBg})`, padding: '5px 14px', borderRadius: '6px', lineHeight: 1.4, textAlign: 'center', maxWidth: '80%', textShadow: a.capBg < 0.2 ? '0 1px 4px #000, 0 0 6px #000' : 'none' };
+    const ccBtnStyle = { padding: '7px 13px', borderRadius: '9px', fontWeight: 800, fontSize: 'calc(13px*var(--ts))', letterSpacing: '.5px', color: a.captionsOn ? '#05070a' : '#fff', background: a.captionsOn ? 'var(--accent)' : 'rgba(255,255,255,.12)', border: '2px solid ' + (a.captionsOn ? 'var(--accent)' : 'rgba(255,255,255,.3)') };
+    const menuRow = (label, on, onClick) => ({ label, on, onClick, style: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '9px 4px', color: 'var(--fg)', fontSize: 'calc(14px*var(--ts))', fontWeight: on ? 700 : 400 } });
+    const subOptions = [ menuRow(isRTL ? 'إيقاف' : 'Off', !a.captionsOn, () => this.setA({ captionsOn: false })), menuRow(isRTL ? 'العربية' : 'English (CC)', a.captionsOn, () => this.setA({ captionsOn: true })), menuRow(isRTL ? 'الإنجليزية' : 'Español', false, () => {}) ];
+    const audioOptions = [ menuRow(isRTL ? 'العربية 5.1' : 'English 5.1', true, () => {}), menuRow(isRTL ? 'وصف صوتي' : 'Audio Description', false, () => {}), menuRow(isRTL ? 'الإنجليزية' : 'Español', false, () => {}) ];
+
+    let npHasEps = false, npHasNext = false, epMenuItems = [], npEpTitle = '', npSeasonLabel = '', onNextEp = () => {};
+    if (np0.seriesId != null) { const sr = this.SERIES.find(x => x.id === np0.seriesId);
+      if (sr) { npHasEps = true; const seasonI = np0.season || 0; const epi = np0.epIndex || 0; const eps = sr.seasons[seasonI].eps;
+        npEpTitle = L(sr.t); npSeasonLabel = tr.season + ' ' + arNum(seasonI + 1);
+        epMenuItems = eps.map((e, i) => ({ label: arNum(i + 1) + '. ' + L(e), on: i === epi, onClick: () => this.playEpisode(sr.id, seasonI, i), style: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '9px 4px', color: 'var(--fg)', fontSize: 'calc(13px*var(--ts))', fontWeight: i === epi ? 700 : 400 } }));
+        const hasNextInSeason = epi < eps.length - 1; const hasNextSeason = seasonI < sr.seasons.length - 1; npHasNext = hasNextInSeason || hasNextSeason;
+        onNextEp = () => { if (hasNextInSeason) this.playEpisode(sr.id, seasonI, epi + 1); else if (hasNextSeason) this.playEpisode(sr.id, seasonI + 1, 0); }; } }
+    const npHasFav = !!np0.favKey; const npFav = npHasFav && !!s.favs[np0.favKey];
+
+    // search
+    const allItems = []; this.MOVIES.forEach(m => allItems.push({ it: m, type: 'movie' })); this.SERIES.forEach(m => allItems.push({ it: m, type: 'series' })); this.CHANNELS.forEach(c => allItems.push({ it: { t: c.name, g: [c.hue, '#0e1726'], abbr: c.abbr }, type: 'live' }));
+    const q = s.query.trim().toLowerCase();
+    const filtered = q ? allItems.filter(x => (L(x.it.t) + ' ' + (x.it.t.en || '')).toLowerCase().includes(q)) : allItems.slice(0, 9);
+    const gridStyleBase = { position: 'relative', aspectRatio: '16/10', borderRadius: '11px', overflow: 'hidden', border: '1px solid var(--border)' };
+    const results = filtered.map(x => ({ title: L(x.it.t), gridStyle: Object.assign({}, gridStyleBase, { background: `linear-gradient(150deg, ${x.it.g[0]}, ${x.it.g[1]})` }),
+      onClick: () => x.type === 'live' ? this.play({ title: L(x.it.t), sub: L(x.it.t), g: x.it.g, live: true, favKey: 'live:' + x.it.abbr }) : this.openDetails(x.it.id, x.type) }));
+    const resultsLabel = q ? (arNum(filtered.length) + ' ' + (filtered.length === 1 ? tr.results : tr.resultsP) + ' ' + tr.for + ' \u201C' + s.query + '\u201D') : tr.trendingNow;
+    const keyRows = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'].map(row => row.split('').map(ch => ({ label: ch, onClick: () => this.setState(st => ({ query: st.query + ch.toLowerCase() })) })));
+
+    // settings
+    const settingsRows = [
+      { title: tr.sPlaylists, sub: L(pl.name) + ' · ' + arNum(pl.count) + (isRTL ? ' قناة' : ' channels'), d: this.ICONS.list[0], d2: this.ICONS.list[1], onClick: () => this.go('playlists') },
+      { title: tr.sPlayback, sub: tr.sPlaybackSub, d: this.ICONS.play[0], d2: this.ICONS.play[1], onClick: () => {} },
+      { title: tr.sParental, sub: tr.sParentalSub, d: this.ICONS.shield[0], d2: this.ICONS.shield[1], onClick: () => {} },
+      { title: tr.sLanguage, sub: tr.langName, d: this.ICONS.globe[0], d2: this.ICONS.globe[1], onClick: () => this.setLang(isRTL ? 'en' : 'ar') },
+    ];
+    const sizeName = { 0.9: { en: 'Small', ar: 'صغير' }, 1: { en: 'Default', ar: 'افتراضي' }, 1.25: { en: 'Large', ar: 'كبير' }, 1.5: { en: 'Extra large', ar: 'كبير جدًا' } }[a.textScale];
+    const a11ySummary = (isRTL ? 'النص: ' : 'Text: ') + L(sizeName) + ' · ' + (hc ? (isRTL ? 'تباين عالٍ' : 'High contrast') : (isRTL ? 'تباين عادي' : 'Standard')) + ' · ' + (isRTL ? 'الترجمة ' : 'Captions ') + (a.captionsOn ? (isRTL ? 'مفعّلة' : 'on') : (isRTL ? 'معطّلة' : 'off'));
+
+    const scaleOpts = [['S', 0.9], ['M', 1], ['L', 1.25], ['XL', 1.5]].map(([label, v]) => ({ label, onClick: () => this.setA({ textScale: v }), style: this.pill(a.textScale === v, { flex: 1, textAlign: 'center', justifyContent: 'center', display: 'flex' }) }));
+    const mkTrack = (on) => ({ width: '46px', height: '28px', flex: 'none', borderRadius: '16px', position: 'relative', background: on ? 'var(--accent)' : 'var(--surface2)', transition: 'background calc(160ms*var(--mo))' });
+    const mkKnob = (on) => ({ position: 'absolute', top: '3px', left: on ? '21px' : '3px', width: '22px', height: '22px', borderRadius: '50%', background: '#fff', transition: 'left calc(160ms*var(--mo))' });
+    const toggleDefs = [ { k: 'contrast', t: { en: 'High contrast', ar: 'تباين عالٍ' }, s: { en: 'Pure black, max-contrast text', ar: 'أسود نقي ونص عالي التباين' } },
+      { k: 'colorBlind', t: { en: 'Colorblind-safe palette', ar: 'ألوان مناسبة لعمى الألوان' }, s: { en: 'Avoids red/green-only cues', ar: 'يتجنّب الاعتماد على الأحمر/الأخضر فقط' } },
+      { k: 'motion', t: { en: 'Reduce motion', ar: 'تقليل الحركة' }, s: { en: 'Stops animations & autoplay', ar: 'يوقف الحركة والتشغيل التلقائي' } },
+      { k: 'captionsOn', t: { en: 'Captions / subtitles', ar: 'الترجمة' }, s: { en: 'Show subtitles in the player', ar: 'إظهار الترجمة في المشغّل' } } ];
+    const toggles = toggleDefs.map(t => { const on = !!a[t.k]; return { title: L(t.t), sub: L(t.s), on, onClick: () => this.toggleA(t.k), trackStyle: mkTrack(on), knobStyle: mkKnob(on) }; });
+    const capSizeOpts = [[{ en: 'Small', ar: 'صغير' }, 18], [{ en: 'Medium', ar: 'متوسط' }, 24], [{ en: 'Large', ar: 'كبير' }, 32]].map(([label, v]) => ({ label: L(label), onClick: () => this.setA({ capSize: v }), style: this.pill(a.capSize === v, { flex: 1, justifyContent: 'center', display: 'flex' }) }));
+    const capBgOpts = [[{ en: 'None', ar: 'بدون' }, 0], [{ en: 'Light', ar: 'خفيفة' }, 0.45], [{ en: 'Solid', ar: 'صلبة' }, 0.85]].map(([label, v]) => ({ label: L(label), onClick: () => this.setA({ capBg: v }), style: this.pill(a.capBg === v, { flex: 1, justifyContent: 'center', display: 'flex' }) }));
+    const capColorOpts = [['White', '#ffffff'], ['Yellow', '#ffe23d'], ['Cyan', '#5ee7ff']].map(([label, v]) => ({ label, onClick: () => this.setA({ capColor: v }), style: { width: '40px', height: '40px', borderRadius: '10px', background: v, flex: 'none', border: a.capColor === v ? '3px solid var(--accent)' : '2px solid var(--border)' } }));
+
+    const importTabDefs = [['xtream', tr.xtream], ['m3u', tr.m3u], ['upload', tr.upload]];
+    const importTabs = importTabDefs.map(([k, lab]) => ({ label: lab, onClick: () => this.setState({ importTab: k }), style: { flex: 1, padding: '10px', borderRadius: '9px', fontWeight: 700, fontSize: 'calc(13px*var(--ts))', textAlign: 'center', color: s.importTab === k ? '#05070a' : 'var(--dim)', background: s.importTab === k ? 'var(--accent)' : 'transparent' } }));
+    let importFields = [];
+    if (s.importTab === 'xtream') importFields = [{ label: tr.serverUrl, ph: 'http://host:port', type: 'text' }, { label: tr.username, ph: 'username', type: 'text' }, { label: tr.password, ph: '••••••••', type: 'password' }];
+    else if (s.importTab === 'm3u') importFields = [{ label: tr.plName, ph: 'My playlist', type: 'text' }, { label: tr.m3uUrl, ph: 'https://…/playlist.m3u', type: 'text' }];
+    else importFields = [{ label: tr.plName, ph: 'My playlist', type: 'text' }];
+
+    const playlists = this.PLAYLISTS.map((p, i) => ({ name: L(p.name), server: p.server, count: arNum(p.count) + (isRTL ? ' قناة' : ' ch'), initial: p.initial, active: i === s.playlistIdx,
+      rowStyle: { display: 'flex', alignItems: 'center', gap: '14px', background: 'var(--surface)', border: '1.5px solid ' + (i === s.playlistIdx ? 'var(--accent)' : 'var(--border)'), borderRadius: '14px', padding: '14px' },
+      tileStyle: { width: '44px', height: '44px', borderRadius: '12px', flex: 'none', background: p.hue, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontFamily: "'Hanken Grotesk',sans-serif", fontSize: 'calc(18px*var(--ts))' },
+      onClick: () => this.setState({ playlistIdx: i, screen: 'home' }, this.focusFirst) }));
+
+    const flutterRows = [
+      { feature: 'Adaptive TV ⇆ mobile layout', detail: 'TV gets NavigationRail + content rails; phone gets NavigationBar and rotates to landscape in the player.', pkg: 'flutter_adaptive_scaffold' },
+      { feature: 'Arabic / English + RTL', detail: 'Directionality flips the whole tree; .arb files per locale. The toggle here mirrors that.', pkg: 'flutter_localizations · intl' },
+      { feature: 'Remote / D-pad focus', detail: 'The spatial focus you see maps to FocusNode + directional traversal for TV remotes.', pkg: 'Focus · FocusTraversalGroup' },
+      { feature: 'Playlist import (no accounts)', detail: 'Xtream Codes API + M3U/M3U8 parsing + EPG (XMLTV). No internal auth — the source is the login.', pkg: 'xtream_code_client · m3u_parser · dio' },
+      { feature: 'Video playback', detail: 'IPTV streams use many codecs — fvp (libmpv/FFmpeg) plays most out of the box. media_kit or better_player are alternatives.', pkg: 'fvp · media_kit · better_player' },
+      { feature: 'Subtitles & captions', detail: 'A subtitle controller parses SRT/WebVTT and syncs to playback; the size / background / color set here map to its style.', pkg: 'subtitle (SubtitleController)' },
+      { feature: 'Quality & download speed', detail: 'Default to best/auto quality. A manual quality selector is optional and depends on backend support (fvp may not expose track switching) — your call. The badge shows live download speed.', pkg: 'fvp statistics · implementer’s call' },
+      { feature: 'Watch history & resume', detail: 'Persist playback position + history locally. You design the schema (channels, vod, episodes, progress, last_watched).', pkg: 'drift (SQLite)' },
+      { feature: 'Text scaling & contrast', detail: 'Honor MediaQuery.textScaler, highContrast and disableAnimations; two ThemeData variants.', pkg: 'MediaQuery · ThemeData' },
+      { feature: 'Screen reader semantics', detail: 'Every card is a Semantics node with a label; live badges announce state.', pkg: 'Semantics' },
+      { feature: 'No-content compliance', detail: 'App stores require IPTV players to state they host no content. Surfaced at onboarding, playlists and settings.', pkg: 'store compliance' },
+      { feature: 'EPG guide grid', detail: 'Two-axis scroll (time × channel) with synced sticky headers.', pkg: 'two_dimensional_scrollables' },
+    ];
+
+    const mainScreens = ['home', 'favorites', 'live', 'movies', 'series', 'search'];
+
+    return {
+      rootStyle, frameStyle, bodyStyle, dir: isRTL ? 'rtl' : 'ltr', isPhone, isTV, brand: tr.brand, tr, trU: { subtitles: tr.subtitles, audio: tr.audioU },
+      deviceHint: isTV ? 'TV — arrow keys / remote to navigate' : 'Phone — tap or use arrow keys', chevron: isRTL ? '‹' : '›',
+      backIconStyle: isRTL ? { transform: 'scaleX(-1)' } : {}, showNotch: isPhone && !phonePlayer,
+      scHome: s.screen === 'home', scFavorites: s.screen === 'favorites', scLive: s.screen === 'live', scPlayer: s.screen === 'player', scSearch: s.screen === 'search', scSettings: s.screen === 'settings',
+      scGrid: s.screen === 'movies' || s.screen === 'series', scDetails: s.screen === 'details', scImport: s.screen === 'import', scPlaylists: s.screen === 'playlists',
+      showPhoneTop: isPhone && mainScreens.includes(s.screen), showPhoneBack: isPhone && (s.screen === 'settings' || s.screen === 'playlists' || s.screen === 'import'),
+      showPhoneTabs: isPhone && (mainScreens.includes(s.screen) || s.screen === 'settings' || s.screen === 'playlists'),
+      sideItems, tabItems, plChipStyle, plChipSmStyle, plInitial: pl.initial, plName: L(pl.name), plCount: arNum(pl.count) + (isRTL ? ' قناة' : ' channels'),
+      onPlaylists: () => this.go('playlists'), onSettings: () => this.go('settings'), onAddPlaylist: () => this.go('import'), onBackNav: () => this.go('home'), onSearch: () => this.go('search'),
+      onPhoneBack: () => this.go(s.screen === 'import' ? 'playlists' : s.screen === 'playlists' ? 'settings' : 'home'),
+      onPhone: () => this.setDevice('phone'), onTV: () => this.setDevice('tv'), onEN: () => this.setLang('en'), onAR: () => this.setLang('ar'),
+      segPhoneStyle: { padding: '7px 16px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', color: isPhone ? '#05070a' : 'rgba(255,255,255,.6)', background: isPhone ? '#fff' : 'transparent' },
+      segTVStyle: { padding: '7px 16px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', color: isTV ? '#05070a' : 'rgba(255,255,255,.6)', background: isTV ? '#fff' : 'transparent' },
+      segENStyle: { padding: '7px 14px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', color: !isRTL ? '#05070a' : 'rgba(255,255,255,.6)', background: !isRTL ? '#fff' : 'transparent' },
+      segARStyle: { padding: '7px 14px', borderRadius: '8px', fontWeight: 700, fontSize: '13px', fontFamily: "'IBM Plex Sans Arabic',sans-serif", color: isRTL ? '#05070a' : 'rgba(255,255,255,.6)', background: isRTL ? '#fff' : 'transparent' },
+      onPanel: () => this.setState({ panel: true }), onClosePanel: () => this.setState({ panel: false }), panelOpen: s.panel,
+      onFlutter: () => this.setState({ flutter: true }), onCloseFlutter: () => this.setState({ flutter: false }), flutterOpen: s.flutter,
+      a11yBtnStyle: { display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '9px', fontWeight: 700, fontSize: '13px', color: s.panel ? '#05070a' : '#fff', background: s.panel ? 'var(--accent)' : 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.12)' },
+      flutterBtnStyle: { display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: '9px', fontWeight: 700, fontSize: '13px', color: s.flutter ? '#05070a' : '#fff', background: s.flutter ? 'var(--accent)' : 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.12)' },
+      hero, heroStyle, rows,
+      gridTitle, gridChips, gridItems, gridWrapStyle, favItems, favEmpty,
+      detail, detailHeroStyle,
+      epgChips, epgChannels, epgTimes, epgDate: isRTL ? 'اليوم · السبت ٢١ يونيو' : 'Today · Sat 21 Jun',
+      np, playerSurfaceStyle, playing: s.playing, paused: !s.playing, onPlayPause: () => this.setState(st => ({ playing: !st.playing })),
+      captionsOn: a.captionsOn, capStyle, capText: isRTL ? 'الإشارة تزداد قوّة. لقد اقتربنا الآن.' : 'The signal is getting stronger. We are close now.',
+      ccBtnStyle, onToggleCC: () => this.toggleA('captionsOn'), audioMenu: s.audioMenu, onAudioMenu: () => this.setState(st => ({ audioMenu: !st.audioMenu, epMenu: false })), subOptions, audioOptions,
+      qualityLabel, downSpeed, onSkipBack: () => {}, onSkipFwd: () => {},
+      npHasEps, npHasNext, onNextEp, onEpMenu: () => this.setState(st => ({ epMenu: !st.epMenu, audioMenu: false })), epMenuOpen: s.epMenu && npHasEps, epMenuItems, npEpTitle, npSeasonLabel,
+      npHasFav, npFav, npFavFill: npFav ? 'currentColor' : 'none', npFavColor: npFav ? 'var(--accent)' : '#fff', npFavLabel: npFav ? tr.inList : tr.myList, onToggleNpFav: () => { if (np0.favKey) this.toggleFavKey(np0.favKey); },
+      query: s.query, queryDisplay: s.query || tr.typeToSearch, hasQuery: !!s.query, onType: (e) => this.setState({ query: e.target.value }), onClear: () => this.setState({ query: '' }),
+      onSpace: () => this.setState(st => ({ query: st.query + ' ' })), onBackspace: () => this.setState(st => ({ query: st.query.slice(0, -1) })), keyRows, results, resultsLabel,
+      settingsRows, a11ySummary,
+      importTabs, importFields, importIsFile: s.importTab === 'upload', onImport: () => this.setState({ playlistIdx: 0, screen: 'playlists' }, this.focusFirst),
+      playlists, scaleOpts, toggles, capSizeOpts, capBgOpts, capColorOpts, flutterRows
+    };
+  }
+}
+</script>
+</body>
+</html>
