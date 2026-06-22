@@ -19,4 +19,11 @@ void main() {
         fg: Colors.white, dim: Colors.grey, hyperlegible: false, rtl: false);
     expect(t.headlineMedium!.fontWeight, FontWeight.w800);
   });
+
+  test('rtl uses the Arabic family, hyperlegible overrides to Atkinson', () {
+    final ar = buildTextTheme(fg: Colors.white, dim: Colors.grey, hyperlegible: false, rtl: true);
+    expect(ar.bodyLarge!.fontFamily, 'IBMPlexSansArabic');
+    final hl = buildTextTheme(fg: Colors.white, dim: Colors.grey, hyperlegible: true, rtl: true);
+    expect(hl.bodyLarge!.fontFamily, 'AtkinsonHyperlegible');
+  });
 }
