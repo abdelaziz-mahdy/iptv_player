@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
@@ -24,7 +23,7 @@ void main() {
 
     final node = tester.getSemantics(find.byType(FocusableButton));
     expect(node.label, contains('Play'));
-    expect(node.hasFlag(SemanticsFlag.isButton), isTrue);
+    expect(node.getSemanticsData().flagsCollection.isButton, isTrue);
     semantics.dispose();
   });
 }

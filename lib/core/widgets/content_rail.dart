@@ -22,7 +22,7 @@ class ContentRail extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemBuilder: (_, i) => items[i],
-            separatorBuilder: (_, __) => const SizedBox(width: 14),
+            separatorBuilder: (_, _) => const SizedBox(width: 14),
             itemCount: items.length,
           ),
         ),
