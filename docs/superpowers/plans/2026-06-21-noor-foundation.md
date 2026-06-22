@@ -13,7 +13,7 @@
 - Flutter `3.44.2` stable; Dart SDK `^3.12.2` (actual value from `flutter create`, confirmed in `pubspec.yaml`).
 - Platforms enabled: `android`, `macos`, `windows`, `linux`. No iOS, no web.
 - Brand name: `NOOR`. Two locales: English (`en`, LTR) and Arabic (`ar`, RTL).
-- Fonts: Latin UI `Hanken Grotesk`; Arabic `IBM Plex Sans Arabic`; high-legibility option `Atkinson Hyperlegible`. Loaded via `google_fonts`.
+- Fonts: Latin UI `Hanken Grotesk`; Arabic `IBM Plex Sans Arabic`; high-legibility option `Atkinson Hyperlegible`. **Bundled as assets** under `assets/fonts/` and declared in `pubspec.yaml` (NOT `google_fonts`) — the app is offline-first, so runtime font fetching is avoided. Hanken Grotesk is a variable font; weight is applied via `FontVariation('wght', …)`.
 - Accessibility is first-class: honor `textScaler`, reduce-motion, high-contrast, captions config; every interactive element focusable + labelled.
 - App hosts NO content; playlists are user-supplied (compliance copy is in the Settings/Onboarding plan).
 - Color tokens (exact, from `design/ClearView IPTV.dc.html`):
