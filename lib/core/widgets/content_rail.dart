@@ -17,7 +17,8 @@ class ContentRail extends StatelessWidget {
           child: Text(title, style: Theme.of(context).textTheme.titleLarge),
         ),
         SizedBox(
-          height: 230,
+          // 130px-wide PosterCard at 2:3 = 195px art + gap + title + subtitle.
+          height: 264,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
