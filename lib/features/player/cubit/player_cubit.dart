@@ -97,7 +97,7 @@ class PlayerCubit extends Cubit<PlayerUiState> {
 
   /// Toggles play/pause.
   Future<void> togglePlayPause() async {
-    if (state.isPlaying) {
+    if (_controller.isPlaying) {
       await _controller.pause();
     } else {
       await _controller.play();
@@ -145,12 +145,15 @@ class PlayerCubit extends Cubit<PlayerUiState> {
 
   @override
   Future<void> close() async {
-    await _saveProgress();
     try {
-      await WakelockPlus.disable();
-    } catch (_) {}
-    await _statusSub?.cancel();
-    await _controller.dispose();
+      await _saveProgress();
+      try {
+        await WakelockPlus.disable();
+      } catch (_) {}
+      await _statusSub?.cancel();
+    } finally {
+      await _controller.dispose();
+    }
     return super.close();
   }
 }
