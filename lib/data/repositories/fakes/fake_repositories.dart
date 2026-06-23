@@ -173,13 +173,27 @@ class FakePlaybackRepository implements PlaybackRepository {
   final _progress = <String, WatchProgress>{};
   final _continue = _Store<List<WatchProgress>>([]);
 
+  List<WatchProgress> _filtered() {
+    final all = _progress.values
+        .where((p) => p.kind != MediaKind.channel)
+        .toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return all.take(20).toList();
+  }
+
   @override
   Future<WatchProgress?> progressFor(String itemKey) async => _progress[itemKey];
 
   @override
   Future<void> saveProgress(WatchProgress p) async {
     _progress[p.itemKey] = p;
-    _continue.value = _progress.values.toList();
+    _continue.value = _filtered();
+  }
+
+  @override
+  Future<void> removeProgress(String itemKey) async {
+    _progress.remove(itemKey);
+    _continue.value = _filtered();
   }
 
   @override

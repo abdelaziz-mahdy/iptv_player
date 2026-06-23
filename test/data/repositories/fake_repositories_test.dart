@@ -33,4 +33,50 @@ void main() {
     expect((await repo.progressFor('movie:m1'))?.positionSec, 42);
     expect((await repo.continueWatching('p1').first).length, 1);
   });
+
+  test('fake playback repo continueWatching excludes channel-kind', () async {
+    final repo = FakePlaybackRepository();
+
+    await repo.saveProgress(WatchProgress(
+      itemKey: 'channel:c1',
+      playlistId: 'p1',
+      kind: MediaKind.channel,
+      positionSec: 10,
+      durationSec: 60,
+      updatedAt: DateTime.utc(2026, 1, 1),
+    ));
+    await repo.saveProgress(WatchProgress(
+      itemKey: 'movie:m1',
+      playlistId: 'p1',
+      kind: MediaKind.movie,
+      positionSec: 42,
+      durationSec: 120,
+      updatedAt: DateTime.utc(2026, 1, 2),
+    ));
+
+    final list = await repo.continueWatching('p1').first;
+    expect(list, hasLength(1));
+    expect(list.first.itemKey, 'movie:m1');
+  });
+
+  test('fake playback repo removeProgress removes item and re-emits', () async {
+    final repo = FakePlaybackRepository();
+
+    await repo.saveProgress(WatchProgress(
+      itemKey: 'movie:m1',
+      playlistId: 'p1',
+      kind: MediaKind.movie,
+      positionSec: 42,
+      durationSec: 120,
+      updatedAt: DateTime.utc(2026),
+    ));
+
+    expect(await repo.progressFor('movie:m1'), isNotNull);
+
+    await repo.removeProgress('movie:m1');
+
+    expect(await repo.progressFor('movie:m1'), isNull);
+    final list = await repo.continueWatching('p1').first;
+    expect(list, isEmpty);
+  });
 }
