@@ -8,3 +8,4 @@ export 'episode.dart';
 export 'epg_programme.dart';
 export 'watch_progress.dart';
 export 'favorite.dart';
+export 'series_detail.dart';
