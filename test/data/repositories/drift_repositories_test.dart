@@ -3,6 +3,8 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:noor_iptv/core/result.dart';
+import 'package:noor_iptv/data/credential_store.dart';
+import 'package:noor_iptv/data/credential_store_drift.dart';
 import 'package:noor_iptv/data/db/database.dart';
 import 'package:noor_iptv/data/models/models.dart';
 import 'package:noor_iptv/data/repositories/drift_content_repository.dart';
@@ -10,6 +12,7 @@ import 'package:noor_iptv/data/repositories/drift_epg_repository.dart';
 import 'package:noor_iptv/data/repositories/drift_playback_repository.dart';
 import 'package:noor_iptv/data/repositories/drift_playlist_repository.dart';
 import 'package:noor_iptv/data/sources/m3u_source.dart';
+import 'package:noor_iptv/data/sources/xtream_source.dart';
 
 // ---------------------------------------------------------------------------
 // Stub M3uSource for importPlaylist test
@@ -23,6 +26,25 @@ class _StubM3uSource extends M3uSource {
   Future<List<Channel>> parse(String content,
       {required String playlistId}) async {
     return _channels;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Stub XtreamSource for xtream importPlaylist test
+// ---------------------------------------------------------------------------
+
+class _StubXtreamSource extends XtreamSource {
+  final XtreamContent _content;
+  _StubXtreamSource(this._content);
+
+  @override
+  Future<XtreamContent> fetchAll({
+    required String serverUrl,
+    required String username,
+    required String password,
+    required String playlistId,
+  }) async {
+    return _content;
   }
 }
 
@@ -297,6 +319,105 @@ void main() {
       final progs = (result as Ok<List<EpgProgramme>>).value;
       expect(progs.length, 1);
       expect(progs.first.title, 'News');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 7. DriftContentRepository.importPlaylist (xtream) — credentials from
+  //    DriftCredentialStore, stub XtreamSource, channels persisted
+  // -------------------------------------------------------------------------
+  group('DriftContentRepository.importPlaylist (xtream)', () {
+    test('channels persisted when credentials are pre-saved in DriftCredentialStore',
+        () async {
+      final db = _makeDb();
+      addTearDown(db.close);
+
+      // Use the SAME db for both the credential store and content repo —
+      // this mirrors the production DI wiring.
+      final credStore = DriftCredentialStore(db);
+
+      const playlistId = 'xtream-pl';
+      const serverUrl = 'http://xtream.example.com';
+
+      // Pre-save credentials (simulates what ImportCubit does on write path).
+      await credStore.save(
+        playlistId,
+        username: 'alice',
+        password: 'secret',
+      );
+
+      // Build stub content to be returned by the XtreamSource.
+      final stubChannels = [
+        const Channel(
+          id: 'xtream-pl:live:1',
+          playlistId: playlistId,
+          name: 'Live Ch 1',
+          number: '1',
+          streamUrl: 'http://xtream.example.com/alice/secret/1.ts',
+        ),
+        const Channel(
+          id: 'xtream-pl:live:2',
+          playlistId: playlistId,
+          name: 'Live Ch 2',
+          number: '2',
+          streamUrl: 'http://xtream.example.com/alice/secret/2.ts',
+        ),
+      ];
+
+      final stubContent = XtreamContent(
+        channels: stubChannels,
+        movies: [],
+        series: [],
+      );
+
+      final repo = DriftContentRepository(
+        db,
+        credentialStore: credStore,
+        xtream: _StubXtreamSource(stubContent),
+      );
+
+      const playlist = Playlist(
+        id: playlistId,
+        name: 'XTV',
+        type: PlaylistType.xtream,
+        serverUrl: serverUrl,
+        initial: 'X',
+      );
+
+      final result = await repo.importPlaylist(playlist);
+      expect(result, isA<Ok<void>>());
+
+      final channels = await repo.channels(playlistId).first;
+      expect(channels.length, 2);
+      expect(channels.map((c) => c.id),
+          containsAll(['xtream-pl:live:1', 'xtream-pl:live:2']));
+    });
+
+    test('returns Err when credentials are missing', () async {
+      final db = _makeDb();
+      addTearDown(db.close);
+
+      // No credentials saved — repo should return Err.
+      final repo = DriftContentRepository(
+        db,
+        credentialStore: DriftCredentialStore(db),
+        xtream: _StubXtreamSource(
+          XtreamContent(channels: [], movies: [], series: []),
+        ),
+      );
+
+      const playlist = Playlist(
+        id: 'no-creds-pl',
+        name: 'NoCreds',
+        type: PlaylistType.xtream,
+        serverUrl: 'http://xtream.example.com',
+        initial: 'N',
+      );
+
+      final result = await repo.importPlaylist(playlist);
+      expect(result, isA<Err<void>>());
+      final err = result as Err<void>;
+      expect(err.failure.message, contains('credentials missing'));
     });
   });
 }
