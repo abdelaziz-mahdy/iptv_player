@@ -84,11 +84,17 @@ class _BackdropHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // Cap the backdrop height so a full-width 16:9 image doesn't dominate on
+    // wide desktop / TV windows; on phones it still fills nicely.
+    final size = MediaQuery.sizeOf(context);
+    final backdropHeight =
+        (size.height * 0.42).clamp(220.0, 460.0).toDouble();
     return Stack(
       children: [
         // Backdrop image or gradient placeholder
-        AspectRatio(
-          aspectRatio: 16 / 9,
+        SizedBox(
+          height: backdropHeight,
+          width: double.infinity,
           child: posterUrl != null
               ? Image.network(
                   posterUrl!,
