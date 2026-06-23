@@ -57,11 +57,15 @@ class GridState extends Equatable {
   /// The id of the currently selected category, or null when "All" is active.
   final String? selectedCategoryId;
 
+  /// The set of favorited itemKeys (e.g. "movie:m1") for this grid.
+  final Set<String> favoriteKeys;
+
   const GridState({
     this.loading = false,
     this.items = const [],
     this.categories = const [],
     this.selectedCategoryId,
+    this.favoriteKeys = const {},
   });
 
   GridState copyWith({
@@ -70,6 +74,7 @@ class GridState extends Equatable {
     List<CategoryRef>? categories,
     String? selectedCategoryId,
     bool clearCategory = false,
+    Set<String>? favoriteKeys,
   }) {
     return GridState(
       loading: loading ?? this.loading,
@@ -77,6 +82,7 @@ class GridState extends Equatable {
       categories: categories ?? this.categories,
       selectedCategoryId:
           clearCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
+      favoriteKeys: favoriteKeys ?? this.favoriteKeys,
     );
   }
 
@@ -86,7 +92,7 @@ class GridState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [loading, items, categories, selectedCategoryId];
+  List<Object?> get props => [loading, items, categories, selectedCategoryId, favoriteKeys];
 }
 
 // ---------------------------------------------------------------------------
@@ -103,17 +109,27 @@ class GridCubit extends Cubit<GridState> {
 
   StreamSubscription<List<VodItem>>? _moviesSub;
   StreamSubscription<List<Series>>? _seriesSub;
+  StreamSubscription<List<Favorite>>? _favoritesSub;
+  String? _playlistId;
 
   Future<void> load() async {
     emit(state.copyWith(loading: true));
 
     final pid = (await _playlists.active().first)?.id ?? 'p1';
+    _playlistId = pid;
 
     // Determine the MediaKind for category resolution.
     final mediaKind = kind == GridKind.movies ? MediaKind.movie : MediaKind.episode;
 
     // Load categories eagerly so they're available when stream emits.
     final resolvedCats = await _content.categories(pid, mediaKind);
+
+    // Subscribe to favorites stream.
+    _favoritesSub = _content.favorites(pid).listen(
+      (favs) => emit(
+        state.copyWith(favoriteKeys: favs.map((f) => f.itemKey).toSet()),
+      ),
+    );
 
     switch (kind) {
       case GridKind.movies:
@@ -125,6 +141,17 @@ class GridCubit extends Cubit<GridState> {
           (series) => _onSeries(series, resolvedCats),
         );
     }
+  }
+
+  /// Toggles favorite for a grid entry.
+  /// Movies are keyed as `movie:<id>` with [MediaKind.movie].
+  /// Series are keyed as `episode:<id>` with [MediaKind.episode] — matching
+  /// the convention used in the details screen.
+  Future<void> toggleFavorite(GridEntry entry) async {
+    final pid = _playlistId ?? 'p1';
+    final itemKey = entry.isSeries ? 'episode:${entry.id}' : 'movie:${entry.id}';
+    final mediaKind = entry.isSeries ? MediaKind.episode : MediaKind.movie;
+    await _content.toggleFavorite(itemKey, pid, mediaKind);
   }
 
   void _onMovies(List<VodItem> movies, List<CategoryRef> resolvedCats) {
@@ -188,6 +215,7 @@ class GridCubit extends Cubit<GridState> {
   Future<void> close() async {
     await _moviesSub?.cancel();
     await _seriesSub?.cancel();
+    await _favoritesSub?.cancel();
     return super.close();
   }
 }

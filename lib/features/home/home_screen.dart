@@ -110,6 +110,7 @@ class _HomeView extends StatelessWidget {
               SliverToBoxAdapter(
                 child: _MoviesRail(
                   movies: state.movies,
+                  favoriteKeys: state.favoriteKeys,
                   onOpenMovie: onOpenMovie,
                 ),
               ),
@@ -117,6 +118,7 @@ class _HomeView extends StatelessWidget {
               SliverToBoxAdapter(
                 child: _SeriesRail(
                   series: state.series,
+                  favoriteKeys: state.favoriteKeys,
                   onOpenSeries: onOpenSeries,
                 ),
               ),
@@ -367,22 +369,27 @@ class _ContinueWatchingRail extends StatelessWidget {
 class _MoviesRail extends StatelessWidget {
   const _MoviesRail({
     required this.movies,
+    required this.favoriteKeys,
     required this.onOpenMovie,
   });
 
   final List<VodItem> movies;
+  final Set<String> favoriteKeys;
   final void Function(VodItem) onOpenMovie;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final cubit = context.read<HomeCubit>();
     final cards = movies
         .map(
           (m) => PosterCard(
             title: m.title,
             subtitle: m.year,
             imageUrl: m.posterUrl,
+            isFavorite: favoriteKeys.contains('movie:${m.id}'),
             onTap: () => onOpenMovie(m),
+            onToggleFavorite: () => cubit.toggleFavoriteMovie(m),
           ),
         )
         .toList();
@@ -397,22 +404,27 @@ class _MoviesRail extends StatelessWidget {
 class _SeriesRail extends StatelessWidget {
   const _SeriesRail({
     required this.series,
+    required this.favoriteKeys,
     required this.onOpenSeries,
   });
 
   final List<Series> series;
+  final Set<String> favoriteKeys;
   final void Function(Series) onOpenSeries;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final cubit = context.read<HomeCubit>();
     final cards = series
         .map(
           (s) => PosterCard(
             title: s.title,
             subtitle: s.year,
             imageUrl: s.posterUrl,
+            isFavorite: favoriteKeys.contains('episode:${s.id}'),
             onTap: () => onOpenSeries(s),
+            onToggleFavorite: () => cubit.toggleFavoriteSeries(s),
           ),
         )
         .toList();

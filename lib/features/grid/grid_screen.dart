@@ -164,11 +164,17 @@ class _WideLayout extends StatelessWidget {
                         itemCount: displayed.length,
                         itemBuilder: (context, index) {
                           final entry = displayed[index];
+                          final itemKey = entry.isSeries
+                              ? 'episode:${entry.id}'
+                              : 'movie:${entry.id}';
                           return PosterCard(
                             title: entry.title,
                             subtitle: entry.subtitle,
                             imageUrl: entry.posterUrl,
+                            isFavorite: state.favoriteKeys.contains(itemKey),
                             onTap: () => onOpen(entry),
+                            onToggleFavorite: () =>
+                                ctx.read<GridCubit>().toggleFavorite(entry),
                           );
                         },
                       ),

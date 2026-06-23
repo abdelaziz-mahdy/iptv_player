@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:noor_iptv/data/models/models.dart';
 import 'package:noor_iptv/data/repositories/fakes/fake_repositories.dart';
 import 'package:noor_iptv/features/grid/cubit/grid_cubit.dart';
 
@@ -181,6 +182,110 @@ void main() {
       expect(cubit.state.items, isNotEmpty);
       final titles = cubit.state.items.map((e) => e.title).toList();
       expect(titles, containsAll(['Deep Field', 'Horizon']));
+
+      await cubit.close();
+    });
+  });
+
+  group('GridCubit — favorites', () {
+    test('initial favoriteKeys is empty', () {
+      final cubit = GridCubit(
+        FakeContentRepository(),
+        FakePlaylistRepository(),
+        GridKind.movies,
+      );
+      expect(cubit.state.favoriteKeys, isEmpty);
+    });
+
+    test('favoriteKeys reflects favorites stream after load', () async {
+      final contentRepo = FakeContentRepository();
+      final cubit = GridCubit(
+        contentRepo,
+        FakePlaylistRepository(),
+        GridKind.movies,
+      );
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      // No favorites yet
+      expect(cubit.state.favoriteKeys, isEmpty);
+
+      // Add a favorite externally via the repo
+      await contentRepo.toggleFavorite('movie:m1', 'p1', MediaKind.movie);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.favoriteKeys, contains('movie:m1'));
+
+      await cubit.close();
+    });
+
+    test('toggleFavorite(entry) adds movie to favoriteKeys', () async {
+      final contentRepo = FakeContentRepository();
+      final cubit = GridCubit(
+        contentRepo,
+        FakePlaylistRepository(),
+        GridKind.movies,
+      );
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.favoriteKeys, isEmpty);
+
+      // Use a GridEntry matching a movie
+      final entry = cubit.state.items.firstWhere((e) => e.title == 'Dune');
+      await cubit.toggleFavorite(entry);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.favoriteKeys, contains('movie:${entry.id}'));
+
+      await cubit.close();
+    });
+
+    test('toggleFavorite(entry) removes movie when already favorited', () async {
+      final contentRepo = FakeContentRepository();
+      final cubit = GridCubit(
+        contentRepo,
+        FakePlaylistRepository(),
+        GridKind.movies,
+      );
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      final entry = cubit.state.items.firstWhere((e) => e.title == 'Dune');
+
+      // Add it
+      await cubit.toggleFavorite(entry);
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.favoriteKeys, contains('movie:${entry.id}'));
+
+      // Remove it
+      await cubit.toggleFavorite(entry);
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.favoriteKeys, isNot(contains('movie:${entry.id}')));
+
+      await cubit.close();
+    });
+
+    test('toggleFavorite(entry) uses episode kind for series entries', () async {
+      final contentRepo = FakeContentRepository();
+      final cubit = GridCubit(
+        contentRepo,
+        FakePlaylistRepository(),
+        GridKind.series,
+      );
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      final entry = cubit.state.items.firstWhere((e) => e.title == 'Deep Field');
+      await cubit.toggleFavorite(entry);
+      await Future<void>.delayed(Duration.zero);
+
+      // Series items are keyed as 'episode:<id>' matching details_screen convention
+      expect(cubit.state.favoriteKeys, contains('episode:${entry.id}'));
 
       await cubit.close();
     });

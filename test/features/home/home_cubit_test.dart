@@ -82,4 +82,81 @@ void main() {
       await cubit.close();
     });
   });
+
+  group('HomeCubit — favorites', () {
+    test('initial favoriteKeys is empty', () {
+      final cubit = HomeCubit(
+        FakeContentRepository(),
+        FakePlaybackRepository(),
+        FakePlaylistRepository(),
+      );
+      expect(cubit.state.favoriteKeys, isEmpty);
+    });
+
+    test('favoriteKeys updates when toggleFavoriteMovie is called', () async {
+      final contentRepo = FakeContentRepository();
+      final cubit = HomeCubit(
+        contentRepo,
+        FakePlaybackRepository(),
+        FakePlaylistRepository(),
+      );
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.favoriteKeys, isEmpty);
+
+      final movie = cubit.state.movies.firstWhere((m) => m.title == 'Dune');
+      await cubit.toggleFavoriteMovie(movie);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.favoriteKeys, contains('movie:${movie.id}'));
+
+      await cubit.close();
+    });
+
+    test('toggleFavoriteMovie removes movie when already favorited', () async {
+      final contentRepo = FakeContentRepository();
+      final cubit = HomeCubit(
+        contentRepo,
+        FakePlaybackRepository(),
+        FakePlaylistRepository(),
+      );
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      final movie = cubit.state.movies.firstWhere((m) => m.title == 'Dune');
+
+      await cubit.toggleFavoriteMovie(movie);
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.favoriteKeys, contains('movie:${movie.id}'));
+
+      await cubit.toggleFavoriteMovie(movie);
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.favoriteKeys, isNot(contains('movie:${movie.id}')));
+
+      await cubit.close();
+    });
+
+    test('toggleFavoriteSeries keys series as episode:<id>', () async {
+      final contentRepo = FakeContentRepository();
+      final cubit = HomeCubit(
+        contentRepo,
+        FakePlaybackRepository(),
+        FakePlaylistRepository(),
+      );
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      final show = cubit.state.series.firstWhere((s) => s.title == 'Horizon');
+      await cubit.toggleFavoriteSeries(show);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.favoriteKeys, contains('episode:${show.id}'));
+
+      await cubit.close();
+    });
+  });
 }

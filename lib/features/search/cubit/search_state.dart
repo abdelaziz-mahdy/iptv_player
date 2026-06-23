@@ -28,24 +28,30 @@ class SearchState extends Equatable {
     this.query = '',
     this.results = const [],
     this.loading = false,
+    this.favoriteKeys = const {},
   });
 
   final String query;
   final List<SearchEntry> results;
   final bool loading;
 
+  /// Set of favorited itemKeys (e.g. "movie:m1", "episode:s1").
+  final Set<String> favoriteKeys;
+
   SearchState copyWith({
     String? query,
     List<SearchEntry>? results,
     bool? loading,
+    Set<String>? favoriteKeys,
   }) {
     return SearchState(
       query: query ?? this.query,
       results: results ?? this.results,
       loading: loading ?? this.loading,
+      favoriteKeys: favoriteKeys ?? this.favoriteKeys,
     );
   }
 
   @override
-  List<Object> get props => [query, results, loading];
+  List<Object> get props => [query, results, loading, favoriteKeys];
 }

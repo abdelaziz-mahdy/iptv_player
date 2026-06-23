@@ -86,6 +86,7 @@ class _SearchViewState extends State<_SearchView> {
                     palette: p,
                     textTheme: textTheme,
                     l10n: l10n,
+                    favoriteKeys: state.favoriteKeys,
                   ),
                 ),
               ],
@@ -163,6 +164,7 @@ class _ResultsRails extends StatelessWidget {
     required this.palette,
     required this.textTheme,
     required this.l10n,
+    required this.favoriteKeys,
   });
 
   final List<SearchEntry> results;
@@ -172,6 +174,7 @@ class _ResultsRails extends StatelessWidget {
   final dynamic palette;
   final TextTheme textTheme;
   final AppLocalizations l10n;
+  final Set<String> favoriteKeys;
 
   @override
   Widget build(BuildContext context) {
@@ -208,6 +211,7 @@ class _ResultsRails extends StatelessWidget {
             entries: movies,
             onOpen: onOpen,
             textTheme: textTheme,
+            favoriteKeys: favoriteKeys,
           ),
         if (series.isNotEmpty)
           _SectionRail(
@@ -215,6 +219,7 @@ class _ResultsRails extends StatelessWidget {
             entries: series,
             onOpen: onOpen,
             textTheme: textTheme,
+            favoriteKeys: favoriteKeys,
           ),
       ],
     );
@@ -228,15 +233,18 @@ class _SectionRail extends StatelessWidget {
     required this.entries,
     required this.onOpen,
     required this.textTheme,
+    required this.favoriteKeys,
   });
 
   final String label;
   final List<SearchEntry> entries;
   final void Function(SearchEntry) onOpen;
   final TextTheme textTheme;
+  final Set<String> favoriteKeys;
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<SearchCubit>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -252,6 +260,9 @@ class _SectionRail extends StatelessWidget {
             itemCount: entries.length,
             itemBuilder: (context, index) {
               final entry = entries[index];
+              final itemKey = entry.kind == SearchEntryKind.series
+                  ? 'episode:${entry.id}'
+                  : 'movie:${entry.id}';
               return Padding(
                 padding: EdgeInsets.only(
                   right: index < entries.length - 1 ? 14 : 0,
@@ -260,7 +271,9 @@ class _SectionRail extends StatelessWidget {
                   title: entry.title,
                   subtitle: entry.subtitle,
                   imageUrl: entry.posterUrl,
+                  isFavorite: favoriteKeys.contains(itemKey),
                   onTap: () => onOpen(entry),
+                  onToggleFavorite: () => cubit.toggleFavorite(entry),
                 ),
               );
             },

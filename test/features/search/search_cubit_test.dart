@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:noor_iptv/data/models/models.dart';
 import 'package:noor_iptv/data/repositories/fakes/fake_repositories.dart';
 import 'package:noor_iptv/features/search/cubit/search_cubit.dart';
 
@@ -165,6 +166,72 @@ void main() {
         cubit.state.results.any((e) => e.kind == SearchEntryKind.channel),
         isFalse,
       );
+    });
+  });
+
+  group('SearchCubit — favorites', () {
+    test('initial favoriteKeys is empty', () {
+      final cubit = SearchCubit(
+        FakeContentRepository(),
+        FakePlaylistRepository(),
+      );
+      expect(cubit.state.favoriteKeys, isEmpty);
+    });
+
+    test('favoriteKeys updates when toggleFavorite is called on a movie entry', () async {
+      final contentRepo = FakeContentRepository();
+      final cubit = SearchCubit(contentRepo, FakePlaylistRepository());
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      cubit.setQuery('dune');
+      final duneEntry = cubit.state.results.firstWhere((e) => e.title == 'Dune');
+
+      await cubit.toggleFavorite(duneEntry);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.favoriteKeys, contains('movie:${duneEntry.id}'));
+
+      await cubit.close();
+    });
+
+    test('toggleFavorite keys series entry as episode:<id>', () async {
+      final contentRepo = FakeContentRepository();
+      final cubit = SearchCubit(contentRepo, FakePlaylistRepository());
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      cubit.setQuery('horizon');
+      final horizonEntry = cubit.state.results.firstWhere(
+        (e) => e.title == 'Horizon' && e.kind == SearchEntryKind.series,
+      );
+
+      await cubit.toggleFavorite(horizonEntry);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.favoriteKeys, contains('episode:${horizonEntry.id}'));
+
+      await cubit.close();
+    });
+
+    test('favoriteKeys reflects repository favorites stream', () async {
+      final contentRepo = FakeContentRepository();
+      final cubit = SearchCubit(contentRepo, FakePlaylistRepository());
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.favoriteKeys, isEmpty);
+
+      // Externally toggle via repo
+      await contentRepo.toggleFavorite('movie:m2', 'p1', MediaKind.movie);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.favoriteKeys, contains('movie:m2'));
+
+      await cubit.close();
     });
   });
 }
