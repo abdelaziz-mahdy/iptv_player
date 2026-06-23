@@ -22,7 +22,6 @@ Future<void> _pumpLive(WidgetTester tester, Widget widget) async {
 
 Widget _buildTestApp({
   void Function(Channel)? onPlayChannel,
-  Size size = const Size(1280, 800),
 }) {
   return BlocProvider(
     create: (_) => AccessibilityCubit(),
