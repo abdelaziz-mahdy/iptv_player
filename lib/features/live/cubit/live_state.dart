@@ -1,28 +1,35 @@
 part of 'live_cubit.dart';
 
+/// A named group of channels (e.g. "All", "Sports", "News").
+typedef ChannelGroup = ({String id, String name, int count});
+
 class LiveState extends Equatable {
   const LiveState({
     this.loading = false,
-    this.channels = const [],
-    this.epgByChannel = const {},
+    this.groups = const [],
+    this.selectedGroupId,
+    this.channelsInGroup = const [],
   });
 
   final bool loading;
-  final List<Channel> channels;
-  final Map<String, List<EpgProgramme>> epgByChannel;
+  final List<ChannelGroup> groups;
+  final String? selectedGroupId;
+  final List<Channel> channelsInGroup;
 
   LiveState copyWith({
     bool? loading,
-    List<Channel>? channels,
-    Map<String, List<EpgProgramme>>? epgByChannel,
+    List<ChannelGroup>? groups,
+    String? selectedGroupId,
+    List<Channel>? channelsInGroup,
   }) {
     return LiveState(
       loading: loading ?? this.loading,
-      channels: channels ?? this.channels,
-      epgByChannel: epgByChannel ?? this.epgByChannel,
+      groups: groups ?? this.groups,
+      selectedGroupId: selectedGroupId ?? this.selectedGroupId,
+      channelsInGroup: channelsInGroup ?? this.channelsInGroup,
     );
   }
 
   @override
-  List<Object> get props => [loading, channels, epgByChannel];
+  List<Object?> get props => [loading, groups, selectedGroupId, channelsInGroup];
 }

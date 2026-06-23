@@ -20,7 +20,10 @@ Future<void> _pumpLive(WidgetTester tester, Widget widget) async {
   await tester.pump(const Duration(milliseconds: 100));
 }
 
-Widget _buildTestApp({void Function(Channel)? onPlayChannel}) {
+Widget _buildTestApp({
+  void Function(Channel)? onPlayChannel,
+  Size size = const Size(1280, 800),
+}) {
   return BlocProvider(
     create: (_) => AccessibilityCubit(),
     child: MaterialApp(
@@ -46,8 +49,11 @@ void main() {
     await sl.reset();
   });
 
-  testWidgets('LiveScreen renders channel name from fakes', (tester) async {
-    // Use a larger surface so the EPG grid doesn't clip aggressively.
+  // -------------------------------------------------------------------------
+  // Wide layout (>= 700 px wide) — sidebar + grid
+  // -------------------------------------------------------------------------
+
+  testWidgets('LiveScreen renders channel name from fakes (wide)', (tester) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -76,7 +82,21 @@ void main() {
     );
   });
 
-  testWidgets('LiveScreen tapping channel info cell invokes onPlayChannel',
+  testWidgets('LiveScreen shows group label "All" (wide)', (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await _pumpLive(tester, _buildTestApp());
+
+    expect(
+      find.text('All', skipOffstage: false),
+      findsAtLeastNWidgets(1),
+    );
+  });
+
+  testWidgets('LiveScreen tapping channel tile invokes onPlayChannel (wide)',
       (tester) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
@@ -89,13 +109,53 @@ void main() {
       _buildTestApp(onPlayChannel: (ch) => tappedChannel = ch),
     );
 
-    // Tap the first visible channel cell area (find by text 'NOOR One').
-    final channelCell = find.textContaining('NOOR One', skipOffstage: false);
-    expect(channelCell, findsAtLeastNWidgets(1));
-    await tester.tap(channelCell.first);
+    // Tap the first visible channel tile (find by text 'NOOR One').
+    final channelTile = find.textContaining('NOOR One', skipOffstage: false);
+    expect(channelTile, findsAtLeastNWidgets(1));
+    await tester.tap(channelTile.first);
     await tester.pump(Duration.zero);
 
     expect(tappedChannel, isNotNull);
     expect(tappedChannel!.name, 'NOOR One');
+  });
+
+  // -------------------------------------------------------------------------
+  // Narrow layout (< 700 px wide) — group list only
+  // -------------------------------------------------------------------------
+
+  testWidgets('LiveScreen shows group list on narrow screen', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await _pumpLive(tester, _buildTestApp());
+
+    // Should show group names, not individual channel tiles in grid
+    expect(
+      find.text('All', skipOffstage: false),
+      findsAtLeastNWidgets(1),
+    );
+  });
+
+  testWidgets(
+      'LiveScreen narrow: tapping a group navigates to ChannelListScreen',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await _pumpLive(tester, _buildTestApp());
+
+    // Tap the 'All' group
+    await tester.tap(find.text('All').first);
+    await tester.pumpAndSettle(const Duration(milliseconds: 500));
+
+    // ChannelListScreen should be pushed — check that a channel name appears
+    expect(
+      find.textContaining('NOOR', skipOffstage: false),
+      findsAtLeastNWidgets(1),
+    );
   });
 }
