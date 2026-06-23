@@ -1,8 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import '../../../core/secure_storage.dart';
+import '../../../data/credential_store.dart';
 import '../../../data/models/models.dart';
 import '../../../data/repositories/repositories.dart';
 
@@ -48,13 +47,13 @@ class ImportState extends Equatable {
 class ImportCubit extends Cubit<ImportState> {
   final PlaylistRepository _playlists;
   final ContentRepository _content;
-  final FlutterSecureStorage _storage;
+  final CredentialStore _credentials;
 
   ImportCubit(
     this._playlists,
     this._content, {
-    FlutterSecureStorage? secureStorage,
-  })  : _storage = secureStorage ?? appSecureStorage,
+    CredentialStore? credentialStore,
+  })  : _credentials = credentialStore ?? InMemoryCredentialStore(),
         super(const ImportState());
 
   void selectTab(ImportTab tab) =>
@@ -81,12 +80,11 @@ class ImportCubit extends Cubit<ImportState> {
     );
 
     try {
-      // For xtream, write credentials to secure storage.
+      // For xtream, write credentials to the credential store.
       if (state.tab == ImportTab.xtream &&
           username != null &&
           password != null) {
-        await _storage.write(key: 'xtream_user_$id', value: username);
-        await _storage.write(key: 'xtream_pass_$id', value: password);
+        await _credentials.save(id, username: username, password: password);
       }
 
       final importResult = await _content.importPlaylist(playlist);
@@ -106,8 +104,7 @@ class ImportCubit extends Cubit<ImportState> {
             emit(state.copyWith(submitting: false, error: f.message)),
       );
     } catch (e) {
-      // Surface platform errors (e.g. keychain/secure-storage failures) as a
-      // friendly message instead of an unhandled exception.
+      // Surface platform errors as a friendly message.
       emit(state.copyWith(
         submitting: false,
         error: 'Could not save the playlist: $e',

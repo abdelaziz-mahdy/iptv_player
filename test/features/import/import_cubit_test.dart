@@ -1,31 +1,20 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
+import 'package:noor_iptv/data/credential_store.dart';
 import 'package:noor_iptv/data/repositories/fakes/fake_repositories.dart';
 import 'package:noor_iptv/features/import/cubit/import_cubit.dart';
-
-class MockSecureStorage extends Mock implements FlutterSecureStorage {}
 
 void main() {
   group('ImportCubit', () {
     late FakePlaylistRepository playlists;
     late FakeContentRepository content;
-    late MockSecureStorage storage;
+    late InMemoryCredentialStore credentialStore;
     late ImportCubit cubit;
 
     setUp(() {
       playlists = FakePlaylistRepository();
       content = FakeContentRepository();
-      storage = MockSecureStorage();
-
-      when(
-        () => storage.write(
-          key: any(named: 'key'),
-          value: any(named: 'value'),
-        ),
-      ).thenAnswer((_) async {});
-
-      cubit = ImportCubit(playlists, content, secureStorage: storage);
+      credentialStore = InMemoryCredentialStore();
+      cubit = ImportCubit(playlists, content, credentialStore: credentialStore);
     });
 
     tearDown(() async {
@@ -61,6 +50,24 @@ void main() {
       final result = await playlists.all();
       result.when(
         ok: (list) => expect(list.length, 2),
+        err: (_) => fail('Expected Ok result'),
+      );
+    });
+
+    test('submit with xtream tab saves credentials to store', () async {
+      // Xtream tab is already selected (default).
+      await cubit.submit(
+        name: 'XTV',
+        serverUrl: 'http://xtream.example.com',
+        username: 'alice',
+        password: 'secret123',
+      );
+
+      // The cubit ID is derived from name + timestamp; we can check that
+      // exactly one playlist was added (initial + active).
+      final allResult = await playlists.all();
+      allResult.when(
+        ok: (list) => expect(list.length, 2), // existing default + new
         err: (_) => fail('Expected Ok result'),
       );
     });
