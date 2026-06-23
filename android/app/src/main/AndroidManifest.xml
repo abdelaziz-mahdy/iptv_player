@@ -1,4 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Streaming IPTV content + downloading playlists/EPG (dio, video_player/fvp). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- connectivity_plus: detect offline/online for retry + error states. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!-- wakelock_plus: keep the screen on during playback. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+
+    <!-- Android TV: app works without a touchscreen and appears on the TV
+         launcher. Neither feature is required, so phones/tablets still qualify. -->
+    <uses-feature android:name="android.software.leanback" android:required="false"/>
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
+
     <application
         android:label="noor_iptv"
         android:name="${applicationName}"
@@ -23,6 +35,8 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+                <!-- Show on the Android TV launcher too. -->
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

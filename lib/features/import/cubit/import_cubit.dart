@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../../core/secure_storage.dart';
 import '../../../data/models/models.dart';
 import '../../../data/repositories/repositories.dart';
 
@@ -53,7 +54,7 @@ class ImportCubit extends Cubit<ImportState> {
     this._playlists,
     this._content, {
     FlutterSecureStorage? secureStorage,
-  })  : _storage = secureStorage ?? const FlutterSecureStorage(),
+  })  : _storage = secureStorage ?? appSecureStorage,
         super(const ImportState());
 
   void selectTab(ImportTab tab) =>
@@ -79,30 +80,39 @@ class ImportCubit extends Cubit<ImportState> {
       initial: initial,
     );
 
-    // For xtream, write credentials to secure storage
-    if (state.tab == ImportTab.xtream &&
-        username != null &&
-        password != null) {
-      await _storage.write(key: 'xtream_user_$id', value: username);
-      await _storage.write(key: 'xtream_pass_$id', value: password);
-    }
+    try {
+      // For xtream, write credentials to secure storage.
+      if (state.tab == ImportTab.xtream &&
+          username != null &&
+          password != null) {
+        await _storage.write(key: 'xtream_user_$id', value: username);
+        await _storage.write(key: 'xtream_pass_$id', value: password);
+      }
 
-    final importResult = await _content.importPlaylist(playlist);
-    await importResult.when(
-      ok: (_) async {
-        final addResult = await _playlists.add(playlist);
-        await addResult.when(
-          ok: (_) async {
-            await _playlists.setActive(playlist.id);
-            emit(state.copyWith(submitting: false, done: true));
-          },
-          err: (f) async =>
-              emit(state.copyWith(submitting: false, error: f.message)),
-        );
-      },
-      err: (f) async =>
-          emit(state.copyWith(submitting: false, error: f.message)),
-    );
+      final importResult = await _content.importPlaylist(playlist);
+      await importResult.when(
+        ok: (_) async {
+          final addResult = await _playlists.add(playlist);
+          await addResult.when(
+            ok: (_) async {
+              await _playlists.setActive(playlist.id);
+              emit(state.copyWith(submitting: false, done: true));
+            },
+            err: (f) async =>
+                emit(state.copyWith(submitting: false, error: f.message)),
+          );
+        },
+        err: (f) async =>
+            emit(state.copyWith(submitting: false, error: f.message)),
+      );
+    } catch (e) {
+      // Surface platform errors (e.g. keychain/secure-storage failures) as a
+      // friendly message instead of an unhandled exception.
+      emit(state.copyWith(
+        submitting: false,
+        error: 'Could not save the playlist: $e',
+      ));
+    }
   }
 
   PlaylistType _tabToType(ImportTab tab) {

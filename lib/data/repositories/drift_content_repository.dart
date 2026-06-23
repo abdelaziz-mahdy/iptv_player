@@ -3,6 +3,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../core/result.dart';
+import '../../core/secure_storage.dart';
 import '../db/database.dart';
 import '../models/models.dart';
 import '../sources/m3u_source.dart';
@@ -21,7 +22,7 @@ class DriftContentRepository implements ContentRepository {
     M3uSource? m3u,
     XtreamSource? xtream,
   })  : _dio = dio ?? Dio(),
-        _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+        _secureStorage = secureStorage ?? appSecureStorage,
         _m3u = m3u ?? M3uSource(),
         _xtream = xtream ?? XtreamSource();
 
