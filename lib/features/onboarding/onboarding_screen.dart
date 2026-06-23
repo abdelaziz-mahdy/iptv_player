@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/focusable_button.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key, required this.onGetStarted});
@@ -12,6 +13,7 @@ class OnboardingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: p.bg,
@@ -24,7 +26,7 @@ class OnboardingScreen extends StatelessWidget {
               const Spacer(),
               // Brand name
               Text(
-                'NOOR',
+                l10n.brand,
                 style: textTheme.displayLarge?.copyWith(
                   color: p.fg,
                   fontWeight: FontWeight.w700,
@@ -35,21 +37,21 @@ class OnboardingScreen extends StatelessWidget {
               const SizedBox(height: 16),
               // Value proposition
               Text(
-                'Your playlists. Your content. Beautifully organized.',
+                l10n.tagline,
                 style: textTheme.titleMedium?.copyWith(color: p.dim),
                 textAlign: TextAlign.center,
               ),
               const Spacer(),
               // Compliance statement
               Text(
-                'NOOR hosts no content. All channels and media come from playlists you provide.',
+                l10n.complianceNote,
                 style: textTheme.bodySmall?.copyWith(color: p.dim),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
               // Get Started button
               FocusableButton(
-                semanticLabel: 'Get Started',
+                semanticLabel: l10n.getStarted,
                 onPressed: onGetStarted,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -60,7 +62,7 @@ class OnboardingScreen extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      'Get Started',
+                      l10n.getStarted,
                       style: textTheme.labelLarge?.copyWith(
                         color: Colors.black,
                         fontWeight: FontWeight.w700,
