@@ -27,6 +27,96 @@ void main() {
 
     tearDown(() => cubit.close());
 
+    group('live-aware progress', () {
+      test('channel kind: after start()+close(), no progress saved', () async {
+        final liveController = FakePlayerController();
+        final livePlayback = FakePlaybackRepository();
+        final liveCubit = PlayerCubit(
+          liveController,
+          livePlayback,
+          itemKey: 'channel:c1',
+          url: 'http://live',
+          title: 'NOOR One',
+          kind: MediaKind.channel,
+          playlistId: 'p1',
+        );
+        await liveCubit.start();
+        await liveCubit.close();
+
+        final saved = await livePlayback.progressFor('channel:c1');
+        expect(saved, isNull, reason: 'Live channels must not persist watch progress');
+      });
+
+      test('movie kind: after start()+close(), progress IS saved', () async {
+        final movieController = FakePlayerController();
+        final moviePlayback = FakePlaybackRepository();
+        final movieCubit = PlayerCubit(
+          movieController,
+          moviePlayback,
+          itemKey: 'movie:m1',
+          url: 'http://vod',
+          title: 'Dune',
+          kind: MediaKind.movie,
+          playlistId: 'p1',
+        );
+        await movieCubit.start();
+        await movieCubit.close();
+
+        final saved = await moviePlayback.progressFor('movie:m1');
+        expect(saved, isNotNull, reason: 'VOD (movie) must persist watch progress on close');
+      });
+
+      test('isLive returns true for channel, false for movie', () {
+        final liveController = FakePlayerController();
+        final liveCubit = PlayerCubit(
+          liveController,
+          FakePlaybackRepository(),
+          itemKey: 'channel:c1',
+          url: 'http://live',
+          title: 'Live',
+          kind: MediaKind.channel,
+          playlistId: 'p1',
+        );
+        expect(liveCubit.isLive, isTrue);
+        liveCubit.close();
+
+        expect(cubit.isLive, isFalse);
+      });
+
+      test('channel start() does NOT resume from saved progress', () async {
+        // Seed a fake progress entry before the live cubit starts
+        final liveController = FakePlayerController();
+        final livePlayback = FakePlaybackRepository();
+        await livePlayback.saveProgress(
+          WatchProgress(
+            itemKey: 'channel:c1',
+            playlistId: 'p1',
+            kind: MediaKind.channel,
+            positionSec: 300,
+            durationSec: 0,
+            updatedAt: DateTime.utc(2026),
+          ),
+        );
+
+        final liveCubit = PlayerCubit(
+          liveController,
+          livePlayback,
+          itemKey: 'channel:c1',
+          url: 'http://live',
+          title: 'NOOR One',
+          kind: MediaKind.channel,
+          playlistId: 'p1',
+        );
+        await liveCubit.start();
+
+        // The controller should NOT have been seeked (position stays at zero)
+        expect(liveController.position, Duration.zero,
+            reason: 'Live channels must not seek to a resume position');
+
+        await liveCubit.close();
+      });
+    });
+
     test('start() → isPlaying true', () async {
       await cubit.start();
       expect(cubit.state.isPlaying, isTrue);

@@ -34,6 +34,14 @@ abstract class PlayerController {
   Duration get position;
   Duration get duration;
   bool get isPlaying;
+
+  /// Best-effort stream quality badge (e.g. resolution like "1280×720").
+  ///
+  /// Returns null until the video is initialized and size info is available.
+  /// Note: real download-speed/bitrate is not exposed by the fvp-via-video_player
+  /// abstraction, so this surfaces video resolution instead.
+  String? get streamBadge;
+
   Future<void> dispose();
 }
 
@@ -121,6 +129,13 @@ class VideoPlayerControllerAdapter implements PlayerController {
 
   @override
   bool get isPlaying => _controller?.value.isPlaying ?? false;
+
+  @override
+  String? get streamBadge {
+    final size = _controller?.value.size;
+    if (size == null || size.isEmpty) return null;
+    return '${size.width.toInt()}×${size.height.toInt()}';
+  }
 
   @override
   Future<void> dispose() async {

@@ -58,6 +58,9 @@ class FakePlayerController implements PlayerController {
   bool get isPlaying => _playing;
 
   @override
+  String? get streamBadge => null;
+
+  @override
   Future<void> dispose() async {
     await _statusCtrl.close();
   }

@@ -17,6 +17,7 @@ class PlayerUiState extends Equatable {
   final bool showControls;
   final double volume;
   final bool muted;
+  final String? streamBadge;
 
   const PlayerUiState({
     this.isPlaying = false,
@@ -26,6 +27,7 @@ class PlayerUiState extends Equatable {
     this.showControls = true,
     this.volume = 1.0,
     this.muted = false,
+    this.streamBadge,
   });
 
   PlayerUiState copyWith({
@@ -36,6 +38,7 @@ class PlayerUiState extends Equatable {
     bool? showControls,
     double? volume,
     bool? muted,
+    String? streamBadge,
   }) =>
       PlayerUiState(
         isPlaying: isPlaying ?? this.isPlaying,
@@ -45,10 +48,11 @@ class PlayerUiState extends Equatable {
         showControls: showControls ?? this.showControls,
         volume: volume ?? this.volume,
         muted: muted ?? this.muted,
+        streamBadge: streamBadge ?? this.streamBadge,
       );
 
   @override
-  List<Object?> get props => [isPlaying, position, duration, captionsOn, showControls, volume, muted];
+  List<Object?> get props => [isPlaying, position, duration, captionsOn, showControls, volume, muted, streamBadge];
 }
 
 /// Cubit managing all player interactions: playback, captions, progress saving.
@@ -76,13 +80,18 @@ class PlayerCubit extends Cubit<PlayerUiState> {
     required this.playlistId,
   }) : super(const PlayerUiState());
 
+  /// Whether this is a live channel (not resumable VOD).
+  bool get isLive => kind == MediaKind.channel;
+
   /// Initializes the player, seeks to resume position if available, and starts.
   Future<void> start() async {
     await _controller.initialize(url);
 
-    final progress = await _playback.progressFor(itemKey);
-    if (progress != null) {
-      await _controller.seek(Duration(seconds: progress.positionSec));
+    if (!isLive) {
+      final progress = await _playback.progressFor(itemKey);
+      if (progress != null) {
+        await _controller.seek(Duration(seconds: progress.positionSec));
+      }
     }
 
     await _controller.play();
@@ -96,6 +105,7 @@ class PlayerCubit extends Cubit<PlayerUiState> {
         isPlaying: s.isPlaying,
         position: s.position,
         duration: s.duration,
+        streamBadge: _controller.streamBadge,
       ));
     });
 
@@ -104,6 +114,7 @@ class PlayerCubit extends Cubit<PlayerUiState> {
       isPlaying: _controller.isPlaying,
       position: _controller.position,
       duration: _controller.duration,
+      streamBadge: _controller.streamBadge,
     ));
   }
 
@@ -168,6 +179,7 @@ class PlayerCubit extends Cubit<PlayerUiState> {
   }
 
   Future<void> _saveProgress() async {
+    if (isLive) return;
     await _playback.saveProgress(
       WatchProgress(
         itemKey: itemKey,

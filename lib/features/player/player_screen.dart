@@ -12,6 +12,31 @@ import '../../data/repositories/repositories.dart';
 import 'cubit/player_cubit.dart';
 import 'video_controller.dart';
 
+/// Small red "LIVE" pill shown in place of the seek scrubber for live channels.
+class _LivePill extends StatelessWidget {
+  const _LivePill();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: context.palette.live,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Text(
+        'LIVE',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1,
+        ),
+      ),
+    );
+  }
+}
+
 /// Full-screen video player.
 ///
 /// Accepts a [PlayerController] (real or fake) and a [PlaybackRepository]
@@ -95,6 +120,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
       return const ColoredBox(color: Colors.black);
     }
 
+    final isLive = _cubit!.isLive;
+
     return BlocProvider<PlayerCubit>.value(
       value: _cubit!,
       child: Scaffold(
@@ -175,6 +202,27 @@ class _PlayerScreenState extends State<PlayerScreen> {
                             ],
                           ),
                         ),
+                        // Stream badge: resolution (best-effort; real bitrate not
+                        // exposed by fvp-via-video_player)
+                        if (state.streamBadge != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                state.streamBadge!,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
                         // HD quality badge
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -243,54 +291,67 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Progress row
-                        Row(
-                          children: [
-                            Text(
-                              _formatDuration(state.position),
-                              style: const TextStyle(color: Colors.white, fontSize: 12),
+                        // Progress / live row
+                        if (isLive)
+                          // Live channel: show LIVE pill instead of scrubber
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: _LivePill(),
                             ),
-                            Expanded(
-                              child: Slider(
-                                value: state.duration.inMilliseconds > 0
-                                    ? state.position.inMilliseconds
-                                        .clamp(0, state.duration.inMilliseconds)
-                                        .toDouble()
-                                    : 0.0,
-                                min: 0,
-                                max: state.duration.inMilliseconds > 0
-                                    ? state.duration.inMilliseconds.toDouble()
-                                    : 1.0,
-                                onChanged: (value) {
-                                  context.read<PlayerCubit>().seekTo(
-                                        Duration(milliseconds: value.toInt()),
-                                      );
-                                },
-                                activeColor: context.palette.accent,
-                                inactiveColor: Colors.white.withValues(alpha: 0.3),
+                          )
+                        else
+                          // VOD: full scrubber with position/duration labels
+                          Row(
+                            children: [
+                              Text(
+                                _formatDuration(state.position),
+                                style: const TextStyle(color: Colors.white, fontSize: 12),
                               ),
-                            ),
-                            Text(
-                              _formatDuration(state.duration),
-                              style: const TextStyle(color: Colors.white, fontSize: 12),
-                            ),
-                          ],
-                        ),
+                              Expanded(
+                                child: Slider(
+                                  value: state.duration.inMilliseconds > 0
+                                      ? state.position.inMilliseconds
+                                          .clamp(0, state.duration.inMilliseconds)
+                                          .toDouble()
+                                      : 0.0,
+                                  min: 0,
+                                  max: state.duration.inMilliseconds > 0
+                                      ? state.duration.inMilliseconds.toDouble()
+                                      : 1.0,
+                                  onChanged: (value) {
+                                    context.read<PlayerCubit>().seekTo(
+                                          Duration(milliseconds: value.toInt()),
+                                        );
+                                  },
+                                  activeColor: context.palette.accent,
+                                  inactiveColor: Colors.white.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              Text(
+                                _formatDuration(state.duration),
+                                style: const TextStyle(color: Colors.white, fontSize: 12),
+                              ),
+                            ],
+                          ),
 
                         // Transport controls
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Skip backward 10s
-                            FocusableButton(
-                              semanticLabel: 'Skip backward 10 seconds',
-                              onPressed: () => context.read<PlayerCubit>().skipBackward(),
-                              child: const Padding(
-                                padding: EdgeInsets.all(8),
-                                child: Icon(Icons.replay_10, color: Colors.white, size: 28),
+                            // Skip backward 10s — VOD only
+                            if (!isLive) ...[
+                              FocusableButton(
+                                semanticLabel: 'Skip backward 10 seconds',
+                                onPressed: () => context.read<PlayerCubit>().skipBackward(),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(8),
+                                  child: Icon(Icons.replay_10, color: Colors.white, size: 28),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 24),
+                              const SizedBox(width: 24),
+                            ],
                             // Play/pause
                             FocusableButton(
                               semanticLabel: state.isPlaying ? 'Pause' : 'Play',
@@ -309,16 +370,18 @@ class _PlayerScreenState extends State<PlayerScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 24),
-                            // Skip forward 10s
-                            FocusableButton(
-                              semanticLabel: 'Skip forward 10 seconds',
-                              onPressed: () => context.read<PlayerCubit>().skipForward(),
-                              child: const Padding(
-                                padding: EdgeInsets.all(8),
-                                child: Icon(Icons.forward_10, color: Colors.white, size: 28),
+                            // Skip forward 10s — VOD only
+                            if (!isLive) ...[
+                              const SizedBox(width: 24),
+                              FocusableButton(
+                                semanticLabel: 'Skip forward 10 seconds',
+                                onPressed: () => context.read<PlayerCubit>().skipForward(),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(8),
+                                  child: Icon(Icons.forward_10, color: Colors.white, size: 28),
+                                ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
 

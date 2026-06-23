@@ -12,7 +12,7 @@ import 'package:noor_iptv/l10n/generated/app_localizations.dart';
 import '../../support/fake_hydrated_storage.dart';
 import 'fake_player_controller.dart';
 
-Widget _buildPlayer({VoidCallback? onBack}) => MaterialApp(
+Widget _buildPlayer({VoidCallback? onBack, MediaKind kind = MediaKind.movie}) => MaterialApp(
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -20,12 +20,12 @@ Widget _buildPlayer({VoidCallback? onBack}) => MaterialApp(
         create: (_) => AccessibilityCubit(),
         child: PlayerScreen(
           controller: FakePlayerController(),
-          itemKey: 'movie:m1',
+          itemKey: kind == MediaKind.channel ? 'channel:c1' : 'movie:m1',
           url: 'http://x',
           title: 'Dune',
           onBack: onBack ?? () {},
           playbackRepository: FakePlaybackRepository(),
-          kind: MediaKind.movie,
+          kind: kind,
           playlistId: 'p1',
         ),
       ),
@@ -61,5 +61,43 @@ void main() {
     }
     await tester.pump();
     expect(backCalled, isTrue);
+  });
+
+  group('live vs VOD UI', () {
+    testWidgets('live player shows LIVE indicator and hides seek Slider', (tester) async {
+      await tester.pumpWidget(_buildPlayer(kind: MediaKind.channel));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // LIVE pill must be present
+      expect(find.text('LIVE'), findsOneWidget);
+
+      // The seek Slider for position/duration must NOT be present.
+      // The volume Slider is still present, so we check we have at most one Slider
+      // (the volume one) — not the progress scrubber.
+      // We verify by absence of the skip icons instead (more robust).
+      expect(find.byIcon(Icons.replay_10), findsNothing,
+          reason: 'Live: skip-back button must be hidden');
+      expect(find.byIcon(Icons.forward_10), findsNothing,
+          reason: 'Live: skip-forward button must be hidden');
+    });
+
+    testWidgets('movie player shows seek Slider and no LIVE indicator', (tester) async {
+      await tester.pumpWidget(_buildPlayer(kind: MediaKind.movie));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // LIVE pill must NOT be present
+      expect(find.text('LIVE'), findsNothing);
+
+      // Skip buttons must exist for VOD
+      expect(find.byIcon(Icons.replay_10), findsOneWidget,
+          reason: 'VOD: skip-back button must be visible');
+      expect(find.byIcon(Icons.forward_10), findsOneWidget,
+          reason: 'VOD: skip-forward button must be visible');
+
+      // At least one Slider must be present (the progress scrubber + possibly volume)
+      expect(find.byType(Slider), findsAtLeast(1));
+    });
   });
 }
