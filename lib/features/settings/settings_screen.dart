@@ -31,7 +31,7 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         children: [
-          const _SectionHeader(title: 'Language'),
+          _SectionHeader(title: l10n.language),
           const SizedBox(height: 8),
           const _LanguageSelector(),
           const SizedBox(height: 24),
@@ -39,11 +39,11 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 8),
           const _DisplayToggles(),
           const SizedBox(height: 24),
-          const _SectionHeader(title: 'Text size'),
+          _SectionHeader(title: l10n.textSize),
           const SizedBox(height: 8),
           const _TextSizeSelector(),
           const SizedBox(height: 24),
-          const _SectionHeader(title: 'Captions'),
+          _SectionHeader(title: l10n.captionsLabel),
           const SizedBox(height: 8),
           const _CaptionsSection(),
           const SizedBox(height: 32),
@@ -88,7 +88,7 @@ class _LanguageSelector extends StatelessWidget {
       builder: (ctx, locale) {
         final isEn = locale.languageCode == 'en';
         return Semantics(
-          label: 'Language selector',
+          label: AppLocalizations.of(ctx)!.language,
           child: Container(
             decoration: BoxDecoration(
               color: context.palette.surface,
@@ -177,6 +177,7 @@ class _DisplayToggles extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AccessibilityCubit, AccessibilitySettings>(
       builder: (ctx, state) {
+        final l10n = AppLocalizations.of(ctx)!;
         return Material(
           color: context.palette.surface,
           shape: RoundedRectangleBorder(
@@ -186,32 +187,32 @@ class _DisplayToggles extends StatelessWidget {
           child: Column(
             children: [
               _ToggleRow(
-                label: 'High contrast',
+                label: l10n.highContrast,
                 value: state.highContrast,
                 onChanged: (_) => ctx.read<AccessibilityCubit>().toggleHighContrast(),
-                semanticLabel: 'High contrast mode',
+                semanticLabel: l10n.highContrast,
                 isFirst: true,
               ),
               const _Divider(),
               _ToggleRow(
-                label: 'Reduce motion',
+                label: l10n.reduceMotion,
                 value: state.reduceMotion,
                 onChanged: (_) => ctx.read<AccessibilityCubit>().toggleReduceMotion(),
-                semanticLabel: 'Reduce motion',
+                semanticLabel: l10n.reduceMotion,
               ),
               const _Divider(),
               _ToggleRow(
-                label: 'Colorblind-safe palette',
+                label: l10n.colorblindSafe,
                 value: state.colorblindSafe,
                 onChanged: (_) => ctx.read<AccessibilityCubit>().toggleColorblindSafe(),
-                semanticLabel: 'Colorblind-safe palette',
+                semanticLabel: l10n.colorblindSafe,
               ),
               const _Divider(),
               _ToggleRow(
-                label: 'High-legibility font',
+                label: l10n.highLegibilityFont,
                 value: state.hyperlegibleFont,
                 onChanged: (_) => ctx.read<AccessibilityCubit>().toggleHyperlegible(),
-                semanticLabel: 'High-legibility font',
+                semanticLabel: l10n.highLegibilityFont,
                 isLast: true,
               ),
             ],
@@ -287,18 +288,18 @@ class _Divider extends StatelessWidget {
 class _TextSizeSelector extends StatelessWidget {
   const _TextSizeSelector();
 
-  static const _options = [
-    (label: 'Default', value: 1.0),
-    (label: 'Large', value: 1.25),
-    (label: 'Larger', value: 1.5),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final options = [
+      (label: l10n.sizeDefault, value: 1.0),
+      (label: l10n.sizeLarge, value: 1.25),
+      (label: l10n.sizeLarger, value: 1.5),
+    ];
     return BlocBuilder<AccessibilityCubit, AccessibilitySettings>(
       builder: (ctx, state) {
         return Semantics(
-          label: 'Text size selector',
+          label: l10n.textSize,
           child: Container(
             decoration: BoxDecoration(
               color: context.palette.surface,
@@ -306,13 +307,13 @@ class _TextSizeSelector extends StatelessWidget {
               border: Border.all(color: context.palette.border),
             ),
             child: Row(
-              children: _options.map((opt) {
+              children: options.map((opt) {
                 final selected = state.textScale == opt.value;
                 return _SegmentChip(
                   label: opt.label,
                   selected: selected,
                   onTap: () => ctx.read<AccessibilityCubit>().setTextScale(opt.value),
-                  semanticLabel: 'Text size ${opt.label}',
+                  semanticLabel: '${l10n.textSize} ${opt.label}',
                 );
               }).toList(),
             ),
@@ -382,6 +383,7 @@ class _CaptionsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AccessibilityCubit, AccessibilitySettings>(
       builder: (ctx, state) {
+        final l10n = AppLocalizations.of(ctx)!;
         return Material(
           color: context.palette.surface,
           shape: RoundedRectangleBorder(
@@ -393,11 +395,11 @@ class _CaptionsSection extends StatelessWidget {
             children: [
               // Captions on/off toggle
               Semantics(
-                label: 'Captions on/off',
+                label: l10n.captionsLabel,
                 toggled: state.captionsOn,
                 child: SwitchListTile(
                   title: Text(
-                    'Captions',
+                    l10n.captionsLabel,
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
@@ -413,13 +415,13 @@ class _CaptionsSection extends StatelessWidget {
               ),
               if (state.captionsOn) ...[
                 const _Divider(),
-                const _SubSectionLabel(title: 'Size'),
+                _SubSectionLabel(title: l10n.captionSize),
                 _CaptionSizeRow(currentSize: state.captionSize, ctx: ctx),
                 const _Divider(),
-                const _SubSectionLabel(title: 'Background'),
+                _SubSectionLabel(title: l10n.captionBackground),
                 _CaptionBgRow(currentOpacity: state.captionBgOpacity, ctx: ctx),
                 const _Divider(),
-                const _SubSectionLabel(title: 'Color'),
+                _SubSectionLabel(title: l10n.captionColor),
                 _CaptionColorRow(currentColor: state.captionColor, ctx: ctx),
               ],
             ],
@@ -453,26 +455,26 @@ class _CaptionSizeRow extends StatelessWidget {
   final double currentSize;
   final BuildContext ctx;
 
-  static const _options = [
-    (label: 'Small', value: 18.0),
-    (label: 'Medium', value: 24.0),
-    (label: 'Large', value: 32.0),
-  ];
-
   const _CaptionSizeRow({required this.currentSize, required this.ctx});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final options = [
+      (label: l10n.captionSizeSmall, value: 18.0),
+      (label: l10n.captionSizeMedium, value: 24.0),
+      (label: l10n.sizeLarge, value: 32.0),
+    ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
       child: Semantics(
-        label: 'Caption size selector',
+        label: l10n.captionSize,
         child: Row(
-          children: _options.map((opt) {
+          children: options.map((opt) {
             final selected = currentSize == opt.value;
             return Expanded(
               child: Semantics(
-                label: 'Caption size ${opt.label}',
+                label: '${l10n.captionSize} ${opt.label}',
                 selected: selected,
                 button: true,
                 child: GestureDetector(
@@ -515,26 +517,26 @@ class _CaptionBgRow extends StatelessWidget {
   final double currentOpacity;
   final BuildContext ctx;
 
-  static const _options = [
-    (label: 'None', value: 0.0),
-    (label: 'Light', value: 0.45),
-    (label: 'Solid', value: 0.85),
-  ];
-
   const _CaptionBgRow({required this.currentOpacity, required this.ctx});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final options = [
+      (label: l10n.bgNone, value: 0.0),
+      (label: l10n.bgLight, value: 0.45),
+      (label: l10n.bgSolid, value: 0.85),
+    ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
       child: Semantics(
-        label: 'Caption background selector',
+        label: l10n.captionBackground,
         child: Row(
-          children: _options.map((opt) {
+          children: options.map((opt) {
             final selected = currentOpacity == opt.value;
             return Expanded(
               child: Semantics(
-                label: 'Caption background ${opt.label}',
+                label: '${l10n.captionBackground} ${opt.label}',
                 selected: selected,
                 button: true,
                 child: GestureDetector(
@@ -577,27 +579,27 @@ class _CaptionColorRow extends StatelessWidget {
   final int currentColor;
   final BuildContext ctx;
 
-  static const _options = [
-    (label: 'White', value: 0xFFFFFFFF, color: Color(0xFFFFFFFF)),
-    (label: 'Yellow', value: 0xFFFFE23D, color: Color(0xFFFFE23D)),
-    (label: 'Cyan', value: 0xFF5EE7FF, color: Color(0xFF5EE7FF)),
-  ];
-
   const _CaptionColorRow({required this.currentColor, required this.ctx});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final options = [
+      (label: l10n.colorWhite, value: 0xFFFFFFFF, color: const Color(0xFFFFFFFF)),
+      (label: l10n.colorYellow, value: 0xFFFFE23D, color: const Color(0xFFFFE23D)),
+      (label: l10n.colorCyan, value: 0xFF5EE7FF, color: const Color(0xFF5EE7FF)),
+    ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
       child: Semantics(
-        label: 'Caption color selector',
+        label: l10n.captionColor,
         child: Row(
-          children: _options.map((opt) {
+          children: options.map((opt) {
             final selected = currentColor == opt.value;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6),
               child: Semantics(
-                label: 'Caption color ${opt.label}',
+                label: '${l10n.captionColor} ${opt.label}',
                 selected: selected,
                 button: true,
                 child: GestureDetector(
@@ -639,7 +641,7 @@ class _ComplianceNote extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Text(
-        'NOOR hosts no content. All channels and media come from playlists you provide.',
+        AppLocalizations.of(context)!.complianceNote,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: context.palette.dim,
             ),
