@@ -5,7 +5,11 @@ import 'package:xtream_code_client/xtream_code_client.dart'
         XtreamClient,
         LiveStreamItem,
         VodItem,
-        SeriesItem;
+        SeriesItem,
+        SeriesInfo,
+        VodInfo,
+        Season,
+        Episode;
 
 /// Holds the three content types fetched from an Xtream Codes server in a
 /// single [XtreamSource.fetchAll] call.
@@ -119,6 +123,56 @@ noor.Series seriesFromXtream(
   );
 }
 
+/// Maps a [xc.Season] to a NOOR [noor.Season].
+///
+/// The domain season id is `'<playlistId>:series:<numericSeriesId>:season:<seasonNum>'`.
+/// [seriesId] is the raw numeric id string extracted from the domain series id.
+noor.Season seasonFromXtreamSeason(
+  xc.Season xcSeason, {
+  required String seriesId,
+  required String playlistId,
+}) {
+  final num = xcSeason.seasonNumber ?? 1;
+  final domainSeriesId = '$playlistId:series:$seriesId';
+  return noor.Season(
+    id: '$domainSeriesId:season:$num',
+    seriesId: domainSeriesId,
+    number: num,
+  );
+}
+
+/// Maps a [xc.Episode] to a NOOR [noor.Episode].
+///
+/// Episode stream URL convention:
+///   `{serverUrl}/series/{username}/{password}/{id}.{ext}`
+noor.Episode episodeFromXtreamEpisode(
+  xc.Episode xcEp, {
+  required String seasonId,
+  required String serverUrl,
+  required String username,
+  required String password,
+}) {
+  final epId = xcEp.id ?? 0;
+  final ext = (xcEp.containerExtension?.isNotEmpty ?? false)
+      ? xcEp.containerExtension!
+      : 'mp4';
+  final streamUrl = _buildSeriesUrl(
+    serverUrl: serverUrl,
+    username: username,
+    password: password,
+    episodeId: epId,
+    ext: ext,
+  );
+  return noor.Episode(
+    id: '$seasonId:ep:$epId',
+    seasonId: seasonId,
+    title: xcEp.title ?? '',
+    number: xcEp.episodeNum ?? 0,
+    durationSec: xcEp.info.durationSecs,
+    streamUrl: streamUrl,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Private URL builders
 // ---------------------------------------------------------------------------
@@ -149,6 +203,17 @@ String _buildMovieUrl({
 }) {
   final base = _normalizeServerUrl(serverUrl);
   return '$base/movie/$username/$password/$streamId.$ext';
+}
+
+String _buildSeriesUrl({
+  required String serverUrl,
+  required String username,
+  required String password,
+  required int episodeId,
+  required String ext,
+}) {
+  final base = _normalizeServerUrl(serverUrl);
+  return '$base/series/$username/$password/$episodeId.$ext';
 }
 
 /// Safely converts a [dynamic] rating value to [double?].
@@ -239,6 +304,98 @@ class XtreamSource {
       return XtreamContent(channels: channels, movies: movies, series: series);
     } finally {
       // Only close clients we created; injected clients are managed externally.
+      if (_overrideClient == null) client.close();
+    }
+  }
+
+  /// Fetches the plot/description for a single VOD item.
+  ///
+  /// [vodStreamId] is the numeric stream id extracted from the domain movie id
+  /// (i.e. the last segment of `'<playlistId>:vod:<streamId>'`).
+  ///
+  /// Returns `null` when the server returns no plot and no description.
+  Future<String?> vodPlot({
+    required String serverUrl,
+    required String username,
+    required String password,
+    required String vodStreamId,
+  }) async {
+    final client = _overrideClient ??
+        xc.XtreamClient(
+          url: serverUrl,
+          username: username,
+          password: password,
+        );
+    try {
+      final info = await client.vodInfoData(
+        xc.VodItem(streamId: int.parse(vodStreamId)),
+      );
+      return info.info.plot?.isNotEmpty == true
+          ? info.info.plot
+          : info.info.description;
+    } finally {
+      if (_overrideClient == null) client.close();
+    }
+  }
+
+  /// Fetches the full detail payload for a series: description, seasons,
+  /// and all episodes grouped by season domain id.
+  ///
+  /// [seriesId] is the raw numeric id string (last segment of the domain id).
+  /// [playlistId] is used to construct domain ids for seasons and episodes.
+  Future<noor.SeriesDetail> seriesDetail({
+    required String serverUrl,
+    required String username,
+    required String password,
+    required String seriesId,
+    required String playlistId,
+  }) async {
+    final client = _overrideClient ??
+        xc.XtreamClient(
+          url: serverUrl,
+          username: username,
+          password: password,
+        );
+    try {
+      final info = await client.seriesInfoData(
+        xc.SeriesItem(seriesId: int.parse(seriesId)),
+      );
+
+      final description = info.info.plot;
+      final xcSeasons = info.seasons ?? const [];
+      final xcEpisodeMap = info.episodes ?? const {};
+
+      // Map seasons.
+      final domainSeasons = xcSeasons
+          .map((s) => seasonFromXtreamSeason(
+                s,
+                seriesId: seriesId,
+                playlistId: playlistId,
+              ))
+          .toList();
+
+      // Map episodes: xcEpisodeMap keys are season numbers as strings.
+      final episodesBySeason = <String, List<noor.Episode>>{};
+      for (final season in domainSeasons) {
+        final seasonNum = season.number.toString();
+        final xcEps = xcEpisodeMap[seasonNum] ?? const [];
+        episodesBySeason[season.id] = xcEps
+            .map((e) => episodeFromXtreamEpisode(
+                  e,
+                  seasonId: season.id,
+                  serverUrl: serverUrl,
+                  username: username,
+                  password: password,
+                ))
+            .toList();
+      }
+
+      return noor.SeriesDetail(
+        description: description?.isNotEmpty == true ? description : null,
+        seasons: domainSeasons,
+        episodesBySeason: episodesBySeason,
+      );
+    } finally {
       if (_overrideClient == null) client.close();
     }
   }
