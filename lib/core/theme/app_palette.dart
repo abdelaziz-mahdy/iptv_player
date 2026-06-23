@@ -23,7 +23,7 @@ class AppPalette {
   });
 
   // Shared across both palettes.
-  static const accentColor = Color(0xFFFFE000);
+  static const accentColor = Color(0xFFA78BFA); // violet
   static const accent2Color = Color(0xFF00E5FF);
   static const liveColor = Color(0xFFFF5252);
 

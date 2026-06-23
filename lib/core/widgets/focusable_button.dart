@@ -52,8 +52,11 @@ class _FocusableButtonState extends State<FocusableButton> {
         },
         child: GestureDetector(
           onTap: widget.onPressed,
+          // foregroundDecoration paints the focus ring OVER the child without
+          // adding to layout size, so wrapping fixed-width widgets (e.g. EPG
+          // cells) doesn't shift or overflow their layout.
           child: Container(
-            decoration: BoxDecoration(
+            foregroundDecoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: _focused ? context.palette.focus : Colors.transparent,

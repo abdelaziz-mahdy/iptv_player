@@ -9,7 +9,7 @@ void main() {
     expect(AppPalette.standard.fg, const Color(0xFFF3F6FB));
     expect(AppPalette.standard.dim, const Color(0xFF97A3B7));
     expect(AppPalette.standard.focus, const Color(0xFF5AB0FF));
-    expect(AppPalette.standard.accent, const Color(0xFFFFE000));
+    expect(AppPalette.standard.accent, const Color(0xFFA78BFA));
     expect(AppPalette.standard.live, const Color(0xFFFF5252));
   });
 
