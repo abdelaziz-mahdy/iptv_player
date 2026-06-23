@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
 import 'package:noor_iptv/features/onboarding/onboarding_screen.dart';
+import 'package:noor_iptv/l10n/generated/app_localizations.dart';
 
 void main() {
   group('OnboardingScreen', () {
@@ -13,18 +14,21 @@ void main() {
           hyperlegible: false,
           rtl: false,
         ),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: OnboardingScreen(onGetStarted: onGetStarted),
       );
     }
+
+    AppLocalizations l10n(WidgetTester tester) =>
+        AppLocalizations.of(tester.element(find.byType(OnboardingScreen)))!;
 
     testWidgets('renders compliance text', (tester) async {
       await tester.pumpWidget(buildTestApp(onGetStarted: () {}));
       await tester.pumpAndSettle();
 
       expect(
-        find.text(
-          'NOOR hosts no content. All channels and media come from playlists you provide.',
-        ),
+        find.text(l10n(tester).complianceNote),
         findsOneWidget,
       );
     });
@@ -33,7 +37,7 @@ void main() {
       await tester.pumpWidget(buildTestApp(onGetStarted: () {}));
       await tester.pumpAndSettle();
 
-      expect(find.text('Get Started'), findsOneWidget);
+      expect(find.text(l10n(tester).getStarted), findsOneWidget);
     });
 
     testWidgets('tapping Get Started calls callback', (tester) async {
@@ -43,7 +47,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Get Started'));
+      await tester.tap(find.text(l10n(tester).getStarted));
       await tester.pumpAndSettle();
 
       expect(called, isTrue);

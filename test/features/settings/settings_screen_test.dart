@@ -29,6 +29,12 @@ Widget _buildTestApp(AccessibilityCubit a11y, LocaleCubit locale) {
   );
 }
 
+AppLocalizations _l10n(WidgetTester tester) {
+  return AppLocalizations.of(
+    tester.element(find.byType(SettingsScreen)),
+  )!;
+}
+
 void main() {
   setUp(installFakeHydratedStorage);
 
@@ -42,10 +48,9 @@ void main() {
 
     expect(a11y.state.highContrast, isFalse);
 
-    // Find the High contrast SwitchListTile via the Switch widget inside it.
-    // The SwitchListTile renders a Switch; we find it by its label text.
+    final l10n = _l10n(tester);
     final switchFinder = find.ancestor(
-      of: find.text('High contrast'),
+      of: find.text(l10n.highContrast),
       matching: find.byType(SwitchListTile),
     );
     expect(switchFinder, findsOneWidget);
@@ -65,7 +70,8 @@ void main() {
 
     expect(a11y.state.textScale, 1.0);
 
-    await tester.tap(find.text('Large'));
+    final l10n = _l10n(tester);
+    await tester.tap(find.text(l10n.sizeLarge));
     await tester.pumpAndSettle();
 
     expect(a11y.state.textScale, 1.25);
@@ -78,12 +84,9 @@ void main() {
     await tester.pumpWidget(_buildTestApp(a11y, locale));
     await tester.pumpAndSettle();
 
-    // The note may be below the fold; search including offstage widgets.
+    final l10n = _l10n(tester);
     expect(
-      find.text(
-        'NOOR hosts no content. All channels and media come from playlists you provide.',
-        skipOffstage: false,
-      ),
+      find.text(l10n.complianceNote, skipOffstage: false),
       findsOneWidget,
     );
   });
