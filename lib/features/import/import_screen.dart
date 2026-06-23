@@ -5,6 +5,7 @@ import '../../core/di/injection.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/focusable_button.dart';
+import '../../data/credential_store.dart';
 import '../../data/repositories/repositories.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'cubit/import_cubit.dart';
@@ -25,6 +26,7 @@ class _ImportScreenState extends State<ImportScreen> {
       create: (_) => ImportCubit(
         sl<PlaylistRepository>(),
         sl<ContentRepository>(),
+        credentialStore: sl<CredentialStore>(),
       ),
       child: BlocListener<ImportCubit, ImportState>(
         listener: (context, state) {

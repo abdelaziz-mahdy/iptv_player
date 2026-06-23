@@ -1,4 +1,7 @@
 import 'package:get_it/get_it.dart';
+
+import '../../data/credential_store.dart';
+import '../../data/credential_store_drift.dart';
 import '../../data/db/database.dart';
 import '../../data/repositories/drift_repositories.dart';
 import '../../data/repositories/fakes/fake_repositories.dart';
@@ -7,9 +10,9 @@ import '../../data/repositories/repositories.dart';
 /// Global service locator.
 final GetIt sl = GetIt.instance;
 
-/// Registers app dependencies. For now this wires the in-memory fakes against
-/// the repository contracts; the Data & Import plan swaps these for the real
-/// drift-backed implementations without touching the feature layer.
+/// Registers app dependencies using in-memory fakes.
+/// Used by widget tests and the DI test. Does NOT register [CredentialStore]
+/// — tests that need one pass it directly to the component under test.
 Future<void> configureDependencies() async {
   sl.registerLazySingleton<PlaylistRepository>(FakePlaylistRepository.new);
   sl.registerLazySingleton<ContentRepository>(FakeContentRepository.new);
@@ -22,10 +25,14 @@ Future<void> configureDependencies() async {
 Future<void> configureProductionDependencies() async {
   final db = AppDatabase();
   sl.registerSingleton<AppDatabase>(db);
+
+  final creds = DriftCredentialStore(db);
+  sl.registerSingleton<CredentialStore>(creds);
+
   sl.registerLazySingleton<PlaylistRepository>(
       () => DriftPlaylistRepository(db));
   sl.registerLazySingleton<ContentRepository>(
-      () => DriftContentRepository(db));
+      () => DriftContentRepository(db, credentialStore: creds));
   sl.registerLazySingleton<EpgRepository>(() => EpgRepositoryImpl(db));
   sl.registerLazySingleton<PlaybackRepository>(
       () => DriftPlaybackRepository(db));
