@@ -8,6 +8,7 @@ class FakePlayerController implements PlayerController {
   Duration _position = Duration.zero;
   final Duration _duration = const Duration(minutes: 90);
   bool _initialized = false;
+  double _volume = 1.0;
 
   // ignore: unused_field
   bool get initialized => _initialized;
@@ -35,6 +36,14 @@ class FakePlayerController implements PlayerController {
     _position = position;
     _emit();
   }
+
+  @override
+  Future<void> setVolume(double v) async {
+    _volume = v.clamp(0.0, 1.0);
+  }
+
+  @override
+  double get volume => _volume;
 
   @override
   Stream<PlayerStatus> get status => _statusCtrl.stream;

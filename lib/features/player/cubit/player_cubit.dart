@@ -15,6 +15,8 @@ class PlayerUiState extends Equatable {
   final Duration duration;
   final bool captionsOn;
   final bool showControls;
+  final double volume;
+  final bool muted;
 
   const PlayerUiState({
     this.isPlaying = false,
@@ -22,6 +24,8 @@ class PlayerUiState extends Equatable {
     this.duration = Duration.zero,
     this.captionsOn = false,
     this.showControls = true,
+    this.volume = 1.0,
+    this.muted = false,
   });
 
   PlayerUiState copyWith({
@@ -30,6 +34,8 @@ class PlayerUiState extends Equatable {
     Duration? duration,
     bool? captionsOn,
     bool? showControls,
+    double? volume,
+    bool? muted,
   }) =>
       PlayerUiState(
         isPlaying: isPlaying ?? this.isPlaying,
@@ -37,10 +43,12 @@ class PlayerUiState extends Equatable {
         duration: duration ?? this.duration,
         captionsOn: captionsOn ?? this.captionsOn,
         showControls: showControls ?? this.showControls,
+        volume: volume ?? this.volume,
+        muted: muted ?? this.muted,
       );
 
   @override
-  List<Object?> get props => [isPlaying, position, duration, captionsOn, showControls];
+  List<Object?> get props => [isPlaying, position, duration, captionsOn, showControls, volume, muted];
 }
 
 /// Cubit managing all player interactions: playback, captions, progress saving.
@@ -127,6 +135,31 @@ class PlayerCubit extends Cubit<PlayerUiState> {
   /// Toggles caption display on/off.
   void toggleCaptions() {
     emit(state.copyWith(captionsOn: !state.captionsOn));
+  }
+
+  /// Sets the playback volume, clamped to [0.0, 1.0].
+  Future<void> setVolume(double v) async {
+    final clamped = v.clamp(0.0, 1.0);
+    await _controller.setVolume(clamped);
+    emit(state.copyWith(volume: clamped));
+  }
+
+  double? _preMuteVolume;
+
+  /// Toggles mute. Stores pre-mute volume on mute and restores on un-mute.
+  Future<void> toggleMute() async {
+    if (state.muted) {
+      // Un-mute: restore saved volume
+      final restored = _preMuteVolume ?? 1.0;
+      _preMuteVolume = null;
+      await _controller.setVolume(restored);
+      emit(state.copyWith(volume: restored, muted: false));
+    } else {
+      // Mute: save current volume and set to 0
+      _preMuteVolume = state.volume;
+      await _controller.setVolume(0.0);
+      emit(state.copyWith(muted: true));
+    }
   }
 
   /// Seeks to the given position.

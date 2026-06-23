@@ -328,6 +328,32 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
+                            // Mute / volume toggle
+                            FocusableButton(
+                              semanticLabel: state.muted ? 'Unmute' : 'Mute',
+                              onPressed: () => context.read<PlayerCubit>().toggleMute(),
+                              child: Padding(
+                                padding: const EdgeInsets.all(6),
+                                child: Icon(
+                                  state.muted ? Icons.volume_off : Icons.volume_up,
+                                  color: Colors.white.withValues(alpha: 0.6),
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                            // Volume slider (compact, desktop-friendly)
+                            SizedBox(
+                              width: 100,
+                              child: Slider(
+                                value: state.volume,
+                                min: 0.0,
+                                max: 1.0,
+                                onChanged: (v) => context.read<PlayerCubit>().setVolume(v),
+                                activeColor: Colors.white,
+                                inactiveColor: Colors.white.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             // CC toggle
                             FocusableButton(
                               semanticLabel: state.captionsOn ? 'Captions on' : 'Captions off',

@@ -151,4 +151,55 @@ void main() {
     expect(played, isNotNull);
     expect(played!.title, 'Pilot');
   });
+
+  testWidgets('DetailsScreen.series shows a Play button when episodes are loaded',
+      (tester) async {
+    const series = Series(id: 's1', playlistId: 'p1', title: 'Deep Field');
+
+    await tester.pumpWidget(
+      _wrap(
+        DetailsScreen.series(
+          series,
+          onBack: () {},
+          onPlayEpisode: (_) {},
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // After episodes are loaded the series detail must have a Play button.
+    expect(find.text('Play'), findsAtLeast(1));
+  });
+
+  testWidgets(
+      'DetailsScreen.series Play button calls onPlayEpisode with first episode',
+      (tester) async {
+    Episode? played;
+    const series = Series(id: 's1', playlistId: 'p1', title: 'Deep Field');
+
+    await tester.pumpWidget(
+      _wrap(
+        DetailsScreen.series(
+          series,
+          onBack: () {},
+          onPlayEpisode: (e) => played = e,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // The Play button (localized label) should be visible.
+    final playFinder = find.text('Play');
+    expect(playFinder, findsAtLeast(1));
+
+    // Tap the first occurrence of Play (the primary series Play button).
+    await tester.tap(playFinder.first);
+    await tester.pumpAndSettle();
+
+    // Should call back with the first episode (Pilot).
+    expect(played, isNotNull);
+    expect(played!.title, 'Pilot');
+  });
 }

@@ -60,5 +60,38 @@ void main() {
       expect(cubit.kind, MediaKind.movie);
       expect(cubit.playlistId, 'p1');
     });
+
+    test('setVolume(0.3) sets state.volume to 0.3', () async {
+      await cubit.start();
+      await cubit.setVolume(0.3);
+      expect(cubit.state.volume, closeTo(0.3, 0.001));
+    });
+
+    test('setVolume clamps values outside 0..1', () async {
+      await cubit.start();
+      await cubit.setVolume(1.5);
+      expect(cubit.state.volume, 1.0);
+      await cubit.setVolume(-0.5);
+      expect(cubit.state.volume, 0.0);
+    });
+
+    test('toggleMute() sets muted=true and volume 0 on controller', () async {
+      await cubit.start();
+      await cubit.setVolume(0.7);
+      await cubit.toggleMute();
+      expect(cubit.state.muted, isTrue);
+      expect(controller.volume, closeTo(0.0, 0.001));
+    });
+
+    test('toggleMute() twice restores original volume', () async {
+      await cubit.start();
+      await cubit.setVolume(0.3);
+      await cubit.toggleMute();
+      expect(cubit.state.muted, isTrue);
+      await cubit.toggleMute();
+      expect(cubit.state.muted, isFalse);
+      expect(cubit.state.volume, closeTo(0.3, 0.001));
+      expect(controller.volume, closeTo(0.3, 0.001));
+    });
   });
 }

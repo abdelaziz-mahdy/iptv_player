@@ -28,6 +28,8 @@ abstract class PlayerController {
   Future<void> play();
   Future<void> pause();
   Future<void> seek(Duration position);
+  Future<void> setVolume(double v);
+  double get volume;
   Stream<PlayerStatus> get status;
   Duration get position;
   Duration get duration;
@@ -42,6 +44,7 @@ class VideoPlayerControllerAdapter implements PlayerController {
   VideoPlayerController? _controller;
   final _statusCtrl = StreamController<PlayerStatus>.broadcast();
   bool _initialized = false;
+  double _volume = 1.0;
 
   /// Whether the underlying [VideoPlayerController] is ready to render.
   bool get isInitialized => _initialized && _controller != null;
@@ -97,6 +100,15 @@ class VideoPlayerControllerAdapter implements PlayerController {
   Future<void> seek(Duration position) async {
     await _controller?.seekTo(position);
   }
+
+  @override
+  Future<void> setVolume(double v) async {
+    _volume = v.clamp(0.0, 1.0);
+    await _controller?.setVolume(_volume);
+  }
+
+  @override
+  double get volume => _volume;
 
   @override
   Stream<PlayerStatus> get status => _statusCtrl.stream;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -89,22 +90,59 @@ class _BackdropHero extends StatelessWidget {
     final size = MediaQuery.sizeOf(context);
     final backdropHeight =
         (size.height * 0.42).clamp(220.0, 460.0).toDouble();
+
+    Widget buildPosterContent() {
+      if (posterUrl == null) {
+        return _GradientPlaceholder(title: title);
+      }
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          // Bottom layer: blurred full-bleed poster for ambient glow
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+            child: Image.network(
+              posterUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stack) => _GradientPlaceholder(title: title),
+            ),
+          ),
+          // Dark scrim over the blurred layer
+          Container(
+            color: context.palette.bg.withValues(alpha: 0.55),
+          ),
+          // Foreground: full poster, contained (portrait box centred)
+          Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: backdropHeight,
+                maxWidth: backdropHeight * 0.67, // typical portrait aspect
+              ),
+              child: Image.network(
+                posterUrl!,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stack) => _GradientPlaceholder(title: title),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Stack(
       children: [
-        // Backdrop image or gradient placeholder
+        // Backdrop / ambient hero
         SizedBox(
           height: backdropHeight,
           width: double.infinity,
-          child: posterUrl != null
-              ? Image.network(
-                  posterUrl!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, _) => _GradientPlaceholder(title: title),
-                )
-              : _GradientPlaceholder(title: title),
+          child: buildPosterContent(),
         ),
         // Gradient overlay so text is readable
-        Positioned.fill(
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 0,
+          height: backdropHeight,
           child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -457,6 +495,38 @@ class _SeriesDetailBody extends StatelessWidget {
                       // Action buttons
                       Row(
                         children: [
+                          // Play button — only shown when episodes are available
+                          if (!state.loading && state.episodes.isNotEmpty) ...[
+                            FocusableButton(
+                              semanticLabel: l10n.play,
+                              onPressed: () =>
+                                  onPlayEpisode(state.episodes.first),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 28, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: context.palette.accent,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.play_arrow,
+                                        color: context.palette.bg, size: 20),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      l10n.play,
+                                      style: tt.labelLarge?.copyWith(
+                                        color: context.palette.bg,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                          ],
                           _MyListButton(
                             itemKey: 'episode:${series.id}',
                             playlistId: series.playlistId,
