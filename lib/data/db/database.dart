@@ -19,6 +19,7 @@ part 'database.g.dart';
     WatchProgressRows,
     Favorites,
     XtreamCredentials,
+    Categories,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -26,7 +27,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'noor'));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -34,6 +35,9 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.createTable(xtreamCredentials);
+          }
+          if (from < 3) {
+            await m.createTable(categories);
           }
         },
       );
@@ -109,6 +113,15 @@ class AppDatabase extends _$AppDatabase {
             ..where((t) => t.playlistId.equals(playlistId))
             ..orderBy([(t) => OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)]))
           .watch();
+
+  // --- Categories ---
+  Future<void> replaceCategories(String playlistId, String type, List<CategoriesCompanion> rows) =>
+      batch((b) {
+        b.deleteWhere(categories, (t) => t.playlistId.equals(playlistId) & t.type.equals(type));
+        b.insertAll(categories, rows, mode: InsertMode.insertOrReplace);
+      });
+  Future<List<CategoryRow>> getCategories(String playlistId, String type) =>
+      (select(categories)..where((t) => t.playlistId.equals(playlistId) & t.type.equals(type))).get();
 
   // --- Xtream credentials ---
   Future<void> upsertCredentials(XtreamCredentialsCompanion c) =>

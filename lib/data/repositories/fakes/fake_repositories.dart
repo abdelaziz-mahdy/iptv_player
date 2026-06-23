@@ -132,6 +132,23 @@ class FakeContentRepository implements ContentRepository {
   }
 
   @override
+  Future<List<CategoryRef>> categories(String playlistId, MediaKind kind) async {
+    return switch (kind) {
+      MediaKind.movie => const [
+          CategoryRef(id: 'cat1', name: 'Action'),
+          CategoryRef(id: 'cat2', name: 'Drama'),
+        ],
+      MediaKind.channel => const [
+          CategoryRef(id: 'cat3', name: 'Sports'),
+          CategoryRef(id: 'cat4', name: 'News'),
+        ],
+      MediaKind.episode => const [
+          CategoryRef(id: 'cat5', name: 'Sci-Fi'),
+        ],
+    };
+  }
+
+  @override
   Future<Result<void>> importPlaylist(Playlist p) async => const Ok(null);
 }
 

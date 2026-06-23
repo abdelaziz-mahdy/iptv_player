@@ -127,3 +127,14 @@ class XtreamCredentials extends Table {
   @override
   Set<Column> get primaryKey => {playlistId};
 }
+
+@DataClassName('CategoryRow')
+class Categories extends Table {
+  TextColumn get playlistId => text()();
+  TextColumn get type => text()();
+  TextColumn get categoryId => text()();
+  TextColumn get name => text()();
+
+  @override
+  Set<Column> get primaryKey => {playlistId, type, categoryId};
+}

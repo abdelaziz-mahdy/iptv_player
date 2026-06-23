@@ -21,6 +21,12 @@ abstract class ContentRepository {
   Stream<List<Favorite>> favorites(String playlistId);
   Future<void> toggleFavorite(String itemKey, String playlistId, MediaKind kind);
 
+  /// Returns the provider's category list for [playlistId] and [kind].
+  ///
+  /// For M3U playlists (where no category rows exist) this returns an empty
+  /// list — callers should fall back to group-title ids in that case.
+  Future<List<CategoryRef>> categories(String playlistId, MediaKind kind);
+
   /// Fetches the playlist's content from its source and persists it locally.
   Future<Result<void>> importPlaylist(Playlist p);
 }

@@ -322,7 +322,68 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
-  // 7. DriftContentRepository.importPlaylist (xtream) — credentials from
+  // 7. DriftContentRepository.categories — reads from db after seed
+  // -------------------------------------------------------------------------
+  group('DriftContentRepository.categories', () {
+    test('returns mapped CategoryRefs from seeded db rows', () async {
+      final db = _makeDb();
+      addTearDown(db.close);
+
+      // Seed two vod categories directly into the db.
+      await db.replaceCategories(_playlistId, 'vod', [
+        CategoriesCompanion.insert(
+            playlistId: _playlistId, type: 'vod', categoryId: '1', name: 'Action'),
+        CategoriesCompanion.insert(
+            playlistId: _playlistId, type: 'vod', categoryId: '2', name: 'Drama'),
+      ]);
+
+      final repo = DriftContentRepository(db);
+      final result = await repo.categories(_playlistId, MediaKind.movie);
+
+      expect(result.length, 2);
+      expect(result.map((r) => r.name), containsAll(['Action', 'Drama']));
+    });
+
+    test('returns empty list when no categories seeded (m3u case)', () async {
+      final db = _makeDb();
+      addTearDown(db.close);
+
+      final repo = DriftContentRepository(db);
+      final result = await repo.categories(_playlistId, MediaKind.movie);
+      expect(result, isEmpty);
+    });
+
+    test('maps MediaKind.channel to live type', () async {
+      final db = _makeDb();
+      addTearDown(db.close);
+
+      await db.replaceCategories(_playlistId, 'live', [
+        CategoriesCompanion.insert(
+            playlistId: _playlistId, type: 'live', categoryId: '10', name: 'Sports'),
+      ]);
+
+      final repo = DriftContentRepository(db);
+      final result = await repo.categories(_playlistId, MediaKind.channel);
+      expect(result.single.name, 'Sports');
+    });
+
+    test('maps MediaKind.episode to series type', () async {
+      final db = _makeDb();
+      addTearDown(db.close);
+
+      await db.replaceCategories(_playlistId, 'series', [
+        CategoriesCompanion.insert(
+            playlistId: _playlistId, type: 'series', categoryId: '20', name: 'Sci-Fi'),
+      ]);
+
+      final repo = DriftContentRepository(db);
+      final result = await repo.categories(_playlistId, MediaKind.episode);
+      expect(result.single.name, 'Sci-Fi');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // 8. DriftContentRepository.importPlaylist (xtream) — credentials from
   //    DriftCredentialStore, stub XtreamSource, channels persisted
   // -------------------------------------------------------------------------
   group('DriftContentRepository.importPlaylist (xtream)', () {

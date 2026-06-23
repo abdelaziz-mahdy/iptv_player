@@ -9,6 +9,18 @@ import '../sources/m3u_source.dart';
 import '../sources/xtream_source.dart';
 import 'repositories.dart';
 
+/// Maps a [MediaKind] to the string type key used in the categories table.
+String _kindToType(MediaKind kind) {
+  switch (kind) {
+    case MediaKind.channel:
+      return 'live';
+    case MediaKind.movie:
+      return 'vod';
+    case MediaKind.episode:
+      return 'series';
+  }
+}
+
 /// Drift-backed [ContentRepository].
 ///
 /// [dio], [credentialStore], [m3u], and [xtream] are injectable via constructor
@@ -190,6 +202,17 @@ class DriftContentRepository implements ContentRepository {
   }
 
   // ---------------------------------------------------------------------------
+  // ContentRepository — categories
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<List<CategoryRef>> categories(String playlistId, MediaKind kind) async {
+    final type = _kindToType(kind);
+    final rows = await _db.getCategories(playlistId, type);
+    return rows.map((r) => CategoryRef(id: r.categoryId, name: r.name)).toList();
+  }
+
+  // ---------------------------------------------------------------------------
   // ContentRepository — importPlaylist
   // ---------------------------------------------------------------------------
 
@@ -223,6 +246,20 @@ class DriftContentRepository implements ContentRepository {
             password: creds.password,
             playlistId: p.id,
           );
+
+          // Group categories by type and persist each group.
+          final catsByType = <String, List<CategoriesCompanion>>{};
+          for (final cat in content.categories) {
+            catsByType.putIfAbsent(cat.type, () => []).add(
+              CategoriesCompanion.insert(
+                playlistId: p.id,
+                type: cat.type,
+                categoryId: cat.id,
+                name: cat.name,
+              ),
+            );
+          }
+
           await Future.wait([
             _db.replaceChannels(
                 p.id, content.channels.map(_toChannelCompanion).toList()),
@@ -230,6 +267,8 @@ class DriftContentRepository implements ContentRepository {
                 p.id, content.movies.map(_toVodCompanion).toList()),
             _db.replaceSeries(
                 p.id, content.series.map(_toSeriesCompanion).toList()),
+            for (final entry in catsByType.entries)
+              _db.replaceCategories(p.id, entry.key, entry.value),
           ]);
 
         case PlaylistType.upload:

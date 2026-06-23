@@ -3,6 +3,7 @@ import 'package:xtream_code_client/xtream_code_client.dart'
     as xc
     show
         XtreamClient,
+        Category,
         LiveStreamItem,
         VodItem,
         SeriesItem,
@@ -16,11 +17,18 @@ class XtreamContent {
     required this.channels,
     required this.movies,
     required this.series,
+    this.categories = const [],
   });
 
   final List<noor.Channel> channels;
   final List<noor.VodItem> movies;
   final List<noor.Series> series;
+
+  /// Flat list of all categories across all types: live, vod, series.
+  ///
+  /// Each entry is a record with `type` (e.g. `'live'`), `id` (the numeric
+  /// category id as a string), and `name` (the human-readable label).
+  final List<({String type, String id, String name})> categories;
 }
 
 // ---------------------------------------------------------------------------
@@ -266,11 +274,17 @@ class XtreamSource {
         client.liveStreamItemsData(),
         client.vodItemsData(),
         client.seriesItemsData(),
+        client.liveStreamCategoriesData(),
+        client.vodCategoriesData(),
+        client.seriesCategoriesData(),
       ]);
 
       final liveItems = results[0] as List<xc.LiveStreamItem>;
       final vodItems = results[1] as List<xc.VodItem>;
       final seriesItems = results[2] as List<xc.SeriesItem>;
+      final liveCategories = results[3] as List<xc.Category>;
+      final vodCategories = results[4] as List<xc.Category>;
+      final seriesCategories = results[5] as List<xc.Category>;
 
       final channels = [
         for (var i = 0; i < liveItems.length; i++)
@@ -299,7 +313,19 @@ class XtreamSource {
         for (final item in seriesItems) seriesFromXtream(item, playlistId: playlistId),
       ];
 
-      return XtreamContent(channels: channels, movies: movies, series: series);
+      final categories = [
+        for (final c in liveCategories)
+          if (c.categoryId != null && c.categoryName != null)
+            (type: 'live', id: '${c.categoryId}', name: c.categoryName!),
+        for (final c in vodCategories)
+          if (c.categoryId != null && c.categoryName != null)
+            (type: 'vod', id: '${c.categoryId}', name: c.categoryName!),
+        for (final c in seriesCategories)
+          if (c.categoryId != null && c.categoryName != null)
+            (type: 'series', id: '${c.categoryId}', name: c.categoryName!),
+      ];
+
+      return XtreamContent(channels: channels, movies: movies, series: series, categories: categories);
     } finally {
       // Only close clients we created; injected clients are managed externally.
       if (_overrideClient == null) client.close();

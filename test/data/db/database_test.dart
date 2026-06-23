@@ -67,6 +67,15 @@ void main() {
     expect((await db.getProgress('movie:1'))?.positionSec, 10);
   });
 
+  test('replaceCategories stores and getCategories retrieves by type', () async {
+    await db.replaceCategories('p1', 'vod', [
+      CategoriesCompanion.insert(playlistId: 'p1', type: 'vod', categoryId: '407', name: 'Action'),
+    ]);
+    final rows = await db.getCategories('p1', 'vod');
+    expect(rows.single.name, 'Action');
+    expect(await db.getCategories('p1', 'live'), isEmpty);
+  });
+
   test('upsertCredentials stores and getCredentials retrieves', () async {
     await db.upsertCredentials(XtreamCredentialsCompanion.insert(
       playlistId: 'p-xtream',

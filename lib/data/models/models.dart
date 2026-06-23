@@ -1,3 +1,4 @@
+export 'category_ref.dart';
 export 'enums.dart';
 export 'playlist.dart';
 export 'channel.dart';
