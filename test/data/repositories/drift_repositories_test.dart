@@ -149,9 +149,9 @@ void main() {
       final repo = DriftPlaybackRepository(db);
 
       final wp = WatchProgress(
-        itemKey: 'channel:c1',
+        itemKey: 'movie:m1',
         playlistId: _playlistId,
-        kind: MediaKind.channel,
+        kind: MediaKind.movie,
         positionSec: 10,
         durationSec: 60,
         updatedAt: DateTime.utc(2026),
@@ -161,7 +161,90 @@ void main() {
 
       final list = await repo.continueWatching(_playlistId).first;
       expect(list.length, 1);
-      expect(list.first.itemKey, 'channel:c1');
+      expect(list.first.itemKey, 'movie:m1');
+    });
+
+    test('continueWatching excludes channel-kind entries', () async {
+      final db = _makeDb();
+      addTearDown(db.close);
+
+      final repo = DriftPlaybackRepository(db);
+
+      // Save a channel entry and a movie entry.
+      await repo.saveProgress(WatchProgress(
+        itemKey: 'channel:c1',
+        playlistId: _playlistId,
+        kind: MediaKind.channel,
+        positionSec: 10,
+        durationSec: 60,
+        updatedAt: DateTime.utc(2026, 1, 1),
+      ));
+      await repo.saveProgress(WatchProgress(
+        itemKey: 'movie:m1',
+        playlistId: _playlistId,
+        kind: MediaKind.movie,
+        positionSec: 42,
+        durationSec: 120,
+        updatedAt: DateTime.utc(2026, 1, 2),
+      ));
+
+      final list = await repo.continueWatching(_playlistId).first;
+      expect(list, hasLength(1));
+      expect(list.first.itemKey, 'movie:m1');
+      expect(list.first.kind, MediaKind.movie);
+    });
+
+    test('continueWatching caps at 20 most-recent entries', () async {
+      final db = _makeDb();
+      addTearDown(db.close);
+
+      final repo = DriftPlaybackRepository(db);
+
+      // Save 25 movie entries with increasing updatedAt.
+      for (var i = 1; i <= 25; i++) {
+        await repo.saveProgress(WatchProgress(
+          itemKey: 'movie:m$i',
+          playlistId: _playlistId,
+          kind: MediaKind.movie,
+          positionSec: i,
+          durationSec: 100,
+          updatedAt: DateTime.utc(2026, 1, i),
+        ));
+      }
+
+      final list = await repo.continueWatching(_playlistId).first;
+      expect(list, hasLength(20));
+      // Most recent should be first (m25 updatedAt is largest).
+      expect(list.first.itemKey, 'movie:m25');
+    });
+
+    test('removeProgress deletes the row; progressFor returns null', () async {
+      final db = _makeDb();
+      addTearDown(db.close);
+
+      final repo = DriftPlaybackRepository(db);
+
+      await repo.saveProgress(WatchProgress(
+        itemKey: 'movie:m1',
+        playlistId: _playlistId,
+        kind: MediaKind.movie,
+        positionSec: 42,
+        durationSec: 120,
+        updatedAt: DateTime.utc(2026),
+      ));
+
+      // Confirm it exists.
+      expect(await repo.progressFor('movie:m1'), isNotNull);
+
+      // Remove it.
+      await repo.removeProgress('movie:m1');
+
+      // Should be gone.
+      expect(await repo.progressFor('movie:m1'), isNull);
+
+      // continueWatching stream should also be empty.
+      final list = await repo.continueWatching(_playlistId).first;
+      expect(list, isEmpty);
     });
   });
 

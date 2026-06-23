@@ -47,6 +47,11 @@ class DriftPlaybackRepository implements PlaybackRepository {
   }
 
   @override
+  Future<void> removeProgress(String itemKey) async {
+    await _db.deleteProgress(itemKey);
+  }
+
+  @override
   Stream<List<WatchProgress>> continueWatching(String playlistId) {
     return _db.watchContinue(playlistId).map(
           (rows) => rows.map(_fromRow).toList(),

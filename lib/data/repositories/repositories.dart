@@ -41,5 +41,6 @@ abstract class EpgRepository {
 abstract class PlaybackRepository {
   Future<WatchProgress?> progressFor(String itemKey);
   Future<void> saveProgress(WatchProgress p);
+  Future<void> removeProgress(String itemKey);
   Stream<List<WatchProgress>> continueWatching(String playlistId);
 }

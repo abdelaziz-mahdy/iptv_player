@@ -108,10 +108,17 @@ class AppDatabase extends _$AppDatabase {
       (select(watchProgressRows)..where((t) => t.itemKey.equals(itemKey))).getSingleOrNull();
   Future<void> saveProgress(WatchProgressRowsCompanion p) =>
       into(watchProgressRows).insertOnConflictUpdate(p);
+  Future<void> deleteProgress(String itemKey) =>
+      (delete(watchProgressRows)..where((t) => t.itemKey.equals(itemKey))).go();
   Stream<List<WatchProgressRow>> watchContinue(String playlistId) =>
       (select(watchProgressRows)
-            ..where((t) => t.playlistId.equals(playlistId))
-            ..orderBy([(t) => OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)]))
+            ..where((t) =>
+                t.playlistId.equals(playlistId) &
+                t.kind.equals('channel').not())
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)
+            ])
+            ..limit(20))
           .watch();
 
   // --- Categories ---
