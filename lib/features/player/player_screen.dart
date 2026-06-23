@@ -206,7 +206,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         // exposed by fvp-via-video_player)
                         if (state.streamBadge != null)
                           Padding(
-                            padding: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsetsDirectional.only(end: 8),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
@@ -297,7 +297,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 8),
                             child: Align(
-                              alignment: Alignment.centerLeft,
+                              alignment: AlignmentDirectional.centerStart,
                               child: _LivePill(),
                             ),
                           )

@@ -96,27 +96,24 @@ class PosterCard extends StatelessWidget {
                     ),
                   // Heart favorite button — only rendered when wired up.
                   if (onToggleFavorite != null)
-                    Positioned(
+                    PositionedDirectional(
                       top: 6,
-                      left: 6,
-                      child: Semantics(
-                        label: isFavorite ? 'Remove from favorites' : 'Add to favorites',
-                        button: true,
-                        child: GestureDetector(
-                          onTap: onToggleFavorite,
-                          behavior: HitTestBehavior.opaque,
-                          child: Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: Colors.black45,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Icon(
-                              isFavorite ? Icons.favorite : Icons.favorite_border,
-                              color: isFavorite ? p.accent : Colors.white,
-                              size: 16,
-                            ),
+                      start: 6,
+                      child: FocusableButton(
+                        semanticLabel:
+                            isFavorite ? 'Remove from favorites' : 'Add to favorites',
+                        onPressed: onToggleFavorite!,
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: Colors.black45,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                            color: isFavorite ? p.accent : Colors.white,
+                            size: 16,
                           ),
                         ),
                       ),

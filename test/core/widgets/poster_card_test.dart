@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
+import 'package:noor_iptv/core/widgets/focusable_button.dart';
 import 'package:noor_iptv/core/widgets/poster_card.dart';
 
 void main() {
@@ -133,5 +134,39 @@ void main() {
       find.bySemanticsLabel(RegExp(r'[Ff]av')),
       findsAtLeastNWidgets(1),
     );
+  });
+
+  testWidgets('heart is independently focusable via its own FocusableButton', (tester) async {
+    var heartActivated = false;
+    var cardTapped = false;
+
+    await tester.pumpWidget(MaterialApp(
+      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
+      home: Scaffold(
+        body: PosterCard(
+          title: 'Dune',
+          onTap: () => cardTapped = true,
+          onToggleFavorite: () => heartActivated = true,
+        ),
+      ),
+    ));
+
+    // The heart must be wrapped in its own FocusableButton widget.
+    // There should be at least 2 FocusableButton instances: one for the card and
+    // one for the heart.
+    expect(find.byType(FocusableButton), findsAtLeastNWidgets(2));
+
+    // The heart's FocusableButton must carry distinct button semantics
+    // (label containing "favorites"), separate from the card label "Dune".
+    expect(
+      find.bySemanticsLabel(RegExp(r'[Ff]avorites')),
+      findsAtLeastNWidgets(1),
+    );
+
+    // Activating the heart button does NOT fire onTap.
+    await tester.tap(find.byIcon(Icons.favorite_border));
+    await tester.pump();
+    expect(heartActivated, isTrue);
+    expect(cardTapped, isFalse);
   });
 }
