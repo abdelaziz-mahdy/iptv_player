@@ -106,5 +106,65 @@ void main() {
       const s2 = SearchState();
       expect(s1, equals(s2));
     });
+
+    test('setQuery("dune") yields a movie-kind entry', () async {
+      final cubit = SearchCubit(
+        FakeContentRepository(),
+        FakePlaylistRepository(),
+      );
+      await cubit.load();
+
+      cubit.setQuery('dune');
+
+      expect(
+        cubit.state.results.any(
+          (e) =>
+              e.title.toLowerCase().contains('dune') &&
+              e.kind == SearchEntryKind.movie,
+        ),
+        isTrue,
+      );
+    });
+
+    test('byKind splits results into movies vs series', () async {
+      final cubit = SearchCubit(
+        FakeContentRepository(),
+        FakePlaylistRepository(),
+      );
+      await cubit.load();
+
+      // Search for something that returns both movies and series if available,
+      // or verify the split works independently.
+      cubit.setQuery('dune');
+      final results = cubit.state.results;
+
+      final movies = SearchCubit.byKind(results, SearchEntryKind.movie);
+      final series = SearchCubit.byKind(results, SearchEntryKind.series);
+
+      // Dune is a movie — must appear in movies group.
+      expect(movies.any((e) => e.title == 'Dune'), isTrue);
+      // No series matches 'dune' in the fake data.
+      expect(series, isEmpty);
+
+      // Verify every entry in movies is actually a movie kind.
+      expect(movies.every((e) => e.kind == SearchEntryKind.movie), isTrue);
+    });
+
+    test('channels are excluded from search results', () async {
+      final cubit = SearchCubit(
+        FakeContentRepository(),
+        FakePlaylistRepository(),
+      );
+      await cubit.load();
+
+      // Search for 'noor' — matches channel names but channels should be
+      // excluded from VOD search.
+      cubit.setQuery('noor');
+
+      expect(
+        cubit.state.results.any((e) => e.kind == SearchEntryKind.channel),
+        isFalse,
+      );
+    });
   });
 }

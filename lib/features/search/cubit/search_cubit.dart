@@ -23,7 +23,6 @@ class SearchCubit extends Cubit<SearchState> {
 
     final movies = await _content.movies(pid).first;
     final series = await _content.series(pid).first;
-    final channels = await _content.channels(pid).first;
 
     _allEntries = [
       ...movies.map(
@@ -46,20 +45,18 @@ class SearchCubit extends Cubit<SearchState> {
           streamUrl: null,
         ),
       ),
-      ...channels.map(
-        (c) => SearchEntry(
-          id: c.id,
-          title: c.name,
-          subtitle: c.number,
-          posterUrl: c.logoUrl,
-          kind: SearchEntryKind.channel,
-          streamUrl: c.streamUrl,
-        ),
-      ),
+      // Live channels are excluded from VOD/series search results.
     ];
 
     emit(state.copyWith(loading: false));
   }
+
+  /// Returns the subset of [results] whose kind matches [kind].
+  static List<SearchEntry> byKind(
+    List<SearchEntry> results,
+    SearchEntryKind kind,
+  ) =>
+      results.where((e) => e.kind == kind).toList();
 
   void setQuery(String q) {
     if (q.isEmpty) {

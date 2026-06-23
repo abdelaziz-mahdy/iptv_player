@@ -153,7 +153,7 @@ void main() {
   });
 
   testWidgets(
-      'SearchScreen: results use GridView.builder',
+      'SearchScreen: typing "Dune" shows a Movies section label',
       (tester) async {
     await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
@@ -162,6 +162,54 @@ void main() {
     await tester.pumpAndSettle();
     _restoreOverflow();
 
-    expect(find.byType(GridView), findsOneWidget);
+    // The "Movies" section header must be present.
+    expect(
+      find.textContaining('Movies', skipOffstage: false),
+      findsAtLeastNWidgets(1),
+    );
+  });
+
+  testWidgets(
+      'SearchScreen: typing "Dune" shows the Dune card in a horizontal rail',
+      (tester) async {
+    await _pumpAndIgnoreOverflow(tester, _buildTestApp());
+
+    _suppressOverflow();
+    await tester.enterText(find.byType(TextField), 'Dune');
+    await tester.pumpAndSettle();
+    _restoreOverflow();
+
+    // Results are rendered in horizontal ListViews (rails), not a GridView.
+    expect(find.byType(GridView), findsNothing);
+    expect(
+      find.textContaining('Dune', skipOffstage: false),
+      findsAtLeastNWidgets(1),
+    );
+  });
+
+  testWidgets(
+      'SearchScreen: searching "horizon" shows a Series section label',
+      (tester) async {
+    await _pumpAndIgnoreOverflow(tester, _buildTestApp());
+
+    _suppressOverflow();
+    await tester.enterText(find.byType(TextField), 'horizon');
+    await tester.pumpAndSettle();
+    _restoreOverflow();
+
+    expect(
+      find.textContaining('Series', skipOffstage: false),
+      findsAtLeastNWidgets(1),
+    );
+  });
+
+  testWidgets(
+      'SearchScreen: empty query shows no rails',
+      (tester) async {
+    await _pumpAndIgnoreOverflow(tester, _buildTestApp());
+
+    // No text entered — no section labels should appear.
+    expect(find.text('Movies'), findsNothing);
+    expect(find.text('Series'), findsNothing);
   });
 }
