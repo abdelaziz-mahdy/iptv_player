@@ -202,8 +202,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
                             ],
                           ),
                         ),
-                        // Stream badge: resolution (best-effort; real bitrate not
-                        // exposed by fvp-via-video_player)
+                        // Stream badge: real-time bitrate from fvp getMediaInfo()
+                        // (e.g. "4.2 Mbps"), falling back to resolution string.
+                        // Hidden when no info is available (streamBadge == null).
                         if (state.streamBadge != null)
                           Padding(
                             padding: const EdgeInsetsDirectional.only(end: 8),

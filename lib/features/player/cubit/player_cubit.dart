@@ -30,6 +30,11 @@ class PlayerUiState extends Equatable {
     this.streamBadge,
   });
 
+  /// Sentinel used to distinguish "clear to null" from "leave unchanged" in
+  /// [copyWith]. Pass [clearStreamBadge] instead of `streamBadge: null` when
+  /// you want to remove the badge.
+  static const _unset = Object();
+
   PlayerUiState copyWith({
     bool? isPlaying,
     Duration? position,
@@ -38,7 +43,8 @@ class PlayerUiState extends Equatable {
     bool? showControls,
     double? volume,
     bool? muted,
-    String? streamBadge,
+    // ignore: library_private_types_in_public_api
+    Object? streamBadge = _unset,
   }) =>
       PlayerUiState(
         isPlaying: isPlaying ?? this.isPlaying,
@@ -48,7 +54,9 @@ class PlayerUiState extends Equatable {
         showControls: showControls ?? this.showControls,
         volume: volume ?? this.volume,
         muted: muted ?? this.muted,
-        streamBadge: streamBadge ?? this.streamBadge,
+        streamBadge: identical(streamBadge, _unset)
+            ? this.streamBadge
+            : streamBadge as String?,
       );
 
   @override
@@ -68,6 +76,7 @@ class PlayerCubit extends Cubit<PlayerUiState> {
   final String playlistId;
 
   StreamSubscription<PlayerStatus>? _statusSub;
+  Timer? _bitrateTimer;
 
   PlayerCubit(
     this._controller,
@@ -82,6 +91,25 @@ class PlayerCubit extends Cubit<PlayerUiState> {
 
   /// Whether this is a live channel (not resumable VOD).
   bool get isLive => kind == MediaKind.channel;
+
+  /// Formats a bitrate/resolution badge string from the controller's current data.
+  ///
+  /// Priority:
+  ///   1. If [bitRate] is non-null and > 0 → format as Mbps (≥ 1 000 000) or Kbps.
+  ///   2. If bitRate is 0 or null → fall back to [resolutionBadge] (e.g. "1280×720").
+  ///   3. If neither is available → return null (no badge shown).
+  static String? computeStreamBadge({required int? bitRate, required String? resolutionBadge}) {
+    if (bitRate != null && bitRate > 0) {
+      if (bitRate >= 1000000) {
+        final mbps = bitRate / 1000000;
+        return '${mbps.toStringAsFixed(1)} Mbps';
+      } else {
+        final kbps = bitRate ~/ 1000;
+        return '$kbps Kbps';
+      }
+    }
+    return resolutionBadge; // may be null
+  }
 
   /// Initializes the player, seeks to resume position if available, and starts.
   Future<void> start() async {
@@ -101,22 +129,51 @@ class PlayerCubit extends Cubit<PlayerUiState> {
     } catch (_) {}
 
     _statusSub = _controller.status.listen((s) {
+      if (isClosed) return;
       emit(state.copyWith(
         isPlaying: s.isPlaying,
         position: s.position,
         duration: s.duration,
-        streamBadge: _controller.streamBadge,
+        streamBadge: computeStreamBadge(
+          bitRate: _controller.currentBitRate,
+          resolutionBadge: _controller.streamBadge,
+        ),
       ));
     });
+
+    // Poll bitrate every 2 seconds and update the stream badge.
+    _bitrateTimer = Timer.periodic(const Duration(seconds: 2), (_) => _tickBitrate());
 
     // Emit initial state from the controller
     emit(state.copyWith(
       isPlaying: _controller.isPlaying,
       position: _controller.position,
       duration: _controller.duration,
-      streamBadge: _controller.streamBadge,
+      streamBadge: computeStreamBadge(
+        bitRate: _controller.currentBitRate,
+        resolutionBadge: _controller.streamBadge,
+      ),
     ));
   }
+
+  /// Samples [PlayerController.currentBitRate] and emits an updated badge.
+  ///
+  /// Called by [_bitrateTimer] every 2 seconds. Exposed as
+  /// [pollBitrateBadgeForTesting] so unit tests can drive it directly without
+  /// needing to control a real [Timer].
+  void _tickBitrate() {
+    if (isClosed) return;
+    final badge = computeStreamBadge(
+      bitRate: _controller.currentBitRate,
+      resolutionBadge: _controller.streamBadge,
+    );
+    emit(state.copyWith(streamBadge: badge));
+  }
+
+  // ignore: invalid_annotation_target
+  /// Triggers one poll tick — **for testing only**.
+  // @visibleForTesting (avoids adding flutter dependency in cubit layer)
+  void pollBitrateBadgeForTesting() => _tickBitrate();
 
   /// Toggles play/pause.
   Future<void> togglePlayPause() async {
@@ -194,6 +251,8 @@ class PlayerCubit extends Cubit<PlayerUiState> {
 
   @override
   Future<void> close() async {
+    _bitrateTimer?.cancel();
+    _bitrateTimer = null;
     try {
       await _saveProgress();
       try {

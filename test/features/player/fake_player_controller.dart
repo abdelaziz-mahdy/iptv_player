@@ -10,6 +10,12 @@ class FakePlayerController implements PlayerController {
   bool _initialized = false;
   double _volume = 1.0;
 
+  /// Settable fake bitrate (bits/sec). Defaults to 4 200 000 (4.2 Mbps).
+  /// Set to 0 to test the resolution fallback path. Set to null to test
+  /// the "no info" path.
+  @override
+  int? currentBitRate = 4200000;
+
   // ignore: unused_field
   bool get initialized => _initialized;
 

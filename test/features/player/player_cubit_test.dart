@@ -183,5 +183,100 @@ void main() {
       expect(cubit.state.volume, closeTo(0.3, 0.001));
       expect(controller.volume, closeTo(0.3, 0.001));
     });
+
+    // ── computeStreamBadge pure-function unit tests ──────────────────────────
+
+    group('computeStreamBadge()', () {
+      test('≥ 1 Mbps → "X.X Mbps" with one decimal', () {
+        expect(
+          PlayerCubit.computeStreamBadge(bitRate: 4200000, resolutionBadge: null),
+          '4.2 Mbps',
+        );
+      });
+
+      test('exactly 1 000 000 bps → "1.0 Mbps"', () {
+        expect(
+          PlayerCubit.computeStreamBadge(bitRate: 1000000, resolutionBadge: null),
+          '1.0 Mbps',
+        );
+      });
+
+      test('< 1 Mbps → "X Kbps"', () {
+        expect(
+          PlayerCubit.computeStreamBadge(bitRate: 850000, resolutionBadge: null),
+          '850 Kbps',
+        );
+      });
+
+      test('bitRate == 0 → falls back to resolutionBadge', () {
+        expect(
+          PlayerCubit.computeStreamBadge(bitRate: 0, resolutionBadge: '1280×720'),
+          '1280×720',
+        );
+      });
+
+      test('bitRate == null → falls back to resolutionBadge', () {
+        expect(
+          PlayerCubit.computeStreamBadge(bitRate: null, resolutionBadge: '1920×1080'),
+          '1920×1080',
+        );
+      });
+
+      test('bitRate == 0 and resolutionBadge == null → returns null', () {
+        expect(
+          PlayerCubit.computeStreamBadge(bitRate: 0, resolutionBadge: null),
+          isNull,
+        );
+      });
+    });
+
+    // ── Integration: streamBadge in cubit state ───────────────────────────────
+
+    test('start() → streamBadge reflects 4.2 Mbps from fake controller', () async {
+      controller.currentBitRate = 4200000;
+      await cubit.start();
+      expect(cubit.state.streamBadge, '4.2 Mbps');
+    });
+
+    test('start() with currentBitRate=0 → badge falls back to null (no resolution in fake)', () async {
+      controller.currentBitRate = 0;
+      await cubit.start();
+      // FakePlayerController.streamBadge returns null → no badge
+      expect(cubit.state.streamBadge, isNull);
+    });
+
+    test('pollBitrateBadgeForTesting() updates badge on each call', () async {
+      // Start with 2 Mbps
+      controller.currentBitRate = 2000000;
+      await cubit.start();
+      expect(cubit.state.streamBadge, '2.0 Mbps');
+
+      // Simulate a timer tick with a different bitrate
+      controller.currentBitRate = 500000;
+      cubit.pollBitrateBadgeForTesting();
+      expect(cubit.state.streamBadge, '500 Kbps');
+
+      // Another tick — back to high bitrate
+      controller.currentBitRate = 1500000;
+      cubit.pollBitrateBadgeForTesting();
+      expect(cubit.state.streamBadge, '1.5 Mbps');
+
+      // bitRate drops to 0 → fallback to resolution (null in fake)
+      controller.currentBitRate = 0;
+      cubit.pollBitrateBadgeForTesting();
+      expect(cubit.state.streamBadge, isNull);
+    });
+
+    test('pollBitrateBadgeForTesting() is a no-op after close()', () async {
+      controller.currentBitRate = 1000000;
+      await cubit.start();
+      expect(cubit.state.streamBadge, '1.0 Mbps');
+
+      // Close the cubit
+      await cubit.close();
+
+      // Calling the poll after close must not throw even though isClosed==true
+      expect(() => cubit.pollBitrateBadgeForTesting(), returnsNormally);
+    });
   });
 }

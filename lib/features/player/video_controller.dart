@@ -42,6 +42,12 @@ abstract class PlayerController {
   /// abstraction, so this surfaces video resolution instead.
   String? get streamBadge;
 
+  /// Real-time bitrate from fvp's [MediaInfo.bitRate] (bits per second).
+  ///
+  /// Returns null when unavailable (before init, or when fvp returns 0/throws).
+  /// When playing, fvp updates this to the current network bitrate.
+  int? get currentBitRate;
+
   Future<void> dispose();
 }
 
@@ -135,6 +141,18 @@ class VideoPlayerControllerAdapter implements PlayerController {
     final size = _controller?.value.size;
     if (size == null || size.isEmpty) return null;
     return '${size.width.toInt()}×${size.height.toInt()}';
+  }
+
+  @override
+  int? get currentBitRate {
+    if (!_initialized || _controller == null) return null;
+    try {
+      // fvp extension on VideoPlayerController: getMediaInfo() returns MediaInfo
+      // whose bitRate field is updated to the real-time value during playback.
+      return _controller!.getMediaInfo()?.bitRate;
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
