@@ -39,7 +39,7 @@ class XtreamContent {
 /// Maps a [xc.LiveStreamItem] to a NOOR [noor.Channel].
 ///
 /// The stream URL is built following the Xtream Codes convention:
-///   `{serverUrl}/{username}/{password}/{streamId}.ts`
+///   `{serverUrl}/live/{username}/{password}/{streamId}.ts`
 ///
 /// [index] is used as the channel number fallback when [item.num] is null.
 noor.Channel channelFromLive(
@@ -197,7 +197,7 @@ String _buildLiveUrl({
   String ext = 'ts',
 }) {
   final base = _normalizeServerUrl(serverUrl);
-  return '$base/$username/$password/$streamId.$ext';
+  return '$base/live/$username/$password/$streamId.$ext';
 }
 
 String _buildMovieUrl({

@@ -65,7 +65,7 @@ void main() {
         password: password,
         index: 0,
       );
-      expect(ch.streamUrl, 'http://example.com:8080/user/pass/7.ts');
+      expect(ch.streamUrl, 'http://example.com:8080/live/user/pass/7.ts');
     });
 
     test('number uses item.num when present', () {
@@ -172,7 +172,7 @@ void main() {
         password: password,
         index: 0,
       );
-      expect(ch.streamUrl, 'http://example.com:8080/user/pass/3.ts');
+      expect(ch.streamUrl, 'http://example.com:8080/live/user/pass/3.ts');
     });
   });
 
