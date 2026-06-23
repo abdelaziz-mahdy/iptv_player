@@ -1,9 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../core/result.dart';
-import '../../core/secure_storage.dart';
+import '../credential_store.dart';
 import '../db/database.dart';
 import '../models/models.dart';
 import '../sources/m3u_source.dart';
@@ -12,23 +11,23 @@ import 'repositories.dart';
 
 /// Drift-backed [ContentRepository].
 ///
-/// [dio], [secureStorage], [m3u], and [xtream] are injectable via constructor
+/// [dio], [credentialStore], [m3u], and [xtream] are injectable via constructor
 /// so tests can pass fakes without network access.
 class DriftContentRepository implements ContentRepository {
   DriftContentRepository(
     this._db, {
     Dio? dio,
-    FlutterSecureStorage? secureStorage,
+    CredentialStore? credentialStore,
     M3uSource? m3u,
     XtreamSource? xtream,
   })  : _dio = dio ?? Dio(),
-        _secureStorage = secureStorage ?? appSecureStorage,
+        _credentials = credentialStore ?? InMemoryCredentialStore(),
         _m3u = m3u ?? M3uSource(),
         _xtream = xtream ?? XtreamSource();
 
   final AppDatabase _db;
   final Dio _dio;
-  final FlutterSecureStorage _secureStorage;
+  final CredentialStore _credentials;
   final M3uSource _m3u;
   final XtreamSource _xtream;
 
@@ -214,14 +213,14 @@ class DriftContentRepository implements ContentRepository {
           if (serverUrl == null || serverUrl.isEmpty) {
             return const Err(Failure('Xtream playlist has no server URL'));
           }
-          final username =
-              await _secureStorage.read(key: 'xtream_user_${p.id}') ?? '';
-          final password =
-              await _secureStorage.read(key: 'xtream_pass_${p.id}') ?? '';
+          final creds = await _credentials.read(p.id);
+          if (creds == null) {
+            return const Err(Failure('Xtream credentials missing'));
+          }
           final content = await _xtream.fetchAll(
             serverUrl: serverUrl,
-            username: username,
-            password: password,
+            username: creds.username,
+            password: creds.password,
             playlistId: p.id,
           );
           await Future.wait([
