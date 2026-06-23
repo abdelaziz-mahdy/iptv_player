@@ -93,7 +93,7 @@ class _GridView extends StatelessWidget {
                             ? state.selectedCategoryId == null
                             : state.selectedCategoryId == cat.id;
                         return Padding(
-                          padding: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsetsDirectional.only(end: 8),
                           child: _CategoryChip(
                             label: cat.name,
                             selected: selected,

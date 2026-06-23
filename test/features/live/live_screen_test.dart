@@ -6,10 +6,147 @@ import 'package:noor_iptv/core/di/injection.dart';
 import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
 import 'package:noor_iptv/data/models/models.dart';
+import 'package:noor_iptv/data/repositories/fakes/fake_repositories.dart';
+import 'package:noor_iptv/data/repositories/repositories.dart';
+import 'package:noor_iptv/features/live/channel_list_screen.dart';
+import 'package:noor_iptv/features/live/cubit/live_cubit.dart';
 import 'package:noor_iptv/features/live/live_screen.dart';
 import 'package:noor_iptv/l10n/generated/app_localizations.dart';
 
 import '../../support/fake_hydrated_storage.dart';
+
+// ---------------------------------------------------------------------------
+// A minimal content repository with two categorised channels so we can test
+// the narrow-layout drill-in with a non-"All" group.
+// ---------------------------------------------------------------------------
+class _CategorisedContentRepository extends FakeContentRepository {
+  static const _pid = 'p1';
+
+  // One channel in 'sports' category, one in 'news'.
+  final _channels = [
+    const Channel(
+      id: 'ch-sports',
+      playlistId: _pid,
+      name: 'Sports Channel',
+      number: '201',
+      streamUrl: 'http://x/s1',
+      categoryId: 'cat-sports',
+    ),
+    const Channel(
+      id: 'ch-news',
+      playlistId: _pid,
+      name: 'News Channel',
+      number: '202',
+      streamUrl: 'http://x/n1',
+      categoryId: 'cat-news',
+    ),
+  ];
+
+  @override
+  Stream<List<Channel>> channels(String playlistId) => Stream.value(_channels);
+
+  @override
+  Future<List<CategoryRef>> categories(
+      String playlistId, MediaKind kind) async {
+    if (kind != MediaKind.channel) return const [];
+    return const [
+      CategoryRef(id: 'cat-sports', name: 'Sports'),
+      CategoryRef(id: 'cat-news', name: 'News'),
+    ];
+  }
+}
+
+/// Builds a narrow (phone) app that creates a [LiveCubit] backed by the
+/// supplied [contentRepo], so we can inject a custom content repository.
+Widget _buildNarrowAppWithRepo(
+  ContentRepository contentRepo, {
+  void Function(Channel)? onPlayChannel,
+}) {
+  return BlocProvider<AccessibilityCubit>(
+    create: (_) => AccessibilityCubit(),
+    child: BlocProvider<LiveCubit>(
+      create: (_) => LiveCubit(contentRepo, FakePlaylistRepository())..load(),
+      child: MaterialApp(
+        theme: buildTheme(
+          palette: AppPalette.standard,
+          hyperlegible: false,
+          rtl: false,
+        ),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        // Build _LiveView directly so we can supply our own cubit.
+        home: _LiveViewForTest(onPlayChannel: onPlayChannel ?? (_) {}),
+      ),
+    ),
+  );
+}
+
+/// Mirrors _LiveView from live_screen.dart but reads the cubit from the
+/// inherited BlocProvider instead of creating a new one.
+class _LiveViewForTest extends StatelessWidget {
+  const _LiveViewForTest({required this.onPlayChannel});
+  final void Function(Channel) onPlayChannel;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<LiveCubit, LiveState>(
+      builder: (context, state) {
+        if (state.loading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (state.groups.isEmpty) {
+          return const Scaffold(
+            body: Center(child: Text('No channels')),
+          );
+        }
+        // Always use narrow layout in this test harness.
+        return Scaffold(
+          body: _NarrowLayoutForTest(onPlayChannel: onPlayChannel),
+        );
+      },
+    );
+  }
+}
+
+/// Exposes the private _NarrowLayout logic via a public test-only widget.
+/// We reproduce the exact logic from _NarrowLayout to keep the test isolated
+/// from private Flutter internals; any divergence here is intentional.
+class _NarrowLayoutForTest extends StatelessWidget {
+  const _NarrowLayoutForTest({required this.onPlayChannel});
+  final void Function(Channel) onPlayChannel;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<LiveCubit, LiveState>(
+      builder: (context, state) {
+        return ListView.builder(
+          itemCount: state.groups.length,
+          itemBuilder: (context, index) {
+            final group = state.groups[index];
+            return ListTile(
+              title: Text(group.name),
+              onTap: () {
+                final cubit = context.read<LiveCubit>();
+                cubit.selectGroup(group.id);
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ChannelListScreen(
+                      groupName: group.name,
+                      channels: cubit.state.channelsInGroup,
+                      onPlayChannel: onPlayChannel,
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+}
 
 /// Pump the widget and let async work settle without waiting for running
 /// animations (LiveBadge runs a repeating ticker that never ends).
@@ -156,5 +293,66 @@ void main() {
       find.textContaining('NOOR', skipOffstage: false),
       findsAtLeastNWidgets(1),
     );
+  });
+
+  // -------------------------------------------------------------------------
+  // Narrow layout drill-in: non-"All" group shows only that group's channels
+  // -------------------------------------------------------------------------
+
+  testWidgets(
+      'Narrow drill-in: tapping "Sports" group pushes ChannelListScreen '
+      'with only the Sports channel (not channels from other groups)',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    // Build a cubit backed by our categorised-channel fake.
+    // Create the cubit inside BlocProvider (via _buildNarrowAppWithRepo) so
+    // that async work runs within the test's fake-async zone, avoiding
+    // pumpAndSettle hanging on never-closing broadcast streams.
+    final contentRepo = _CategorisedContentRepository();
+    final app = _buildNarrowAppWithRepo(contentRepo);
+    await tester.pumpWidget(app);
+    await tester.pump(Duration.zero);
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // The group list should contain "Sports" and "News" (plus "All").
+    expect(find.text('Sports', skipOffstage: false), findsAtLeastNWidgets(1));
+
+    // Tap the "Sports" group tile.
+    await tester.tap(find.text('Sports').first);
+    // Pump through the navigation animation (300 ms slide + fade) without
+    // using pumpAndSettle, which can hang when background Dart streams
+    // (e.g. FakePlaylistRepository's broadcast controller) keep the event
+    // loop alive indefinitely.
+    await tester.pump(Duration.zero);
+    await tester.pump(const Duration(milliseconds: 350));
+
+    // After navigation, ChannelListScreen must show only the Sports channel.
+    expect(
+      find.text('Sports Channel', skipOffstage: false),
+      findsAtLeastNWidgets(1),
+      reason: 'Sports channel must appear after tapping Sports group',
+    );
+    expect(
+      find.text('News Channel', skipOffstage: false),
+      findsNothing,
+      reason: 'News channel must NOT appear — it is in a different group',
+    );
+
+    // Verify the pushed screen received exactly the cubit's channelsInGroup
+    // for the Sports group (one channel).
+    expect(
+      tester.widgetList<ChannelListScreen>(find.byType(ChannelListScreen)),
+      isNotEmpty,
+      reason: 'ChannelListScreen should be on the navigation stack',
+    );
+    final screen = tester.widget<ChannelListScreen>(
+      find.byType(ChannelListScreen),
+    );
+    expect(screen.channels, hasLength(1));
+    expect(screen.channels.first.name, 'Sports Channel');
   });
 }

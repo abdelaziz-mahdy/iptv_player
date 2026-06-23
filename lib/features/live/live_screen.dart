@@ -173,12 +173,13 @@ class _NarrowLayout extends StatelessWidget {
             return FocusableButton(
               semanticLabel: group.name,
               onPressed: () {
-                context.read<LiveCubit>().selectGroup(group.id);
+                final cubit = context.read<LiveCubit>();
+                cubit.selectGroup(group.id);
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => ChannelListScreen(
                       groupName: group.name,
-                      channels: state.channelsInGroup,
+                      channels: cubit.state.channelsInGroup,
                       onPlayChannel: onPlayChannel,
                     ),
                   ),
@@ -252,7 +253,7 @@ class _GroupTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? p.accent.withValues(alpha: 0.18) : null,
           border: isSelected
-              ? Border(left: BorderSide(color: p.accent, width: 3))
+              ? BorderDirectional(start: BorderSide(color: p.accent, width: 3))
               : null,
         ),
         child: Row(
