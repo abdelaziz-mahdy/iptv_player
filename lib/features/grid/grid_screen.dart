@@ -57,10 +57,7 @@ class _GridView extends StatelessWidget {
           );
         }
 
-        final displayed = state.items.where((e) {
-          if (state.selectedCategory == null) return true;
-          return e.badge == state.selectedCategory;
-        }).toList();
+        final displayed = state.filteredItems;
 
         return Scaffold(
           backgroundColor: p.bg,
@@ -69,8 +66,7 @@ class _GridView extends StatelessWidget {
               // Title bar
               SliverToBoxAdapter(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.fromLTRB(20, 56, 20, 0),
+                  padding: const EdgeInsets.fromLTRB(12, 56, 12, 0),
                   child: Text(
                     title,
                     style: tt.headlineMedium?.copyWith(
@@ -81,59 +77,57 @@ class _GridView extends StatelessWidget {
                 ),
               ),
 
-              // Category filter chips
+              // Category filter chips — lazy horizontal ListView
               if (state.categories.isNotEmpty)
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        // "All" chip
-                        _CategoryChip(
-                          label: 'All',
-                          selected: state.selectedCategory == null,
-                          onTap: () =>
-                              ctx.read<GridCubit>().selectCategory(null),
-                        ),
-                        ...state.categories.map(
-                          (cat) => _CategoryChip(
-                            label: cat,
-                            selected: state.selectedCategory == cat,
-                            onTap: () =>
-                                ctx.read<GridCubit>().selectCategory(cat),
+                  child: SizedBox(
+                    height: 44,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                      itemCount: state.categories.length,
+                      itemBuilder: (context, index) {
+                        final cat = state.categories[index];
+                        final isAll = cat.id.isEmpty;
+                        final selected = isAll
+                            ? state.selectedCategoryId == null
+                            : state.selectedCategoryId == cat.id;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _CategoryChip(
+                            label: cat.name,
+                            selected: selected,
+                            onTap: () => ctx
+                                .read<GridCubit>()
+                                .selectCategory(isAll ? null : cat.id),
                           ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
                 ),
 
-              // Poster grid
+              // Poster grid — denser layout
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-                sliver: SliverGrid(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 32),
+                sliver: SliverGrid.builder(
                   gridDelegate:
                       const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 160,
-                    mainAxisExtent: 260,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 16,
+                    maxCrossAxisExtent: 150,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 2 / 3.4,
                   ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final entry = displayed[index];
-                      return PosterCard(
-                        title: entry.title,
-                        subtitle: entry.subtitle,
-                        imageUrl: entry.posterUrl,
-                        onTap: () => onOpen(entry),
-                      );
-                    },
-                    childCount: displayed.length,
-                  ),
+                  itemCount: displayed.length,
+                  itemBuilder: (context, index) {
+                    final entry = displayed[index];
+                    return PosterCard(
+                      title: entry.title,
+                      subtitle: entry.subtitle,
+                      imageUrl: entry.posterUrl,
+                      onTap: () => onOpen(entry),
+                    );
+                  },
                 ),
               ),
 

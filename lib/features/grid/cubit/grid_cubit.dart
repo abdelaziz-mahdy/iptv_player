@@ -43,50 +43,50 @@ class GridEntry extends Equatable {
 // State
 // ---------------------------------------------------------------------------
 
+/// Synthetic "All" category placed at index 0.
+const _allCategory = CategoryRef(id: '', name: 'All');
+
 class GridState extends Equatable {
   final bool loading;
   final List<GridEntry> items;
-  final List<String> categories;
-  final String? selectedCategory;
+
+  /// Category chips including the synthetic "All" at index 0.
+  /// Each entry is a [CategoryRef] with resolved human names.
+  final List<CategoryRef> categories;
+
+  /// The id of the currently selected category, or null when "All" is active.
+  final String? selectedCategoryId;
 
   const GridState({
     this.loading = false,
     this.items = const [],
     this.categories = const [],
-    this.selectedCategory,
+    this.selectedCategoryId,
   });
 
   GridState copyWith({
     bool? loading,
     List<GridEntry>? items,
-    List<String>? categories,
-    String? selectedCategory,
+    List<CategoryRef>? categories,
+    String? selectedCategoryId,
     bool clearCategory = false,
   }) {
     return GridState(
       loading: loading ?? this.loading,
       items: items ?? this.items,
       categories: categories ?? this.categories,
-      selectedCategory:
-          clearCategory ? null : (selectedCategory ?? this.selectedCategory),
+      selectedCategoryId:
+          clearCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
     );
   }
 
   List<GridEntry> get filteredItems {
-    if (selectedCategory == null) return items;
-    return items
-        .where((e) => e.badge == selectedCategory ||
-            _categoryOf(e) == selectedCategory)
-        .toList();
+    if (selectedCategoryId == null) return items;
+    return items.where((e) => e.badge == selectedCategoryId).toList();
   }
 
-  /// Badge is repurposed below for categoryId during mapping; actual badge
-  /// (LIVE etc.) lives in a separate field. Here we reuse the subtitle as
-  /// category hint when entries are built from movie/series categoryId.
-  String? _categoryOf(GridEntry e) => null; // filtered via badge during build
-
   @override
-  List<Object?> get props => [loading, items, categories, selectedCategory];
+  List<Object?> get props => [loading, items, categories, selectedCategoryId];
 }
 
 // ---------------------------------------------------------------------------
@@ -109,15 +109,25 @@ class GridCubit extends Cubit<GridState> {
 
     final pid = (await _playlists.active().first)?.id ?? 'p1';
 
+    // Determine the MediaKind for category resolution.
+    final mediaKind = kind == GridKind.movies ? MediaKind.movie : MediaKind.episode;
+
+    // Load categories eagerly so they're available when stream emits.
+    final resolvedCats = await _content.categories(pid, mediaKind);
+
     switch (kind) {
       case GridKind.movies:
-        _moviesSub = _content.movies(pid).listen(_onMovies);
+        _moviesSub = _content.movies(pid).listen(
+          (movies) => _onMovies(movies, resolvedCats),
+        );
       case GridKind.series:
-        _seriesSub = _content.series(pid).listen(_onSeries);
+        _seriesSub = _content.series(pid).listen(
+          (series) => _onSeries(series, resolvedCats),
+        );
     }
   }
 
-  void _onMovies(List<VodItem> movies) {
+  void _onMovies(List<VodItem> movies, List<CategoryRef> resolvedCats) {
     final entries = movies
         .map(
           (m) => GridEntry(
@@ -131,12 +141,14 @@ class GridCubit extends Cubit<GridState> {
           ),
         )
         .toList();
-    final cats = _deriveCategories(
-        movies.map((m) => m.categoryId).whereType<String>().toList());
-    emit(state.copyWith(loading: false, items: entries, categories: cats));
+    emit(state.copyWith(
+      loading: false,
+      items: entries,
+      categories: _buildCategoryList(resolvedCats),
+    ));
   }
 
-  void _onSeries(List<Series> series) {
+  void _onSeries(List<Series> series, List<CategoryRef> resolvedCats) {
     final entries = series
         .map(
           (s) => GridEntry(
@@ -150,22 +162,25 @@ class GridCubit extends Cubit<GridState> {
           ),
         )
         .toList();
-    final cats = _deriveCategories(
-        series.map((s) => s.categoryId).whereType<String>().toList());
-    emit(state.copyWith(loading: false, items: entries, categories: cats));
+    emit(state.copyWith(
+      loading: false,
+      items: entries,
+      categories: _buildCategoryList(resolvedCats),
+    ));
   }
 
-  List<String> _deriveCategories(List<String> rawCats) {
-    // deduplicate, preserve insertion order
-    final seen = <String>{};
-    return rawCats.where(seen.add).toList();
+  /// Prepends the synthetic "All" chip and returns the full list.
+  List<CategoryRef> _buildCategoryList(List<CategoryRef> cats) {
+    return [_allCategory, ...cats];
   }
 
-  void selectCategory(String? category) {
-    if (category == null) {
+  /// Select a category by its id.
+  /// Pass null or an empty string to clear the filter (show All).
+  void selectCategory(String? categoryId) {
+    if (categoryId == null || categoryId.isEmpty) {
       emit(state.copyWith(clearCategory: true));
     } else {
-      emit(state.copyWith(selectedCategory: category));
+      emit(state.copyWith(selectedCategoryId: categoryId));
     }
   }
 
