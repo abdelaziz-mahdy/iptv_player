@@ -6,8 +6,6 @@ import 'package:xtream_code_client/xtream_code_client.dart'
         LiveStreamItem,
         VodItem,
         SeriesItem,
-        SeriesInfo,
-        VodInfo,
         Season,
         Episode;
 
