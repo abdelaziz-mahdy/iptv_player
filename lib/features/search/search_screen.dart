@@ -341,7 +341,7 @@ class _ResultsGrid extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
-                '${results.length} ${l10n.search}',
+                '${results.length} ${l10n.resultsLabel}',
                 style: textTheme.labelMedium?.copyWith(
                   color: p.dim,
                   fontWeight: FontWeight.w700,
@@ -352,7 +352,7 @@ class _ResultsGrid extends StatelessWidget {
             child: results.isEmpty && query.isNotEmpty
                 ? Center(
                     child: Text(
-                      l10n.search,
+                      l10n.noResults,
                       style: textTheme.bodyMedium?.copyWith(color: p.dim),
                     ),
                   )
