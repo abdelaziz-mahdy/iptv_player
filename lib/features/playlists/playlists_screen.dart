@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/focusable_button.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'cubit/playlists_cubit.dart';
 
 class PlaylistsScreen extends StatefulWidget {
@@ -49,6 +50,7 @@ class _PlaylistsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return BlocBuilder<PlaylistsCubit, PlaylistsState>(
       builder: (context, state) {
@@ -61,7 +63,7 @@ class _PlaylistsView extends StatelessWidget {
           appBar: AppBar(
             backgroundColor: p.bg,
             title: Text(
-              'Playlists',
+              l10n.playlists,
               style: textTheme.titleLarge?.copyWith(color: p.fg),
             ),
           ),
@@ -94,7 +96,7 @@ class _PlaylistsView extends StatelessWidget {
 
               // Compliance text
               Text(
-                'NOOR hosts no content. All channels and media come from playlists you provide.',
+                l10n.complianceNote,
                 style: textTheme.bodySmall?.copyWith(color: p.dim),
                 textAlign: TextAlign.center,
               ),
@@ -124,6 +126,7 @@ class _PlaylistTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = palette;
+    final l10n = AppLocalizations.of(context)!;
     final typeLabel = _typeLabel(playlist.type);
 
     return Padding(
@@ -183,7 +186,7 @@ class _PlaylistTile extends StatelessWidget {
                     if (playlist.channelCount > 0) ...[
                       const SizedBox(height: 2),
                       Text(
-                        '${playlist.channelCount} channels',
+                        '${playlist.channelCount} ${l10n.channels}',
                         style:
                             textTheme.bodySmall?.copyWith(color: p.dim),
                       ),
@@ -227,8 +230,9 @@ class _AddPlaylistButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = palette;
+    final l10n = AppLocalizations.of(context)!;
     return FocusableButton(
-      semanticLabel: 'Add Playlist',
+      semanticLabel: l10n.addPlaylist,
       onPressed: onPressed,
       child: CustomPaint(
         painter: _DashedBorderPainter(color: p.border),
@@ -240,7 +244,7 @@ class _AddPlaylistButton extends StatelessWidget {
               Icon(Icons.add_rounded, color: p.fg, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Add Playlist',
+                l10n.addPlaylist,
                 style: textTheme.labelLarge?.copyWith(color: p.fg),
               ),
             ],
