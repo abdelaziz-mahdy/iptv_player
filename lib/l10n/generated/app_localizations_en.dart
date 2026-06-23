@@ -52,4 +52,110 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get episodes => 'Episodes';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get highContrast => 'High contrast';
+
+  @override
+  String get reduceMotion => 'Reduce motion';
+
+  @override
+  String get colorblindSafe => 'Colorblind-safe palette';
+
+  @override
+  String get highLegibilityFont => 'High-legibility font';
+
+  @override
+  String get textSize => 'Text size';
+
+  @override
+  String get sizeDefault => 'Default';
+
+  @override
+  String get sizeLarge => 'Large';
+
+  @override
+  String get sizeLarger => 'Larger';
+
+  @override
+  String get captionsLabel => 'Captions';
+
+  @override
+  String get captionSize => 'Caption size';
+
+  @override
+  String get captionSizeSmall => 'Small';
+
+  @override
+  String get captionSizeMedium => 'Medium';
+
+  @override
+  String get captionBackground => 'Background';
+
+  @override
+  String get bgNone => 'None';
+
+  @override
+  String get bgLight => 'Light';
+
+  @override
+  String get bgSolid => 'Solid';
+
+  @override
+  String get captionColor => 'Color';
+
+  @override
+  String get colorWhite => 'White';
+
+  @override
+  String get colorYellow => 'Yellow';
+
+  @override
+  String get colorCyan => 'Cyan';
+
+  @override
+  String get complianceNote =>
+      'NOOR hosts no content. All channels and media come from playlists you provide.';
+
+  @override
+  String get getStarted => 'Get Started';
+
+  @override
+  String get tagline => 'Your playlists. Your content. Beautifully organized.';
+
+  @override
+  String get addPlaylist => 'Add playlist';
+
+  @override
+  String get serverUrl => 'Server URL';
+
+  @override
+  String get username => 'Username';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get playlistName => 'Playlist Name';
+
+  @override
+  String get m3uUrl => 'Playlist URL';
+
+  @override
+  String get importAction => 'Import';
+
+  @override
+  String get tabUpload => 'Upload';
+
+  @override
+  String get noResults => 'No results';
+
+  @override
+  String get resultsLabel => 'results';
+
+  @override
+  String get channels => 'channels';
 }

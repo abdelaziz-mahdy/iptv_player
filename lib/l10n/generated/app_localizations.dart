@@ -187,6 +187,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Episodes'**
   String get episodes;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @highContrast.
+  ///
+  /// In en, this message translates to:
+  /// **'High contrast'**
+  String get highContrast;
+
+  /// No description provided for @reduceMotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce motion'**
+  String get reduceMotion;
+
+  /// No description provided for @colorblindSafe.
+  ///
+  /// In en, this message translates to:
+  /// **'Colorblind-safe palette'**
+  String get colorblindSafe;
+
+  /// No description provided for @highLegibilityFont.
+  ///
+  /// In en, this message translates to:
+  /// **'High-legibility font'**
+  String get highLegibilityFont;
+
+  /// No description provided for @textSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Text size'**
+  String get textSize;
+
+  /// No description provided for @sizeDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get sizeDefault;
+
+  /// No description provided for @sizeLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get sizeLarge;
+
+  /// No description provided for @sizeLarger.
+  ///
+  /// In en, this message translates to:
+  /// **'Larger'**
+  String get sizeLarger;
+
+  /// No description provided for @captionsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Captions'**
+  String get captionsLabel;
+
+  /// No description provided for @captionSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Caption size'**
+  String get captionSize;
+
+  /// No description provided for @captionSizeSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'Small'**
+  String get captionSizeSmall;
+
+  /// No description provided for @captionSizeMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get captionSizeMedium;
+
+  /// No description provided for @captionBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Background'**
+  String get captionBackground;
+
+  /// No description provided for @bgNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get bgNone;
+
+  /// No description provided for @bgLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get bgLight;
+
+  /// No description provided for @bgSolid.
+  ///
+  /// In en, this message translates to:
+  /// **'Solid'**
+  String get bgSolid;
+
+  /// No description provided for @captionColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get captionColor;
+
+  /// No description provided for @colorWhite.
+  ///
+  /// In en, this message translates to:
+  /// **'White'**
+  String get colorWhite;
+
+  /// No description provided for @colorYellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow'**
+  String get colorYellow;
+
+  /// No description provided for @colorCyan.
+  ///
+  /// In en, this message translates to:
+  /// **'Cyan'**
+  String get colorCyan;
+
+  /// No description provided for @complianceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'NOOR hosts no content. All channels and media come from playlists you provide.'**
+  String get complianceNote;
+
+  /// No description provided for @getStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Started'**
+  String get getStarted;
+
+  /// No description provided for @tagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Your playlists. Your content. Beautifully organized.'**
+  String get tagline;
+
+  /// No description provided for @addPlaylist.
+  ///
+  /// In en, this message translates to:
+  /// **'Add playlist'**
+  String get addPlaylist;
+
+  /// No description provided for @serverUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Server URL'**
+  String get serverUrl;
+
+  /// No description provided for @username.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get username;
+
+  /// No description provided for @password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// No description provided for @playlistName.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlist Name'**
+  String get playlistName;
+
+  /// No description provided for @m3uUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlist URL'**
+  String get m3uUrl;
+
+  /// No description provided for @importAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get importAction;
+
+  /// No description provided for @tabUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload'**
+  String get tabUpload;
+
+  /// No description provided for @noResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results'**
+  String get noResults;
+
+  /// No description provided for @resultsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'results'**
+  String get resultsLabel;
+
+  /// No description provided for @channels.
+  ///
+  /// In en, this message translates to:
+  /// **'channels'**
+  String get channels;
 }
 
 class _AppLocalizationsDelegate
