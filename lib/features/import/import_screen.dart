@@ -6,6 +6,7 @@ import '../../core/theme/app_palette.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/focusable_button.dart';
 import '../../data/repositories/repositories.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'cubit/import_cubit.dart';
 
 class ImportScreen extends StatefulWidget {
@@ -71,6 +72,7 @@ class _ImportViewState extends State<_ImportView> {
     final cubit = context.read<ImportCubit>();
     final p = context.palette;
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return BlocBuilder<ImportCubit, ImportState>(
       builder: (context, state) {
@@ -79,7 +81,7 @@ class _ImportViewState extends State<_ImportView> {
           appBar: AppBar(
             backgroundColor: p.bg,
             title: Text(
-              'Add Playlist',
+              l10n.addPlaylist,
               style: textTheme.titleLarge?.copyWith(color: p.fg),
             ),
           ),
@@ -103,28 +105,28 @@ class _ImportViewState extends State<_ImportView> {
                   if (state.tab == ImportTab.xtream) ...[
                     _TextField(
                       controller: _nameController,
-                      label: 'Playlist Name',
+                      label: l10n.playlistName,
                       palette: p,
                       textTheme: textTheme,
                     ),
                     const SizedBox(height: 16),
                     _TextField(
                       controller: _xtreamServerController,
-                      label: 'Server URL',
+                      label: l10n.serverUrl,
                       palette: p,
                       textTheme: textTheme,
                     ),
                     const SizedBox(height: 16),
                     _TextField(
                       controller: _usernameController,
-                      label: 'Username',
+                      label: l10n.username,
                       palette: p,
                       textTheme: textTheme,
                     ),
                     const SizedBox(height: 16),
                     _TextField(
                       controller: _passwordController,
-                      label: 'Password',
+                      label: l10n.password,
                       palette: p,
                       textTheme: textTheme,
                       obscureText: true,
@@ -132,21 +134,21 @@ class _ImportViewState extends State<_ImportView> {
                   ] else if (state.tab == ImportTab.m3u) ...[
                     _TextField(
                       controller: _nameController,
-                      label: 'Playlist Name',
+                      label: l10n.playlistName,
                       palette: p,
                       textTheme: textTheme,
                     ),
                     const SizedBox(height: 16),
                     _TextField(
                       controller: _m3uUrlController,
-                      label: 'M3U URL',
+                      label: l10n.m3uUrl,
                       palette: p,
                       textTheme: textTheme,
                     ),
                   ] else ...[
                     _TextField(
                       controller: _nameController,
-                      label: 'Playlist Name',
+                      label: l10n.playlistName,
                       palette: p,
                       textTheme: textTheme,
                     ),
@@ -166,7 +168,7 @@ class _ImportViewState extends State<_ImportView> {
 
                   // Submit button
                   FocusableButton(
-                    semanticLabel: 'Add Playlist',
+                    semanticLabel: l10n.importAction,
                     onPressed: state.submitting
                         ? () {}
                         : () => _handleSubmit(context, state),
@@ -190,7 +192,7 @@ class _ImportViewState extends State<_ImportView> {
                             )
                           : Center(
                               child: Text(
-                                'Add Playlist',
+                                l10n.importAction,
                                 style: textTheme.labelLarge?.copyWith(
                                   color: Colors.black,
                                   fontWeight: FontWeight.w700,
@@ -249,10 +251,11 @@ class _TabSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = palette;
+    final l10n = AppLocalizations.of(context)!;
     final tabs = [
       (ImportTab.xtream, 'Xtream Codes'),
       (ImportTab.m3u, 'M3U URL'),
-      (ImportTab.upload, 'File'),
+      (ImportTab.upload, l10n.tabUpload),
     ];
 
     return Container(
