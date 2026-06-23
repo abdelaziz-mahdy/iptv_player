@@ -6,6 +6,7 @@ import '../../data/db/database.dart';
 import '../../data/repositories/drift_repositories.dart';
 import '../../data/repositories/fakes/fake_repositories.dart';
 import '../../data/repositories/repositories.dart';
+import '../sync_service.dart';
 
 /// Global service locator.
 final GetIt sl = GetIt.instance;
@@ -19,6 +20,8 @@ Future<void> configureDependencies() async {
   sl.registerLazySingleton<ContentRepository>(FakeContentRepository.new);
   sl.registerLazySingleton<EpgRepository>(FakeEpgRepository.new);
   sl.registerLazySingleton<PlaybackRepository>(FakePlaybackRepository.new);
+  sl.registerLazySingleton<SyncService>(
+      () => SyncService(sl<PlaylistRepository>(), sl<ContentRepository>()));
 }
 
 /// Registers production dependencies backed by the real drift database.
@@ -37,4 +40,6 @@ Future<void> configureProductionDependencies() async {
   sl.registerLazySingleton<EpgRepository>(() => EpgRepositoryImpl(db));
   sl.registerLazySingleton<PlaybackRepository>(
       () => DriftPlaybackRepository(db));
+  sl.registerLazySingleton<SyncService>(
+      () => SyncService(sl<PlaylistRepository>(), sl<ContentRepository>()));
 }
