@@ -59,6 +59,8 @@ class _ImportViewState extends State<_ImportView> {
   // M3U
   final _m3uUrlController = TextEditingController();
 
+  bool _passwordVisible = false;
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -126,12 +128,45 @@ class _ImportViewState extends State<_ImportView> {
                       textTheme: textTheme,
                     ),
                     const SizedBox(height: 16),
-                    _TextField(
+                    TextFormField(
                       controller: _passwordController,
-                      label: l10n.password,
-                      palette: p,
-                      textTheme: textTheme,
-                      obscureText: true,
+                      obscureText: !_passwordVisible,
+                      style: textTheme.bodyLarge?.copyWith(color: p.fg),
+                      decoration: InputDecoration(
+                        labelText: l10n.password,
+                        labelStyle: textTheme.bodyMedium?.copyWith(color: p.dim),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: p.border),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: p.accent, width: 2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        filled: true,
+                        fillColor: p.surface2,
+                        suffixIcon: Semantics(
+                          label: _passwordVisible
+                              ? 'Hide password'
+                              : 'Show password',
+                          child: IconButton(
+                            tooltip: _passwordVisible
+                                ? 'Hide password'
+                                : 'Show password',
+                            icon: Icon(
+                              _passwordVisible
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: p.dim,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _passwordVisible = !_passwordVisible;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
                     ),
                   ] else if (state.tab == ImportTab.m3u) ...[
                     _TextField(
@@ -306,21 +341,18 @@ class _TextField extends StatelessWidget {
     required this.label,
     required this.palette,
     required this.textTheme,
-    this.obscureText = false,
   });
 
   final TextEditingController controller;
   final String label;
   final AppPalette palette;
   final TextTheme textTheme;
-  final bool obscureText;
 
   @override
   Widget build(BuildContext context) {
     final p = palette;
     return TextFormField(
       controller: controller,
-      obscureText: obscureText,
       style: textTheme.bodyLarge?.copyWith(color: p.fg),
       decoration: InputDecoration(
         labelText: label,

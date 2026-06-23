@@ -11,9 +11,10 @@ import '../../data/repositories/repositories.dart';
 final GetIt sl = GetIt.instance;
 
 /// Registers app dependencies using in-memory fakes.
-/// Used by widget tests and the DI test. Does NOT register [CredentialStore]
-/// — tests that need one pass it directly to the component under test.
+/// Used by widget tests and the DI test. Registers an [InMemoryCredentialStore]
+/// so [ImportScreen] can resolve [CredentialStore] from the service locator.
 Future<void> configureDependencies() async {
+  sl.registerLazySingleton<CredentialStore>(InMemoryCredentialStore.new);
   sl.registerLazySingleton<PlaylistRepository>(FakePlaylistRepository.new);
   sl.registerLazySingleton<ContentRepository>(FakeContentRepository.new);
   sl.registerLazySingleton<EpgRepository>(FakeEpgRepository.new);
