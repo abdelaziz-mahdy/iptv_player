@@ -16,13 +16,11 @@ class HomeScreen extends StatelessWidget {
     super.key,
     required this.onOpenMovie,
     required this.onOpenSeries,
-    required this.onOpenChannel,
     required this.onAddPlaylist,
   });
 
   final void Function(VodItem) onOpenMovie;
   final void Function(Series) onOpenSeries;
-  final void Function(Channel) onOpenChannel;
   final VoidCallback onAddPlaylist;
 
   @override
@@ -36,7 +34,6 @@ class HomeScreen extends StatelessWidget {
       child: _HomeView(
         onOpenMovie: onOpenMovie,
         onOpenSeries: onOpenSeries,
-        onOpenChannel: onOpenChannel,
         onAddPlaylist: onAddPlaylist,
       ),
     );
@@ -47,19 +44,15 @@ class _HomeView extends StatelessWidget {
   const _HomeView({
     required this.onOpenMovie,
     required this.onOpenSeries,
-    required this.onOpenChannel,
     required this.onAddPlaylist,
   });
 
   final void Function(VodItem) onOpenMovie;
   final void Function(Series) onOpenSeries;
-  final void Function(Channel) onOpenChannel;
   final VoidCallback onAddPlaylist;
 
   bool _hasContent(HomeState state) =>
-      state.movies.isNotEmpty ||
-      state.series.isNotEmpty ||
-      state.channels.isNotEmpty;
+      state.movies.isNotEmpty || state.series.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -125,13 +118,6 @@ class _HomeView extends StatelessWidget {
                 child: _SeriesRail(
                   series: state.series,
                   onOpenSeries: onOpenSeries,
-                ),
-              ),
-            if (state.channels.isNotEmpty)
-              SliverToBoxAdapter(
-                child: _ChannelsRail(
-                  channels: state.channels,
-                  onOpenChannel: onOpenChannel,
                 ),
               ),
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
@@ -313,45 +299,58 @@ class _ContinueWatchingRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<HomeCubit>();
+
     final cards = items.map((progress) {
       final progress0 = progress.durationSec > 0
           ? progress.positionSec / progress.durationSec
           : 0.0;
 
+      Widget card;
+
       // Try to find the matching movie
       final movie = movies.cast<VodItem?>().firstWhere(
-            (m) => m?.id == progress.itemKey || 'movie:${m?.id}' == progress.itemKey,
+            (m) =>
+                m?.id == progress.itemKey ||
+                'movie:${m?.id}' == progress.itemKey,
             orElse: () => null,
           );
       if (movie != null) {
-        return PosterCard(
+        card = PosterCard(
           title: movie.title,
           subtitle: movie.year,
           imageUrl: movie.posterUrl,
           progress: progress0.clamp(0.0, 1.0),
           onTap: () => onOpenMovie(movie),
         );
-      }
-
-      // Try to find the matching series
-      final show = series.cast<Series?>().firstWhere(
-            (s) => s?.id == progress.itemKey || 'series:${s?.id}' == progress.itemKey,
-            orElse: () => null,
+      } else {
+        // Try to find the matching series
+        final show = series.cast<Series?>().firstWhere(
+              (s) =>
+                  s?.id == progress.itemKey ||
+                  'series:${s?.id}' == progress.itemKey,
+              orElse: () => null,
+            );
+        if (show != null) {
+          card = PosterCard(
+            title: show.title,
+            subtitle: show.year,
+            imageUrl: show.posterUrl,
+            progress: progress0.clamp(0.0, 1.0),
+            onTap: () => onOpenSeries(show),
           );
-      if (show != null) {
-        return PosterCard(
-          title: show.title,
-          subtitle: show.year,
-          imageUrl: show.posterUrl,
-          progress: progress0.clamp(0.0, 1.0),
-          onTap: () => onOpenSeries(show),
-        );
+        } else {
+          card = PosterCard(
+            title: progress.itemKey,
+            progress: progress0.clamp(0.0, 1.0),
+            onTap: () {},
+          );
+        }
       }
 
-      return PosterCard(
-        title: progress.itemKey,
-        progress: progress0.clamp(0.0, 1.0),
-        onTap: () {},
+      return GestureDetector(
+        onLongPress: () => cubit.removeFromContinueWatching(progress.itemKey),
+        child: card,
       );
     }).toList();
 
@@ -421,37 +420,6 @@ class _SeriesRail extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: ContentRail(title: l10n.series, items: cards),
-    );
-  }
-}
-
-class _ChannelsRail extends StatelessWidget {
-  const _ChannelsRail({
-    required this.channels,
-    required this.onOpenChannel,
-  });
-
-  final List<Channel> channels;
-  final void Function(Channel) onOpenChannel;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final cards = channels
-        .map(
-          (c) => PosterCard(
-            title: c.name,
-            subtitle: c.number,
-            imageUrl: c.logoUrl,
-            badge: 'LIVE',
-            onTap: () => onOpenChannel(c),
-          ),
-        )
-        .toList();
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: ContentRail(title: l10n.live, items: cards),
     );
   }
 }

@@ -12,7 +12,6 @@ import '../../support/fake_hydrated_storage.dart';
 Widget _buildTestApp({
   void Function(VodItem)? onOpenMovie,
   void Function(Series)? onOpenSeries,
-  void Function(Channel)? onOpenChannel,
   VoidCallback? onAddPlaylist,
 }) {
   return MaterialApp(
@@ -26,16 +25,12 @@ Widget _buildTestApp({
     home: HomeScreen(
       onOpenMovie: onOpenMovie ?? (_) {},
       onOpenSeries: onOpenSeries ?? (_) {},
-      onOpenChannel: onOpenChannel ?? (_) {},
       onAddPlaylist: onAddPlaylist ?? () {},
     ),
   );
 }
 
-/// Pump the widget and suppress layout-overflow FlutterErrors that come from
-/// the pre-existing PosterCard/ContentRail combination. Those widgets render
-/// correctly at runtime; the overflow only appears in the narrow default test
-/// surface (800 × 600). Non-overflow errors are still propagated normally.
+/// Pump the widget and suppress layout-overflow FlutterErrors.
 Future<void> _pumpAndIgnoreOverflow(WidgetTester tester, Widget widget) async {
   final previousHandler = FlutterError.onError;
   FlutterError.onError = (FlutterErrorDetails details) {
@@ -60,7 +55,6 @@ void main() {
   testWidgets('HomeScreen renders a movie title from fakes', (tester) async {
     await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
-    // FakeContentRepository seeds: 'The Signal', 'Dune', 'Arrival', 'Interstellar'
     final titleFinder = find.textContaining(
       RegExp('The Signal|Dune'),
       skipOffstage: false,
@@ -80,6 +74,14 @@ void main() {
     expect(find.text('Series', skipOffstage: false), findsAtLeastNWidgets(1));
   });
 
+  testWidgets('HomeScreen does NOT render Live TV rail', (tester) async {
+    await _pumpAndIgnoreOverflow(tester, _buildTestApp());
+
+    // The Live TV rail has title 'Live' (from l10n.live).
+    // We use skipOffstage: false to catch rails that are scrolled offscreen.
+    expect(find.text('Live', skipOffstage: false), findsNothing);
+  });
+
   testWidgets('HomeScreen tapping Play button triggers onOpenMovie',
       (tester) async {
     VodItem? tappedMovie;
@@ -88,7 +90,6 @@ void main() {
       _buildTestApp(onOpenMovie: (m) => tappedMovie = m),
     );
 
-    // Find and tap the Play button in the hero banner
     final playFinder = find.text('Play');
     expect(playFinder, findsAtLeastNWidgets(1));
 

@@ -78,16 +78,6 @@ GoRouter buildRouter() {
                       context.push('/details/movie', extra: m),
                   onOpenSeries: (s) =>
                       context.push('/details/series', extra: s),
-                  onOpenChannel: (c) => context.push(
-                    '/player',
-                    extra: PlayerArgs(
-                      itemKey: 'channel:${c.id}',
-                      url: c.streamUrl,
-                      title: c.name,
-                      kind: MediaKind.channel,
-                      playlistId: c.playlistId,
-                    ),
-                  ),
                   onAddPlaylist: () => context.push('/import'),
                 ),
               ),
