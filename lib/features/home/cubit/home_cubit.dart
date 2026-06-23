@@ -18,7 +18,6 @@ class HomeCubit extends Cubit<HomeState> {
 
   StreamSubscription<List<VodItem>>? _moviesSub;
   StreamSubscription<List<Series>>? _seriesSub;
-  StreamSubscription<List<Channel>>? _channelsSub;
   StreamSubscription<List<WatchProgress>>? _continueSub;
 
   Future<void> load() async {
@@ -32,19 +31,19 @@ class HomeCubit extends Cubit<HomeState> {
     _seriesSub = _content.series(pid).listen(
       (series) => emit(state.copyWith(series: series)),
     );
-    _channelsSub = _content.channels(pid).listen(
-      (channels) => emit(state.copyWith(channels: channels)),
-    );
     _continueSub = _playback.continueWatching(pid).listen(
       (cw) => emit(state.copyWith(continueWatching: cw)),
     );
+  }
+
+  Future<void> removeFromContinueWatching(String itemKey) async {
+    await _playback.removeProgress(itemKey);
   }
 
   @override
   Future<void> close() async {
     await _moviesSub?.cancel();
     await _seriesSub?.cancel();
-    await _channelsSub?.cancel();
     await _continueSub?.cancel();
     return super.close();
   }
