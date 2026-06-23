@@ -107,36 +107,41 @@ class AdaptiveShell extends StatelessWidget {
           if (onOpenSettings != null || onOpenPlaylists != null)
             SafeArea(
               bottom: false,
-              child: Row(
-                children: [
-                  const SizedBox(width: 16),
-                  Text(brand, style: Theme.of(context).textTheme.titleMedium),
-                  const Spacer(),
-                  if (onOpenPlaylists != null)
-                    Tooltip(
-                      message: 'Playlists',
-                      child: Semantics(
-                        label: 'Playlists',
-                        button: true,
-                        child: IconButton(
-                          icon: const Icon(Icons.playlist_play),
-                          onPressed: onOpenPlaylists,
+              child: SizedBox(
+                height: 40,
+                child: Row(
+                  children: [
+                    const SizedBox(width: 16),
+                    Text(brand, style: Theme.of(context).textTheme.titleMedium),
+                    const Spacer(),
+                    if (onOpenPlaylists != null)
+                      Tooltip(
+                        message: 'Playlists',
+                        child: Semantics(
+                          label: 'Playlists',
+                          button: true,
+                          child: IconButton(
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(Icons.playlist_play),
+                            onPressed: onOpenPlaylists,
+                          ),
                         ),
                       ),
-                    ),
-                  if (onOpenSettings != null)
-                    Tooltip(
-                      message: 'Settings',
-                      child: Semantics(
-                        label: 'Settings',
-                        button: true,
-                        child: IconButton(
-                          icon: const Icon(Icons.settings),
-                          onPressed: onOpenSettings,
+                    if (onOpenSettings != null)
+                      Tooltip(
+                        message: 'Settings',
+                        child: Semantics(
+                          label: 'Settings',
+                          button: true,
+                          child: IconButton(
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(Icons.settings),
+                            onPressed: onOpenSettings,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
           Expanded(child: body),

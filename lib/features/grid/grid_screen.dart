@@ -9,6 +9,12 @@ import '../../data/repositories/repositories.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'cubit/grid_cubit.dart';
 
+/// Minimum width (logical pixels) for the wide (sidebar + grid) layout.
+const double _kWideBreakpoint = 700.0;
+
+/// Width of the left category-selector sidebar in wide layout.
+const double _kSidebarWidth = 180.0;
+
 class GridScreen extends StatelessWidget {
   const GridScreen({
     super.key,
@@ -42,7 +48,7 @@ class _GridView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final p = context.palette;
-    final tt = Theme.of(context).textTheme;
+    final isWide = MediaQuery.sizeOf(context).width >= _kWideBreakpoint;
 
     final title = kind == GridKind.movies ? l10n.movies : l10n.series;
 
@@ -57,92 +63,116 @@ class _GridView extends StatelessWidget {
           );
         }
 
+        if (isWide) {
+          return _WideLayout(
+            title: title,
+            onOpen: onOpen,
+          );
+        } else {
+          return _NarrowLayout(
+            title: title,
+            onOpen: onOpen,
+          );
+        }
+      },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Wide layout: sidebar (categories) + poster grid
+// ---------------------------------------------------------------------------
+
+class _WideLayout extends StatelessWidget {
+  const _WideLayout({required this.title, required this.onOpen});
+
+  final String title;
+  final void Function(GridEntry entry) onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final tt = Theme.of(context).textTheme;
+
+    return BlocBuilder<GridCubit, GridState>(
+      builder: (ctx, state) {
         final displayed = state.filteredItems;
 
         return Scaffold(
           backgroundColor: p.bg,
-          body: CustomScrollView(
-            slivers: [
-              // Title bar
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 56, 12, 0),
-                  child: Text(
-                    title,
-                    style: tt.headlineMedium?.copyWith(
-                      color: p.fg,
-                      fontWeight: FontWeight.w700,
-                    ),
+          appBar: AppBar(
+            backgroundColor: p.bg2,
+            title: Text(
+              title,
+              style: tt.titleLarge?.copyWith(
+                color: p.fg,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          body: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ---- Sidebar: category list ----
+              SizedBox(
+                width: _kSidebarWidth,
+                child: Container(
+                  color: p.bg2,
+                  child: ListView.builder(
+                    itemCount: state.categories.length,
+                    itemBuilder: (context, index) {
+                      final cat = state.categories[index];
+                      final isAll = cat.id.isEmpty;
+                      final isSelected = isAll
+                          ? state.selectedCategoryId == null
+                          : state.selectedCategoryId == cat.id;
+                      return _CategoryTile(
+                        name: cat.name,
+                        count: null, // categories don't have a count in CategoryRef
+                        isSelected: isSelected,
+                        onTap: () => ctx
+                            .read<GridCubit>()
+                            .selectCategory(isAll ? null : cat.id),
+                      );
+                    },
                   ),
                 ),
               ),
-
-              // Category filter chips — lazy horizontal ListView
-              if (state.categories.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 44,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                      itemCount: state.categories.length,
-                      itemBuilder: (context, index) {
-                        final cat = state.categories[index];
-                        final isAll = cat.id.isEmpty;
-                        final selected = isAll
-                            ? state.selectedCategoryId == null
-                            : state.selectedCategoryId == cat.id;
-                        return Padding(
-                          padding: const EdgeInsetsDirectional.only(end: 8),
-                          child: _CategoryChip(
-                            label: cat.name,
-                            selected: selected,
-                            onTap: () => ctx
-                                .read<GridCubit>()
-                                .selectCategory(isAll ? null : cat.id),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-
-              // Poster grid — denser layout
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 32),
-                sliver: SliverGrid.builder(
-                  gridDelegate:
-                      const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 150,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 2 / 3.4,
-                  ),
-                  itemCount: displayed.length,
-                  itemBuilder: (context, index) {
-                    final entry = displayed[index];
-                    return PosterCard(
-                      title: entry.title,
-                      subtitle: entry.subtitle,
-                      imageUrl: entry.posterUrl,
-                      onTap: () => onOpen(entry),
-                    );
-                  },
-                ),
-              ),
-
-              if (displayed.isEmpty)
-                SliverToBoxAdapter(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 64),
-                      child: Text(
-                        'No items found',
-                        style: tt.bodyLarge?.copyWith(color: p.dim),
+              // Divider
+              Container(width: 1, color: p.border),
+              // ---- Poster grid ----
+              Expanded(
+                child: displayed.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No items found',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyLarge
+                              ?.copyWith(color: p.dim),
+                        ),
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.all(12),
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 150,
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
+                          childAspectRatio: 2 / 3.4,
+                        ),
+                        itemCount: displayed.length,
+                        itemBuilder: (context, index) {
+                          final entry = displayed[index];
+                          return PosterCard(
+                            title: entry.title,
+                            subtitle: entry.subtitle,
+                            imageUrl: entry.posterUrl,
+                            onTap: () => onOpen(entry),
+                          );
+                        },
                       ),
-                    ),
-                  ),
-                ),
+              ),
             ],
           ),
         );
@@ -151,38 +181,207 @@ class _GridView extends StatelessWidget {
   }
 }
 
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({
-    required this.label,
-    required this.selected,
+// ---------------------------------------------------------------------------
+// Narrow layout: category list; tap → CategoryResultsScreen
+// ---------------------------------------------------------------------------
+
+class _NarrowLayout extends StatelessWidget {
+  const _NarrowLayout({required this.title, required this.onOpen});
+
+  final String title;
+  final void Function(GridEntry entry) onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final tt = Theme.of(context).textTheme;
+
+    return BlocBuilder<GridCubit, GridState>(
+      builder: (ctx, state) {
+        return Scaffold(
+          backgroundColor: p.bg,
+          appBar: AppBar(
+            backgroundColor: p.bg2,
+            title: Text(
+              title,
+              style: tt.titleLarge?.copyWith(
+                color: p.fg,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          body: ListView.builder(
+            itemCount: state.categories.length,
+            itemBuilder: (context, index) {
+              final cat = state.categories[index];
+              final isAll = cat.id.isEmpty;
+              return FocusableButton(
+                semanticLabel: cat.name,
+                onPressed: () {
+                  final cubit = ctx.read<GridCubit>();
+                  cubit.selectCategory(isAll ? null : cat.id);
+                  final items = cubit.state.filteredItems;
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => CategoryResultsScreen(
+                        categoryName: cat.name,
+                        items: items,
+                        onOpen: onOpen,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: p.border)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          cat.name,
+                          style: tt.bodyMedium?.copyWith(
+                            color: p.fg,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Icon(Icons.chevron_right, color: p.dim, size: 20),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Category results screen (second page in phone drill-in)
+// ---------------------------------------------------------------------------
+
+/// Shows a grid of posters for a single category.
+/// Takes a static snapshot of items passed at construction time.
+class CategoryResultsScreen extends StatelessWidget {
+  const CategoryResultsScreen({
+    super.key,
+    required this.categoryName,
+    required this.items,
+    required this.onOpen,
+  });
+
+  final String categoryName;
+  final List<GridEntry> items;
+  final void Function(GridEntry entry) onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final tt = Theme.of(context).textTheme;
+
+    return Scaffold(
+      backgroundColor: p.bg,
+      appBar: AppBar(
+        backgroundColor: p.bg2,
+        title: Text(
+          categoryName,
+          style: tt.titleLarge?.copyWith(
+            color: p.fg,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      body: items.isEmpty
+          ? Center(
+              child: Text(
+                'No items found',
+                style: tt.bodyLarge?.copyWith(color: p.dim),
+              ),
+            )
+          : GridView.builder(
+              padding: const EdgeInsets.all(12),
+              gridDelegate:
+                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 150,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 10,
+                childAspectRatio: 2 / 3.4,
+              ),
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                final entry = items[index];
+                return PosterCard(
+                  title: entry.title,
+                  subtitle: entry.subtitle,
+                  imageUrl: entry.posterUrl,
+                  onTap: () => onOpen(entry),
+                );
+              },
+            ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shared sidebar tile widget (wide layout)
+// ---------------------------------------------------------------------------
+
+class _CategoryTile extends StatelessWidget {
+  const _CategoryTile({
+    required this.name,
+    required this.count,
+    required this.isSelected,
     required this.onTap,
   });
 
-  final String label;
-  final bool selected;
+  final String name;
+  final int? count;
+  final bool isSelected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     return FocusableButton(
-      semanticLabel: label,
+      semanticLabel: name,
       onPressed: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? p.accent : p.surface2,
-          borderRadius: BorderRadius.circular(20),
-          border: selected ? null : Border.all(color: p.border),
+          color: isSelected ? p.accent.withValues(alpha: 0.18) : null,
+          border: isSelected
+              ? BorderDirectional(
+                  start: BorderSide(color: p.accent, width: 3))
+              : null,
         ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: selected ? p.bg : p.fg,
-                fontWeight:
-                    selected ? FontWeight.w700 : FontWeight.normal,
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                name,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: isSelected ? p.accent : p.fg,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w400,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
+            ),
+            if (count != null)
+              Text(
+                '$count',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: isSelected ? p.accent : p.dim,
+                      fontSize: 11,
+                    ),
+              ),
+          ],
         ),
       ),
     );

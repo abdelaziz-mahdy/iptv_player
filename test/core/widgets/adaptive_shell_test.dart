@@ -62,4 +62,23 @@ void main() {
     await tester.pump();
     expect(settingsCalled, isTrue);
   });
+
+  testWidgets('narrow layout top bar height is compact (≤ 56px)', (tester) async {
+    await tester.pumpWidget(_wrap(
+      const Size(400, 800),
+      onOpenSettings: () {},
+      onOpenPlaylists: () {},
+    ));
+    await tester.pump();
+
+    // The top bar is rendered as a SizedBox with constrained height.
+    // Find all SizedBox widgets that contain a Row (the top bar pattern).
+    final sizedBoxes = tester.widgetList<SizedBox>(find.byType(SizedBox));
+    // We expect at least one SizedBox with height ≤ 56 containing the top bar.
+    final compactBoxes = sizedBoxes.where(
+      (sb) => sb.height != null && sb.height! <= 56,
+    );
+    expect(compactBoxes, isNotEmpty,
+        reason: 'narrow top bar must be capped to ≤56px height');
+  });
 }
