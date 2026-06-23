@@ -66,4 +66,29 @@ void main() {
     expect(rows.map((r) => r.itemKey), ['movie:2', 'movie:1']);
     expect((await db.getProgress('movie:1'))?.positionSec, 10);
   });
+
+  test('upsertCredentials stores and getCredentials retrieves', () async {
+    await db.upsertCredentials(XtreamCredentialsCompanion.insert(
+      playlistId: 'p-xtream',
+      username: 'alice',
+      password: 'secret',
+    ));
+
+    final row = await db.getCredentials('p-xtream');
+    expect(row != null, true);
+    expect(row!.username, 'alice');
+    expect(row.password, 'secret');
+
+    // Upsert updates existing row.
+    await db.upsertCredentials(XtreamCredentialsCompanion.insert(
+      playlistId: 'p-xtream',
+      username: 'alice',
+      password: 'updated',
+    ));
+    final updated = await db.getCredentials('p-xtream');
+    expect(updated!.password, 'updated');
+
+    // Non-existent returns null.
+    expect(await db.getCredentials('no-such-id') == null, true);
+  });
 }

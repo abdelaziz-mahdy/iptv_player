@@ -18,6 +18,7 @@ part 'database.g.dart';
     EpgProgrammes,
     WatchProgressRows,
     Favorites,
+    XtreamCredentials,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -25,7 +26,17 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'noor'));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.createTable(xtreamCredentials);
+          }
+        },
+      );
 
   // --- Playlists ---
   Future<List<PlaylistRow>> getPlaylists() => select(playlists).get();
@@ -98,4 +109,11 @@ class AppDatabase extends _$AppDatabase {
             ..where((t) => t.playlistId.equals(playlistId))
             ..orderBy([(t) => OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc)]))
           .watch();
+
+  // --- Xtream credentials ---
+  Future<void> upsertCredentials(XtreamCredentialsCompanion c) =>
+      into(xtreamCredentials).insertOnConflictUpdate(c);
+  Future<XtreamCredentialRow?> getCredentials(String playlistId) =>
+      (select(xtreamCredentials)..where((t) => t.playlistId.equals(playlistId)))
+          .getSingleOrNull();
 }

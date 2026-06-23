@@ -117,3 +117,13 @@ class Favorites extends Table {
   @override
   Set<Column> get primaryKey => {itemKey};
 }
+
+@DataClassName('XtreamCredentialRow')
+class XtreamCredentials extends Table {
+  TextColumn get playlistId => text()();
+  TextColumn get username => text()();
+  TextColumn get password => text()();
+
+  @override
+  Set<Column> get primaryKey => {playlistId};
+}
