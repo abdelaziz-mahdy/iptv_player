@@ -3,7 +3,6 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:noor_iptv/core/result.dart';
-import 'package:noor_iptv/data/credential_store.dart';
 import 'package:noor_iptv/data/credential_store_drift.dart';
 import 'package:noor_iptv/data/db/database.dart';
 import 'package:noor_iptv/data/models/models.dart';
@@ -402,7 +401,7 @@ void main() {
         db,
         credentialStore: DriftCredentialStore(db),
         xtream: _StubXtreamSource(
-          XtreamContent(channels: [], movies: [], series: []),
+          const XtreamContent(channels: [], movies: [], series: []),
         ),
       );
 
