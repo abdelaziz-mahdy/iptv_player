@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/di/injection.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/widgets/focusable_button.dart';
 import '../../core/widgets/poster_card.dart';
 import '../../data/repositories/repositories.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -44,26 +43,6 @@ class _SearchViewState extends State<_SearchView> {
     super.dispose();
   }
 
-  void _appendChar(BuildContext context, String ch) {
-    final cubit = context.read<SearchCubit>();
-    final newQuery = cubit.state.query + ch;
-    _controller.text = newQuery;
-    _controller.selection =
-        TextSelection.collapsed(offset: newQuery.length);
-    cubit.setQuery(newQuery);
-  }
-
-  void _backspace(BuildContext context) {
-    final cubit = context.read<SearchCubit>();
-    final q = cubit.state.query;
-    if (q.isEmpty) return;
-    final newQuery = q.substring(0, q.length - 1);
-    _controller.text = newQuery;
-    _controller.selection =
-        TextSelection.collapsed(offset: newQuery.length);
-    cubit.setQuery(newQuery);
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -93,13 +72,6 @@ class _SearchViewState extends State<_SearchView> {
                   textTheme: textTheme,
                   onChanged: (q) =>
                       context.read<SearchCubit>().setQuery(q),
-                ),
-                _OnScreenKeyboard(
-                  onKey: (ch) => _appendChar(context, ch),
-                  onSpace: () => _appendChar(context, ' '),
-                  onBackspace: () => _backspace(context),
-                  palette: p,
-                  textTheme: textTheme,
                 ),
                 Expanded(
                   child: _ResultsGrid(
@@ -156,6 +128,7 @@ class _SearchBar extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: controller,
+                autofocus: true,
                 onChanged: onChanged,
                 style: textTheme.bodyLarge?.copyWith(color: p.fg),
                 decoration: InputDecoration(
@@ -168,137 +141,6 @@ class _SearchBar extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// Key rows match design: QWERTY layout
-const _kKeyRows = [
-  'QWERTYUIOP',
-  'ASDFGHJKL',
-  'ZXCVBNM',
-];
-
-class _OnScreenKeyboard extends StatelessWidget {
-  const _OnScreenKeyboard({
-    required this.onKey,
-    required this.onSpace,
-    required this.onBackspace,
-    required this.palette,
-    required this.textTheme,
-  });
-
-  final void Function(String) onKey;
-  final VoidCallback onSpace;
-  final VoidCallback onBackspace;
-  final dynamic palette;
-  final TextTheme textTheme;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = palette;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ..._kKeyRows.map(
-            (row) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 4,
-                children: row.split('').map((ch) {
-                  return _KeyButton(
-                    label: ch,
-                    palette: p,
-                    textTheme: textTheme,
-                    onPressed: () => onKey(ch.toLowerCase()),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _KeyButton(
-                  label: '⎵',
-                  palette: p,
-                  textTheme: textTheme,
-                  width: 100,
-                  onPressed: onSpace,
-                ),
-                const SizedBox(width: 4),
-                _KeyButton(
-                  label: '⌫',
-                  palette: p,
-                  textTheme: textTheme,
-                  width: 60,
-                  onPressed: onBackspace,
-                ),
-              ],
-            ),
-          ),
-          // Digit row 0-9
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 4,
-              children: List.generate(10, (i) {
-                final digit = i.toString();
-                return _KeyButton(
-                  label: digit,
-                  palette: p,
-                  textTheme: textTheme,
-                  onPressed: () => onKey(digit),
-                );
-              }),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _KeyButton extends StatelessWidget {
-  const _KeyButton({
-    required this.label,
-    required this.palette,
-    required this.textTheme,
-    required this.onPressed,
-    this.width,
-  });
-
-  final String label;
-  final dynamic palette;
-  final TextTheme textTheme;
-  final VoidCallback onPressed;
-  final double? width;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = palette;
-    return FocusableButton(
-      semanticLabel: label,
-      onPressed: onPressed,
-      child: Container(
-        width: width ?? 34,
-        height: 34,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: p.surface2,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: textTheme.labelMedium?.copyWith(color: p.fg),
         ),
       ),
     );
@@ -360,9 +202,9 @@ class _ResultsGrid extends StatelessWidget {
                     gridDelegate:
                         const SliverGridDelegateWithMaxCrossAxisExtent(
                       maxCrossAxisExtent: 150,
-                      childAspectRatio: 2 / 4.2,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: 2 / 3.4,
                     ),
                     itemCount: results.length,
                     itemBuilder: (context, index) {

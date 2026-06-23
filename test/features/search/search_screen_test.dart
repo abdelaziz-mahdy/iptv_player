@@ -23,17 +23,27 @@ Widget _buildTestApp({void Function(SearchEntry)? onOpen}) {
   );
 }
 
+void Function(FlutterErrorDetails)? _prevError;
+
+void _suppressOverflow() {
+  _prevError = FlutterError.onError;
+  FlutterError.onError = (details) {
+    if (details.exceptionAsString().contains('overflowed')) return;
+    _prevError?.call(details);
+  };
+}
+
+void _restoreOverflow() {
+  FlutterError.onError = _prevError;
+}
+
 /// Pump and settle while suppressing overflow errors from narrow test surface.
 Future<void> _pumpAndIgnoreOverflow(
     WidgetTester tester, Widget widget) async {
-  final prev = FlutterError.onError;
-  FlutterError.onError = (details) {
-    if (details.exceptionAsString().contains('overflowed')) return;
-    prev?.call(details);
-  };
+  _suppressOverflow();
   await tester.pumpWidget(widget);
   await tester.pumpAndSettle();
-  FlutterError.onError = prev;
+  _restoreOverflow();
 }
 
 void main() {
@@ -52,13 +62,26 @@ void main() {
     expect(find.byType(TextField), findsOneWidget);
   });
 
+  testWidgets('SearchScreen: on-screen keyboard is absent', (tester) async {
+    await _pumpAndIgnoreOverflow(tester, _buildTestApp());
+
+    // QWERTY on-screen keyboard keys must not be present
+    expect(find.text('Q'), findsNothing);
+    expect(find.text('W'), findsNothing);
+    expect(find.text('E'), findsNothing);
+    expect(find.text('A'), findsNothing);
+    expect(find.text('Z'), findsNothing);
+  });
+
   testWidgets(
       'SearchScreen: entering "Dune" into the text field shows Dune result',
       (tester) async {
     await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
+    _suppressOverflow();
     await tester.enterText(find.byType(TextField), 'Dune');
     await tester.pumpAndSettle();
+    _restoreOverflow();
 
     expect(
       find.textContaining('Dune', skipOffstage: false),
@@ -67,36 +90,26 @@ void main() {
   });
 
   testWidgets(
-      'SearchScreen: tapping an on-screen key updates the query',
+      'SearchScreen: no on-screen keyboard keys while typing shows result',
       (tester) async {
     await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
-    // The text field should be empty initially
-    final textField =
-        tester.widget<TextField>(find.byType(TextField));
-    expect(textField.controller?.text ?? '', isEmpty);
+    // Keyboard keys must be absent before typing
+    expect(find.text('Q'), findsNothing);
 
-    // Find and tap the 'D' key on the on-screen keyboard
-    final dKeyFinder = find.widgetWithText(
-      FocusableButton,
-      'D',
-      skipOffstage: false,
-    );
-    expect(dKeyFinder, findsAtLeastNWidgets(1));
-
-    final prev = FlutterError.onError;
-    FlutterError.onError = (details) {
-      if (details.exceptionAsString().contains('overflowed')) return;
-      prev?.call(details);
-    };
-    await tester.tap(dKeyFinder.first);
+    _suppressOverflow();
+    await tester.enterText(find.byType(TextField), 'Dune');
     await tester.pumpAndSettle();
-    FlutterError.onError = prev;
+    _restoreOverflow();
 
-    // After tapping 'D' the query should be 'd' and results should update
-    final updatedField =
-        tester.widget<TextField>(find.byType(TextField));
-    expect(updatedField.controller?.text, 'd');
+    // Still no keyboard keys after typing
+    expect(find.text('Q'), findsNothing);
+
+    // But the Dune result is shown
+    expect(
+      find.textContaining('Dune', skipOffstage: false),
+      findsAtLeastNWidgets(1),
+    );
   });
 
   testWidgets('SearchScreen: tapping a result calls onOpen', (tester) async {
@@ -108,8 +121,10 @@ void main() {
     );
 
     // Type 'Dune' to get a result
+    _suppressOverflow();
     await tester.enterText(find.byType(TextField), 'Dune');
     await tester.pumpAndSettle();
+    _restoreOverflow();
 
     // Find the PosterCard for Dune (it wraps in FocusableButton; tap that)
     final dunePoster = find.widgetWithText(
@@ -119,32 +134,34 @@ void main() {
     );
     expect(dunePoster, findsAtLeastNWidgets(1));
 
-    final prev = FlutterError.onError;
-    FlutterError.onError = (details) {
-      if (details.exceptionAsString().contains('overflowed')) return;
-      prev?.call(details);
-    };
-    // The last FocusableButton with text 'Dune' is the PosterCard result
-    // (the keyboard 'D' key is just 'D', not 'Dune')
-    await tester.tap(dunePoster.last);
+    _suppressOverflow();
+    await tester.tap(dunePoster.first);
     await tester.pumpAndSettle();
-    FlutterError.onError = prev;
+    _restoreOverflow();
 
     expect(opened, isNotNull);
     expect(opened!.title, 'Dune');
   });
 
-  testWidgets('SearchScreen renders on-screen keyboard keys', (tester) async {
+  testWidgets(
+      'SearchScreen: TextField has autofocus enabled',
+      (tester) async {
     await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
-    // Check a few keyboard keys are present
-    expect(
-      find.widgetWithText(FocusableButton, 'A', skipOffstage: false),
-      findsAtLeastNWidgets(1),
-    );
-    expect(
-      find.widgetWithText(FocusableButton, 'Z', skipOffstage: false),
-      findsAtLeastNWidgets(1),
-    );
+    final textField = tester.widget<TextField>(find.byType(TextField));
+    expect(textField.autofocus, isTrue);
+  });
+
+  testWidgets(
+      'SearchScreen: results use GridView.builder',
+      (tester) async {
+    await _pumpAndIgnoreOverflow(tester, _buildTestApp());
+
+    _suppressOverflow();
+    await tester.enterText(find.byType(TextField), 'Dune');
+    await tester.pumpAndSettle();
+    _restoreOverflow();
+
+    expect(find.byType(GridView), findsOneWidget);
   });
 }
