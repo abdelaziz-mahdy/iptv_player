@@ -43,6 +43,45 @@ void main() {
     expect(find.text(_l10n(tester).tabUpload), findsOneWidget);
   });
 
+  testWidgets('field keeps focus across a rebuild (TV focus-loop regression)',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(
+          palette: AppPalette.standard,
+          hyperlegible: false,
+          rtl: false,
+        ),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ImportScreen(onImported: () {}),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Focus the server field (Xtream tab is the default).
+    final serverField = find.byKey(const ValueKey('import-server'));
+    expect(serverField, findsOneWidget);
+    await tester.tap(serverField);
+    await tester.pump();
+
+    EditableText editable() => tester.widget<EditableText>(
+          find.descendant(of: serverField, matching: find.byType(EditableText)),
+        );
+    expect(editable().focusNode.hasFocus, isTrue,
+        reason: 'field should hold focus after tapping it');
+
+    // Trigger a rebuild that is unrelated to this field: toggle the password
+    // visibility (setState on the whole view). With stable FocusNodes the
+    // server field must KEEP focus — the old code recreated fields each build,
+    // which churned focus and made the IME flicker open/closed on Android TV.
+    await tester.tap(find.byIcon(Icons.visibility));
+    await tester.pump();
+
+    expect(editable().focusNode.hasFocus, isTrue,
+        reason: 'field must retain focus across an unrelated rebuild');
+  });
+
   testWidgets('ImportScreen renders Import button', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
