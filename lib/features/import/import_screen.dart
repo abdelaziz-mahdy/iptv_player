@@ -59,6 +59,15 @@ class _ImportViewState extends State<_ImportView> {
   // M3U
   final _m3uUrlController = TextEditingController();
 
+  // Stable FocusNodes — created once and reused across rebuilds so D-pad /
+  // IME focus doesn't churn on Android TV (recreating fields each rebuild was
+  // making the soft keyboard flicker open/closed and then get stuck).
+  final _nameFocus = FocusNode();
+  final _serverFocus = FocusNode();
+  final _usernameFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+  final _m3uUrlFocus = FocusNode();
+
   bool _passwordVisible = false;
 
   @override
@@ -68,6 +77,11 @@ class _ImportViewState extends State<_ImportView> {
     _usernameController.dispose();
     _passwordController.dispose();
     _m3uUrlController.dispose();
+    _nameFocus.dispose();
+    _serverFocus.dispose();
+    _usernameFocus.dispose();
+    _passwordFocus.dispose();
+    _m3uUrlFocus.dispose();
     super.dispose();
   }
 
@@ -78,172 +92,228 @@ class _ImportViewState extends State<_ImportView> {
     final textTheme = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context)!;
 
-    return BlocBuilder<ImportCubit, ImportState>(
-      builder: (context, state) {
-        return Scaffold(
-          backgroundColor: p.bg,
-          appBar: AppBar(
-            backgroundColor: p.bg,
-            title: Text(
-              l10n.addPlaylist,
-              style: textTheme.titleLarge?.copyWith(color: p.fg),
-            ),
+    return Scaffold(
+      backgroundColor: p.bg,
+      // On Android TV the IME is an overlay; resizing the body when it opens
+      // caused a relayout→focus→IME loop. Don't resize for the keyboard.
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        backgroundColor: p.bg,
+        title: Text(
+          l10n.addPlaylist,
+          style: textTheme.titleLarge?.copyWith(color: p.fg),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Only the tab + its fields rebuild when the tab changes; typing,
+              // submitting and error state do NOT rebuild this subtree.
+              BlocSelector<ImportCubit, ImportState, ImportTab>(
+                selector: (state) => state.tab,
+                builder: (context, tab) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _TabSelector(
+                        selected: tab,
+                        onSelect: cubit.selectTab,
+                        palette: p,
+                        textTheme: textTheme,
+                      ),
+                      const SizedBox(height: 24),
+                      ..._fieldsForTab(tab, p, textTheme, l10n),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
+              // Error + submit rebuild independently of the fields.
+              BlocBuilder<ImportCubit, ImportState>(
+                buildWhen: (a, b) =>
+                    a.submitting != b.submitting || a.error != b.error,
+                builder: (context, state) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (state.error != null) ...[
+                        Text(
+                          state.error!,
+                          style: textTheme.bodyMedium?.copyWith(color: p.live),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      _submitButton(context, state, p, textTheme, l10n),
+                    ],
+                  );
+                },
+              ),
+            ],
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Tab selector
-                  _TabSelector(
-                    selected: state.tab,
-                    onSelect: cubit.selectTab,
-                    palette: p,
-                    textTheme: textTheme,
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _fieldsForTab(
+    ImportTab tab,
+    AppPalette p,
+    TextTheme textTheme,
+    AppLocalizations l10n,
+  ) {
+    switch (tab) {
+      case ImportTab.xtream:
+        return [
+          _TextField(
+            key: const ValueKey('import-name'),
+            controller: _nameController,
+            focusNode: _nameFocus,
+            label: l10n.playlistName,
+            palette: p,
+            textTheme: textTheme,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 16),
+          _TextField(
+            key: const ValueKey('import-server'),
+            controller: _xtreamServerController,
+            focusNode: _serverFocus,
+            label: l10n.serverUrl,
+            palette: p,
+            textTheme: textTheme,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 16),
+          _TextField(
+            key: const ValueKey('import-username'),
+            controller: _usernameController,
+            focusNode: _usernameFocus,
+            label: l10n.username,
+            palette: p,
+            textTheme: textTheme,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            key: const ValueKey('import-password'),
+            controller: _passwordController,
+            focusNode: _passwordFocus,
+            obscureText: !_passwordVisible,
+            textInputAction: TextInputAction.done,
+            style: textTheme.bodyLarge?.copyWith(color: p.fg),
+            decoration: InputDecoration(
+              labelText: l10n.password,
+              labelStyle: textTheme.bodyMedium?.copyWith(color: p.dim),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: p.border),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: p.accent, width: 2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              filled: true,
+              fillColor: p.surface2,
+              suffixIcon: Semantics(
+                label: _passwordVisible ? 'Hide password' : 'Show password',
+                child: IconButton(
+                  tooltip: _passwordVisible ? 'Hide password' : 'Show password',
+                  icon: Icon(
+                    _passwordVisible
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    color: p.dim,
                   ),
-                  const SizedBox(height: 24),
-
-                  // Tab-specific fields
-                  if (state.tab == ImportTab.xtream) ...[
-                    _TextField(
-                      controller: _nameController,
-                      label: l10n.playlistName,
-                      palette: p,
-                      textTheme: textTheme,
-                    ),
-                    const SizedBox(height: 16),
-                    _TextField(
-                      controller: _xtreamServerController,
-                      label: l10n.serverUrl,
-                      palette: p,
-                      textTheme: textTheme,
-                    ),
-                    const SizedBox(height: 16),
-                    _TextField(
-                      controller: _usernameController,
-                      label: l10n.username,
-                      palette: p,
-                      textTheme: textTheme,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: !_passwordVisible,
-                      style: textTheme.bodyLarge?.copyWith(color: p.fg),
-                      decoration: InputDecoration(
-                        labelText: l10n.password,
-                        labelStyle: textTheme.bodyMedium?.copyWith(color: p.dim),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: p.border),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: p.accent, width: 2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        filled: true,
-                        fillColor: p.surface2,
-                        suffixIcon: Semantics(
-                          label: _passwordVisible
-                              ? 'Hide password'
-                              : 'Show password',
-                          child: IconButton(
-                            tooltip: _passwordVisible
-                                ? 'Hide password'
-                                : 'Show password',
-                            icon: Icon(
-                              _passwordVisible
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: p.dim,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _passwordVisible = !_passwordVisible;
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                  ] else if (state.tab == ImportTab.m3u) ...[
-                    _TextField(
-                      controller: _nameController,
-                      label: l10n.playlistName,
-                      palette: p,
-                      textTheme: textTheme,
-                    ),
-                    const SizedBox(height: 16),
-                    _TextField(
-                      controller: _m3uUrlController,
-                      label: l10n.m3uUrl,
-                      palette: p,
-                      textTheme: textTheme,
-                    ),
-                  ] else ...[
-                    _TextField(
-                      controller: _nameController,
-                      label: l10n.playlistName,
-                      palette: p,
-                      textTheme: textTheme,
-                    ),
-                  ],
-
-                  const SizedBox(height: 24),
-
-                  // Error text
-                  if (state.error != null) ...[
-                    Text(
-                      state.error!,
-                      style: textTheme.bodyMedium?.copyWith(color: p.live),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // Submit button
-                  FocusableButton(
-                    semanticLabel: l10n.importAction,
-                    onPressed: state.submitting
-                        ? () {}
-                        : () => _handleSubmit(context, state),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: state.submitting ? p.surface2 : p.accent,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: state.submitting
-                          ? Center(
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: p.fg,
-                                ),
-                              ),
-                            )
-                          : Center(
-                              child: Text(
-                                l10n.importAction,
-                                style: textTheme.labelLarge?.copyWith(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                    ),
-                  ),
-                ],
+                  onPressed: () {
+                    setState(() {
+                      _passwordVisible = !_passwordVisible;
+                    });
+                  },
+                ),
               ),
             ),
           ),
-        );
-      },
+        ];
+      case ImportTab.m3u:
+        return [
+          _TextField(
+            key: const ValueKey('import-name'),
+            controller: _nameController,
+            focusNode: _nameFocus,
+            label: l10n.playlistName,
+            palette: p,
+            textTheme: textTheme,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: 16),
+          _TextField(
+            key: const ValueKey('import-m3u'),
+            controller: _m3uUrlController,
+            focusNode: _m3uUrlFocus,
+            label: l10n.m3uUrl,
+            palette: p,
+            textTheme: textTheme,
+            textInputAction: TextInputAction.done,
+          ),
+        ];
+      case ImportTab.upload:
+        return [
+          _TextField(
+            key: const ValueKey('import-name'),
+            controller: _nameController,
+            focusNode: _nameFocus,
+            label: l10n.playlistName,
+            palette: p,
+            textTheme: textTheme,
+            textInputAction: TextInputAction.done,
+          ),
+        ];
+    }
+  }
+
+  Widget _submitButton(
+    BuildContext context,
+    ImportState state,
+    AppPalette p,
+    TextTheme textTheme,
+    AppLocalizations l10n,
+  ) {
+    return FocusableButton(
+      semanticLabel: l10n.importAction,
+      onPressed:
+          state.submitting ? () {} : () => _handleSubmit(context, state),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        decoration: BoxDecoration(
+          color: state.submitting ? p.surface2 : p.accent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: state.submitting
+            ? Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: p.fg,
+                  ),
+                ),
+              )
+            : Center(
+                child: Text(
+                  l10n.importAction,
+                  style: textTheme.labelLarge?.copyWith(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+      ),
     );
   }
 
@@ -337,22 +407,29 @@ class _TabSelector extends StatelessWidget {
 
 class _TextField extends StatelessWidget {
   const _TextField({
+    super.key,
     required this.controller,
     required this.label,
     required this.palette,
     required this.textTheme,
+    this.focusNode,
+    this.textInputAction,
   });
 
   final TextEditingController controller;
   final String label;
   final AppPalette palette;
   final TextTheme textTheme;
+  final FocusNode? focusNode;
+  final TextInputAction? textInputAction;
 
   @override
   Widget build(BuildContext context) {
     final p = palette;
     return TextFormField(
       controller: controller,
+      focusNode: focusNode,
+      textInputAction: textInputAction,
       style: textTheme.bodyLarge?.copyWith(color: p.fg),
       decoration: InputDecoration(
         labelText: label,
