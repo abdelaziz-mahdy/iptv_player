@@ -82,6 +82,23 @@ class _ImportViewState extends State<_ImportView> {
   void initState() {
     super.initState();
     _activeController = _nameController;
+    // Unify "D-pad focus" with "keyboard target": whenever a field gains focus
+    // (via remote D-pad or tap) it becomes the field the on-screen keyboard
+    // types into. This makes navigating to a field and then down to the
+    // keyboard behave naturally on Android TV.
+    _wireActiveOnFocus(_nameFocus, _nameController);
+    _wireActiveOnFocus(_serverFocus, _xtreamServerController);
+    _wireActiveOnFocus(_usernameFocus, _usernameController);
+    _wireActiveOnFocus(_passwordFocus, _passwordController);
+    _wireActiveOnFocus(_m3uUrlFocus, _m3uUrlController);
+  }
+
+  void _wireActiveOnFocus(FocusNode node, TextEditingController controller) {
+    node.addListener(() {
+      if (node.hasFocus && _activeController != controller) {
+        setState(() => _activeController = controller);
+      }
+    });
   }
 
   @override
