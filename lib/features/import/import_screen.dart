@@ -73,6 +73,17 @@ class _ImportViewState extends State<_ImportView> {
   bool _passwordVisible = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Give the remote a focus anchor ON a field when the screen opens, so
+    // D-pad navigation can reach/move between the native TV fields. Without an
+    // initial field focus the remote has nothing to traverse from.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _nameFocus.requestFocus();
+    });
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _xtreamServerController.dispose();
