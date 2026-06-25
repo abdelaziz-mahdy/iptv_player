@@ -115,6 +115,7 @@ class _FavoritesView extends StatelessWidget {
                       (context, index) {
                         final entry = state.entries[index];
                         return PosterCard(
+                          autofocus: index == 0,
                           title: entry.title,
                           subtitle: entry.subtitle,
                           imageUrl: entry.posterUrl,

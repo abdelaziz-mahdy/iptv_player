@@ -17,6 +17,7 @@ class PosterCard extends StatelessWidget {
   final double? progress;
   final VoidCallback? onTap;
   final bool isFavorite;
+  final bool autofocus;
   final VoidCallback? onToggleFavorite;
   const PosterCard({
     super.key,
@@ -27,6 +28,7 @@ class PosterCard extends StatelessWidget {
     this.progress,
     this.onTap,
     this.isFavorite = false,
+    this.autofocus = false,
     this.onToggleFavorite,
   });
 
@@ -35,6 +37,7 @@ class PosterCard extends StatelessWidget {
     final p = context.palette;
     return FocusableButton(
       semanticLabel: title,
+      autofocus: autofocus,
       onPressed: onTap ?? () {},
       child: SizedBox(
         width: 130,

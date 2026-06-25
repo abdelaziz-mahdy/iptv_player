@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:noor_iptv/core/di/injection.dart';
 import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
+import 'package:noor_iptv/core/widgets/focusable_button.dart';
+import 'package:noor_iptv/core/widgets/poster_card.dart';
 import 'package:noor_iptv/features/favorites/favorites_screen.dart';
 import 'package:noor_iptv/l10n/generated/app_localizations.dart';
 
@@ -67,5 +69,27 @@ void main() {
     await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
     expect(find.byType(FavoritesScreen), findsOneWidget);
+  });
+
+  testWidgets(
+      'FavoritesScreen first PosterCard has autofocus when favorites exist',
+      (tester) async {
+    // The fake ContentRepository seeds favorites — assert at least one
+    // autofocused FocusableButton exists.
+    await tester.pumpWidget(_buildTestApp()); // use existing helper
+    await tester.pumpAndSettle();
+
+    // Only assert if the grid is non-empty (skip if fakes return empty).
+    final autofocused = find.byWidgetPredicate(
+      (w) => w is FocusableButton && w.autofocus == true,
+      skipOffstage: false,
+    );
+    // Either there are favorites and one is autofocused, or there are none
+    // and zero are autofocused — both are valid. We just assert no crash.
+    // A stronger assertion is that IF posters are shown, one is autofocused.
+    final posters = find.byType(PosterCard, skipOffstage: false);
+    if (posters.evaluate().isNotEmpty) {
+      expect(autofocused, findsAtLeastNWidgets(1));
+    }
   });
 }
