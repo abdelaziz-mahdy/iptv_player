@@ -69,6 +69,7 @@ class _HomeView extends StatelessWidget {
                 const Text('No content yet'),
                 const SizedBox(height: 16),
                 FocusableButton(
+                  autofocus: true,
                   semanticLabel: 'Set up a playlist',
                   onPressed: onAddPlaylist,
                   child: Container(
@@ -218,6 +219,7 @@ class _HeroBanner extends StatelessWidget {
                   Row(
                     children: [
                       FocusableButton(
+                        autofocus: true,
                         semanticLabel: l10n.play,
                         onPressed: () => onOpenMovie(featured),
                         child: Container(

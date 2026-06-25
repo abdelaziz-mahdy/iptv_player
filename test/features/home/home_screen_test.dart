@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:noor_iptv/core/di/injection.dart';
 import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
+import 'package:noor_iptv/core/widgets/focusable_button.dart';
 import 'package:noor_iptv/data/models/models.dart';
 import 'package:noor_iptv/features/home/home_screen.dart';
 import 'package:noor_iptv/l10n/generated/app_localizations.dart';
@@ -103,5 +104,17 @@ void main() {
     FlutterError.onError = previousHandler;
 
     expect(tappedMovie, isNotNull);
+  });
+
+  testWidgets('HomeScreen hero Play button has autofocus: true', (tester) async {
+    await _pumpAndIgnoreOverflow(tester, _buildTestApp());
+
+    // The hero's Play FocusableButton should have autofocus.
+    final playBtns = find.byWidgetPredicate(
+      (w) => w is FocusableButton && w.autofocus == true,
+      skipOffstage: false,
+    );
+    // At least one autofocused FocusableButton must exist.
+    expect(playBtns, findsAtLeastNWidgets(1));
   });
 }
