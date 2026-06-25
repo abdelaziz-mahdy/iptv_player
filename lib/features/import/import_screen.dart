@@ -217,6 +217,7 @@ class _ImportViewState extends State<_ImportView> {
             p: p,
             textTheme: textTheme,
             obscure: true,
+            isLast: true,
             suffix: Semantics(
               label: _passwordVisible ? 'Hide password' : 'Show password',
               child: IconButton(
@@ -249,6 +250,7 @@ class _ImportViewState extends State<_ImportView> {
             label: l10n.m3uUrl,
             p: p,
             textTheme: textTheme,
+            isLast: true,
           ),
         ];
       case ImportTab.upload:
@@ -260,6 +262,7 @@ class _ImportViewState extends State<_ImportView> {
             label: l10n.playlistName,
             p: p,
             textTheme: textTheme,
+            isLast: true,
           ),
         ];
     }
@@ -277,8 +280,20 @@ class _ImportViewState extends State<_ImportView> {
     required AppPalette p,
     required TextTheme textTheme,
     bool obscure = false,
+    bool isLast = false,
     Widget? suffix,
   }) {
+    // Pressing the keyboard's Next/Done action moves to the next field, or on
+    // the last field unfocuses (closes the keyboard) — this is how you LEAVE a
+    // field/keyboard on a TV remote, which was previously impossible.
+    void onSubmit() {
+      if (isLast) {
+        focusNode.unfocus();
+      } else {
+        FocusScope.of(context).nextFocus();
+      }
+    }
+
     if (Platform.isAndroid) {
       return AndroidTVTextField(
         key: key,
@@ -292,6 +307,7 @@ class _ImportViewState extends State<_ImportView> {
         textColor: p.fg,
         focusedBorderColor: p.accent,
         unfocusedBorderColor: p.border,
+        onSubmitted: (_) => onSubmit(),
       );
     }
     return TextFormField(
@@ -299,6 +315,8 @@ class _ImportViewState extends State<_ImportView> {
       controller: controller,
       focusNode: focusNode,
       obscureText: obscure && !_passwordVisible,
+      textInputAction: isLast ? TextInputAction.done : TextInputAction.next,
+      onFieldSubmitted: (_) => onSubmit(),
       style: textTheme.bodyLarge?.copyWith(color: p.fg),
       decoration: InputDecoration(
         labelText: label,
