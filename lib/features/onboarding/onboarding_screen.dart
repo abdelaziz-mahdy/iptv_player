@@ -51,6 +51,7 @@ class OnboardingScreen extends StatelessWidget {
               const SizedBox(height: 32),
               // Get Started button
               FocusableButton(
+                autofocus: true,
                 semanticLabel: l10n.getStarted,
                 onPressed: onGetStarted,
                 child: Container(
