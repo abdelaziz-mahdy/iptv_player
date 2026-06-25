@@ -71,13 +71,14 @@ class _PlaylistsView extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: [
               // Playlist items
-              ...state.playlists.map(
-                (playlist) => _PlaylistTile(
-                  playlist: playlist,
-                  isActive: state.activeId == playlist.id,
+              ...state.playlists.asMap().entries.map(
+                (entry) => _PlaylistTile(
+                  playlist: entry.value,
+                  isActive: state.activeId == entry.value.id,
+                  autofocus: entry.key == 0,
                   onTap: () {
-                    context.read<PlaylistsCubit>().select(playlist.id);
-                    onSelected(playlist);
+                    context.read<PlaylistsCubit>().select(entry.value.id);
+                    onSelected(entry.value);
                   },
                   palette: p,
                   textTheme: textTheme,
@@ -87,6 +88,7 @@ class _PlaylistsView extends StatelessWidget {
 
               // Add Playlist button (dashed border)
               _AddPlaylistButton(
+                autofocus: state.playlists.isEmpty,
                 onPressed: onAddPlaylist,
                 palette: p,
                 textTheme: textTheme,
@@ -112,6 +114,7 @@ class _PlaylistTile extends StatelessWidget {
   const _PlaylistTile({
     required this.playlist,
     required this.isActive,
+    required this.autofocus,
     required this.onTap,
     required this.palette,
     required this.textTheme,
@@ -119,6 +122,7 @@ class _PlaylistTile extends StatelessWidget {
 
   final Playlist playlist;
   final bool isActive;
+  final bool autofocus;
   final VoidCallback onTap;
   final AppPalette palette;
   final TextTheme textTheme;
@@ -132,6 +136,7 @@ class _PlaylistTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: FocusableButton(
+        autofocus: autofocus,
         onPressed: onTap,
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -219,11 +224,13 @@ class _PlaylistTile extends StatelessWidget {
 class _AddPlaylistButton extends StatelessWidget {
   const _AddPlaylistButton({
     required this.onPressed,
+    required this.autofocus,
     required this.palette,
     required this.textTheme,
   });
 
   final VoidCallback onPressed;
+  final bool autofocus;
   final AppPalette palette;
   final TextTheme textTheme;
 
@@ -232,6 +239,7 @@ class _AddPlaylistButton extends StatelessWidget {
     final p = palette;
     final l10n = AppLocalizations.of(context)!;
     return FocusableButton(
+      autofocus: autofocus,
       semanticLabel: l10n.addPlaylist,
       onPressed: onPressed,
       child: CustomPaint(
