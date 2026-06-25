@@ -50,4 +50,44 @@ void main() {
 
     expect(pressed, isTrue);
   });
+
+  testWidgets('shows AnimatedScale with scale > 1.0 when focused and reduceMotion is false',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
+      home: Scaffold(
+        body: FocusableButton(
+          autofocus: true,
+          reduceMotion: false,
+          semanticLabel: 'Test',
+          onPressed: () {},
+          child: const Text('Test'),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final scale = tester.widget<AnimatedScale>(find.byType(AnimatedScale));
+    expect(scale.scale, greaterThan(1.0));
+  });
+
+  testWidgets('AnimatedScale stays at 1.0 when focused but reduceMotion is true',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
+      home: Scaffold(
+        body: FocusableButton(
+          autofocus: true,
+          reduceMotion: true,
+          semanticLabel: 'Test',
+          onPressed: () {},
+          child: const Text('Test'),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final scale = tester.widget<AnimatedScale>(find.byType(AnimatedScale));
+    expect(scale.scale, equals(1.0));
+  });
 }
