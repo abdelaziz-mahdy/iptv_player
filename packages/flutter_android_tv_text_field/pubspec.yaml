@@ -1,0 +1,33 @@
+name: flutter_android_tv_text_field
+description: "A Flutter plugin that provides native Android EditText component as a solution for Android TV remote control issues with Flutter's default TextField. Fork maintained for NOOR IPTV; fixes compileSdk + themable borders."
+version: 1.0.3
+homepage: https://github.com/AbdelazizMahdy/flutter_android_tv_text_field
+repository: https://github.com/AbdelazizMahdy/flutter_android_tv_text_field
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.3.0'
+
+topics:
+  - flutter
+  - android
+  - tv
+  - keyboard
+  - textfield
+
+dependencies:
+  flutter:
+    sdk: flutter
+  plugin_platform_interface: ^2.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.example.native_textfield_tv
+        pluginClass: NativeTextfieldTvPlugin

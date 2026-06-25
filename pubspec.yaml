@@ -59,6 +59,8 @@ dependencies:
   fvp: ^0.37.2
   wakelock_plus: ^1.6.1
   subtitle: ^0.2.0
+  flutter_android_tv_text_field:
+    path: packages/flutter_android_tv_text_field
 
 dev_dependencies:
   flutter_test:

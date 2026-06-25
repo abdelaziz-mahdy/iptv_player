@@ -366,6 +366,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_android_tv_text_field:
+    dependency: "direct main"
+    description:
+      path: "packages/flutter_android_tv_text_field"
+      relative: true
+    source: path
+    version: "1.0.3"
   flutter_bloc:
     dependency: "direct main"
     description:

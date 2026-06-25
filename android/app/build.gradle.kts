@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.noor.iptv.noor_iptv"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

@@ -1,11 +1,13 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_android_tv_text_field/native_textfield_tv.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/di/injection.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/focusable_button.dart';
-import '../../core/widgets/on_screen_keyboard.dart';
 import '../../data/credential_store.dart';
 import '../../data/repositories/repositories.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -50,15 +52,15 @@ class _ImportViewState extends State<_ImportView> {
   final _formKey = GlobalKey<FormState>();
 
   // Shared
-  final _nameController = TextEditingController();
+  final _nameController = NativeTextFieldController();
 
   // Xtream
-  final _xtreamServerController = TextEditingController();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _xtreamServerController = NativeTextFieldController();
+  final _usernameController = NativeTextFieldController();
+  final _passwordController = NativeTextFieldController();
 
   // M3U
-  final _m3uUrlController = TextEditingController();
+  final _m3uUrlController = NativeTextFieldController();
 
   // Stable FocusNodes — created once and reused across rebuilds so D-pad /
   // IME focus doesn't churn on Android TV.
@@ -69,37 +71,6 @@ class _ImportViewState extends State<_ImportView> {
   final _m3uUrlFocus = FocusNode();
 
   bool _passwordVisible = false;
-
-  /// The controller whose text the on-screen keyboard edits.
-  /// Defaults to [_nameController] for all tabs; tapping a field updates this.
-  TextEditingController? _activeController;
-
-  /// Tracks the last-rendered tab so we only reset [_activeController] when
-  /// the tab actually changes, not on every unrelated rebuild.
-  ImportTab? _lastTab;
-
-  @override
-  void initState() {
-    super.initState();
-    _activeController = _nameController;
-    // Unify "D-pad focus" with "keyboard target": whenever a field gains focus
-    // (via remote D-pad or tap) it becomes the field the on-screen keyboard
-    // types into. This makes navigating to a field and then down to the
-    // keyboard behave naturally on Android TV.
-    _wireActiveOnFocus(_nameFocus, _nameController);
-    _wireActiveOnFocus(_serverFocus, _xtreamServerController);
-    _wireActiveOnFocus(_usernameFocus, _usernameController);
-    _wireActiveOnFocus(_passwordFocus, _passwordController);
-    _wireActiveOnFocus(_m3uUrlFocus, _m3uUrlController);
-  }
-
-  void _wireActiveOnFocus(FocusNode node, TextEditingController controller) {
-    node.addListener(() {
-      if (node.hasFocus && _activeController != controller) {
-        setState(() => _activeController = controller);
-      }
-    });
-  }
 
   @override
   void dispose() {
@@ -114,37 +85,6 @@ class _ImportViewState extends State<_ImportView> {
     _passwordFocus.dispose();
     _m3uUrlFocus.dispose();
     super.dispose();
-  }
-
-  // ── OSK helpers ────────────────────────────────────────────────────────
-
-  void _oskChar(String c) {
-    final ctrl = _activeController;
-    if (ctrl == null) return;
-    final t = ctrl.text + c;
-    ctrl.value = TextEditingValue(
-      text: t,
-      selection: TextSelection.collapsed(offset: t.length),
-    );
-  }
-
-  void _oskBackspace() {
-    final ctrl = _activeController;
-    if (ctrl == null || ctrl.text.isEmpty) return;
-    final t = ctrl.text.substring(0, ctrl.text.length - 1);
-    ctrl.value = TextEditingValue(
-      text: t,
-      selection: TextSelection.collapsed(offset: t.length),
-    );
-  }
-
-  void _oskClear() {
-    _activeController?.clear();
-  }
-
-  void _activateField(TextEditingController controller, FocusNode node) {
-    setState(() => _activeController = controller);
-    node.requestFocus();
   }
 
   // ── Build ──────────────────────────────────────────────────────────────
@@ -178,18 +118,6 @@ class _ImportViewState extends State<_ImportView> {
               BlocSelector<ImportCubit, ImportState, ImportTab>(
                 selector: (state) => state.tab,
                 builder: (context, tab) {
-                  // Only reset the active controller when the tab changes,
-                  // not on arbitrary rebuilds (e.g. field activation triggers
-                  // setState which would re-run this builder and incorrectly
-                  // reset the active field back to name).
-                  if (_lastTab != tab) {
-                    _lastTab = tab;
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) {
-                        setState(() => _activeController = _nameController);
-                      }
-                    });
-                  }
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -204,13 +132,6 @@ class _ImportViewState extends State<_ImportView> {
                     ],
                   );
                 },
-              ),
-              const SizedBox(height: 16),
-              // ── On-screen keyboard ──────────────────────────────────────
-              OnScreenKeyboard(
-                onChar: _oskChar,
-                onBackspace: _oskBackspace,
-                onClear: _oskClear,
               ),
               const SizedBox(height: 16),
               // Error + submit rebuild independently of the fields.
@@ -250,95 +171,140 @@ class _ImportViewState extends State<_ImportView> {
     switch (tab) {
       case ImportTab.xtream:
         return [
-          _ReadOnlyField(
+          _field(
             key: const ValueKey('import-name'),
             controller: _nameController,
             focusNode: _nameFocus,
             label: l10n.playlistName,
-            palette: p,
+            p: p,
             textTheme: textTheme,
-            isActive: _activeController == _nameController,
-            onActivate: () => _activateField(_nameController, _nameFocus),
           ),
           const SizedBox(height: 16),
-          _ReadOnlyField(
+          _field(
             key: const ValueKey('import-server'),
             controller: _xtreamServerController,
             focusNode: _serverFocus,
             label: l10n.serverUrl,
-            palette: p,
+            p: p,
             textTheme: textTheme,
-            isActive: _activeController == _xtreamServerController,
-            onActivate: () =>
-                _activateField(_xtreamServerController, _serverFocus),
           ),
           const SizedBox(height: 16),
-          _ReadOnlyField(
+          _field(
             key: const ValueKey('import-username'),
             controller: _usernameController,
             focusNode: _usernameFocus,
             label: l10n.username,
-            palette: p,
+            p: p,
             textTheme: textTheme,
-            isActive: _activeController == _usernameController,
-            onActivate: () =>
-                _activateField(_usernameController, _usernameFocus),
           ),
           const SizedBox(height: 16),
-          _ReadOnlyPasswordField(
+          _field(
             key: const ValueKey('import-password'),
             controller: _passwordController,
             focusNode: _passwordFocus,
             label: l10n.password,
-            palette: p,
+            p: p,
             textTheme: textTheme,
-            isActive: _activeController == _passwordController,
-            passwordVisible: _passwordVisible,
-            onActivate: () =>
-                _activateField(_passwordController, _passwordFocus),
-            onToggleVisibility: () =>
-                setState(() => _passwordVisible = !_passwordVisible),
+            obscure: true,
+            suffix: Semantics(
+              label: _passwordVisible ? 'Hide password' : 'Show password',
+              child: IconButton(
+                tooltip: _passwordVisible ? 'Hide password' : 'Show password',
+                icon: Icon(
+                  _passwordVisible ? Icons.visibility_off : Icons.visibility,
+                  color: p.dim,
+                ),
+                onPressed: () =>
+                    setState(() => _passwordVisible = !_passwordVisible),
+              ),
+            ),
           ),
         ];
       case ImportTab.m3u:
         return [
-          _ReadOnlyField(
+          _field(
             key: const ValueKey('import-name'),
             controller: _nameController,
             focusNode: _nameFocus,
             label: l10n.playlistName,
-            palette: p,
+            p: p,
             textTheme: textTheme,
-            isActive: _activeController == _nameController,
-            onActivate: () => _activateField(_nameController, _nameFocus),
           ),
           const SizedBox(height: 16),
-          _ReadOnlyField(
+          _field(
             key: const ValueKey('import-m3u'),
             controller: _m3uUrlController,
             focusNode: _m3uUrlFocus,
             label: l10n.m3uUrl,
-            palette: p,
+            p: p,
             textTheme: textTheme,
-            isActive: _activeController == _m3uUrlController,
-            onActivate: () =>
-                _activateField(_m3uUrlController, _m3uUrlFocus),
           ),
         ];
       case ImportTab.upload:
         return [
-          _ReadOnlyField(
+          _field(
             key: const ValueKey('import-name'),
             controller: _nameController,
             focusNode: _nameFocus,
             label: l10n.playlistName,
-            palette: p,
+            p: p,
             textTheme: textTheme,
-            isActive: _activeController == _nameController,
-            onActivate: () => _activateField(_nameController, _nameFocus),
           ),
         ];
     }
+  }
+
+  /// Returns an adaptive text field.
+  ///
+  /// On Android: native [AndroidTVTextField] for full D-pad support.
+  /// On other platforms: a standard editable [TextFormField].
+  Widget _field({
+    Key? key,
+    required NativeTextFieldController controller,
+    required FocusNode focusNode,
+    required String label,
+    required AppPalette p,
+    required TextTheme textTheme,
+    bool obscure = false,
+    Widget? suffix,
+  }) {
+    if (Platform.isAndroid) {
+      return AndroidTVTextField(
+        key: key,
+        focusNode: focusNode,
+        controller: controller,
+        hint: label,
+        height: 64,
+        obscureText: obscure,
+        showPasswordToggle: obscure,
+        backgroundColor: p.surface2,
+        textColor: p.fg,
+        focusedBorderColor: p.accent,
+        unfocusedBorderColor: p.border,
+      );
+    }
+    return TextFormField(
+      key: key,
+      controller: controller,
+      focusNode: focusNode,
+      obscureText: obscure && !_passwordVisible,
+      style: textTheme.bodyLarge?.copyWith(color: p.fg),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: textTheme.bodyMedium?.copyWith(color: p.dim),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: p.border),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: p.accent, width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        filled: true,
+        fillColor: p.surface2,
+        suffixIcon: suffix,
+      ),
+    );
   }
 
   Widget _submitButton(
@@ -466,133 +432,6 @@ class _TabSelector extends StatelessWidget {
             ),
           );
         }).toList(),
-      ),
-    );
-  }
-}
-
-// ── Read-only field (replaces _TextField) ──────────────────────────────────
-
-/// A [TextFormField] that is always `readOnly: true` (system IME never opens).
-/// Tapping it calls [onActivate], which the parent uses to set the keyboard
-/// target. When [isActive] is true an accent border is shown.
-class _ReadOnlyField extends StatelessWidget {
-  const _ReadOnlyField({
-    super.key,
-    required this.controller,
-    required this.label,
-    required this.palette,
-    required this.textTheme,
-    required this.isActive,
-    required this.onActivate,
-    this.focusNode,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final AppPalette palette;
-  final TextTheme textTheme;
-  final bool isActive;
-  final VoidCallback onActivate;
-  final FocusNode? focusNode;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = palette;
-    final activeBorder = OutlineInputBorder(
-      borderSide: BorderSide(color: p.accent, width: 2),
-      borderRadius: BorderRadius.circular(8),
-    );
-    return TextFormField(
-      controller: controller,
-      focusNode: focusNode,
-      readOnly: true,
-      showCursor: true,
-      enableInteractiveSelection: false,
-      onTap: onActivate,
-      style: textTheme.bodyLarge?.copyWith(color: p.fg),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: textTheme.bodyMedium?.copyWith(color: p.dim),
-        enabledBorder: isActive
-            ? activeBorder
-            : OutlineInputBorder(
-                borderSide: BorderSide(color: p.border),
-                borderRadius: BorderRadius.circular(8),
-              ),
-        focusedBorder: activeBorder,
-        filled: true,
-        fillColor: p.surface2,
-      ),
-    );
-  }
-}
-
-// ── Read-only password field ───────────────────────────────────────────────
-
-class _ReadOnlyPasswordField extends StatelessWidget {
-  const _ReadOnlyPasswordField({
-    super.key,
-    required this.controller,
-    required this.label,
-    required this.palette,
-    required this.textTheme,
-    required this.isActive,
-    required this.passwordVisible,
-    required this.onActivate,
-    required this.onToggleVisibility,
-    this.focusNode,
-  });
-
-  final TextEditingController controller;
-  final String label;
-  final AppPalette palette;
-  final TextTheme textTheme;
-  final bool isActive;
-  final bool passwordVisible;
-  final VoidCallback onActivate;
-  final VoidCallback onToggleVisibility;
-  final FocusNode? focusNode;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = palette;
-    final activeBorder = OutlineInputBorder(
-      borderSide: BorderSide(color: p.accent, width: 2),
-      borderRadius: BorderRadius.circular(8),
-    );
-    return TextFormField(
-      controller: controller,
-      focusNode: focusNode,
-      obscureText: !passwordVisible,
-      readOnly: true,
-      showCursor: true,
-      enableInteractiveSelection: false,
-      onTap: onActivate,
-      style: textTheme.bodyLarge?.copyWith(color: p.fg),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: textTheme.bodyMedium?.copyWith(color: p.dim),
-        enabledBorder: isActive
-            ? activeBorder
-            : OutlineInputBorder(
-                borderSide: BorderSide(color: p.border),
-                borderRadius: BorderRadius.circular(8),
-              ),
-        focusedBorder: activeBorder,
-        filled: true,
-        fillColor: p.surface2,
-        suffixIcon: Semantics(
-          label: passwordVisible ? 'Hide password' : 'Show password',
-          child: IconButton(
-            tooltip: passwordVisible ? 'Hide password' : 'Show password',
-            icon: Icon(
-              passwordVisible ? Icons.visibility_off : Icons.visibility,
-              color: p.dim,
-            ),
-            onPressed: onToggleVisibility,
-          ),
-        ),
       ),
     );
   }
