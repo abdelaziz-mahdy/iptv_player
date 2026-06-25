@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:noor_iptv/core/di/injection.dart';
 import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
+import 'package:noor_iptv/core/widgets/focusable_button.dart';
 import 'package:noor_iptv/data/models/models.dart';
 import 'package:noor_iptv/features/details/details_screen.dart';
 import 'package:noor_iptv/l10n/generated/app_localizations.dart';
@@ -201,5 +202,35 @@ void main() {
     // Should call back with the first episode (Pilot).
     expect(played, isNotNull);
     expect(played!.title, 'Pilot');
+  });
+
+  testWidgets('DetailsScreen.movie Play button has autofocus: true',
+      (tester) async {
+    const movie = VodItem(
+      id: 'm3',
+      playlistId: 'p1',
+      title: 'Blade Runner',
+      streamUrl: 'http://x',
+    );
+
+    await tester.pumpWidget(
+      _wrap(
+        DetailsScreen.movie(
+          movie,
+          onBack: () {},
+          onPlay: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The Play FocusableButton should have autofocus: true.
+    // There may be multiple FocusableButtons (back, play, my-list).
+    // The play button is identifiable by its semantic label 'Play'.
+    final playButtons = find.byWidgetPredicate(
+      (w) => w is FocusableButton && w.semanticLabel == 'Play',
+    );
+    expect(playButtons, findsOneWidget);
+    expect(tester.widget<FocusableButton>(playButtons).autofocus, isTrue);
   });
 }

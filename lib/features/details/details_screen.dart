@@ -374,6 +374,7 @@ class _MovieDetailBody extends StatelessWidget {
                   Row(
                     children: [
                       FocusableButton(
+                        autofocus: true,
                         semanticLabel: l10n.play,
                         onPressed: () => onPlay(movie),
                         child: Container(
@@ -498,6 +499,7 @@ class _SeriesDetailBody extends StatelessWidget {
                           // Play button — only shown when episodes are available
                           if (!state.loading && state.episodes.isNotEmpty) ...[
                             FocusableButton(
+                              autofocus: true,
                               semanticLabel: l10n.play,
                               onPressed: () =>
                                   onPlayEpisode(state.episodes.first),
