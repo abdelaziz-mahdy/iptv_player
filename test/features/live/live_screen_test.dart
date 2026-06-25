@@ -5,6 +5,7 @@ import 'package:noor_iptv/core/a11y/accessibility_cubit.dart';
 import 'package:noor_iptv/core/di/injection.dart';
 import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
+import 'package:noor_iptv/core/widgets/focusable_button.dart';
 import 'package:noor_iptv/data/models/models.dart';
 import 'package:noor_iptv/data/repositories/fakes/fake_repositories.dart';
 import 'package:noor_iptv/data/repositories/repositories.dart';
@@ -354,5 +355,22 @@ void main() {
     );
     expect(screen.channels, hasLength(1));
     expect(screen.channels.first.name, 'Sports Channel');
+  });
+
+  testWidgets(
+      'LiveScreen has at least one autofocused FocusableButton when content loads',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await _pumpLive(tester, _buildTestApp());
+
+    final autofocused = find.byWidgetPredicate(
+      (w) => w is FocusableButton && w.autofocus == true,
+      skipOffstage: false,
+    );
+    expect(autofocused, findsAtLeastNWidgets(1));
   });
 }

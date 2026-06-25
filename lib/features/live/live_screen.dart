@@ -130,6 +130,7 @@ class _WideLayout extends StatelessWidget {
                     return _GroupTile(
                       group: group,
                       isSelected: isSelected,
+                      autofocus: index == 0,
                       onTap: () => context.read<LiveCubit>().selectGroup(group.id),
                     );
                   },
@@ -171,6 +172,7 @@ class _NarrowLayout extends StatelessWidget {
           itemBuilder: (context, index) {
             final group = state.groups[index];
             return FocusableButton(
+              autofocus: index == 0,
               semanticLabel: group.name,
               onPressed: () {
                 final cubit = context.read<LiveCubit>();
@@ -234,17 +236,20 @@ class _GroupTile extends StatelessWidget {
   const _GroupTile({
     required this.group,
     required this.isSelected,
+    required this.autofocus,
     required this.onTap,
   });
 
   final ChannelGroup group;
   final bool isSelected;
+  final bool autofocus;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     return FocusableButton(
+      autofocus: autofocus,
       semanticLabel: group.name,
       onPressed: onTap,
       child: Container(
