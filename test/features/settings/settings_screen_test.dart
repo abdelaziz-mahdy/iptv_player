@@ -5,6 +5,7 @@ import 'package:noor_iptv/core/a11y/accessibility_cubit.dart';
 import 'package:noor_iptv/core/i18n/locale_cubit.dart';
 import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
+import 'package:noor_iptv/core/widgets/focusable_button.dart';
 import 'package:noor_iptv/features/settings/settings_screen.dart';
 import 'package:noor_iptv/l10n/generated/app_localizations.dart';
 
@@ -89,5 +90,19 @@ void main() {
       find.text(l10n.complianceNote, skipOffstage: false),
       findsOneWidget,
     );
+  });
+
+  testWidgets('SettingsScreen has at least one autofocused FocusableButton',
+      (tester) async {
+    final a11y = AccessibilityCubit();
+    final locale = LocaleCubit();
+    await tester.pumpWidget(_buildTestApp(a11y, locale));
+    await tester.pumpAndSettle();
+
+    final autofocused = find.byWidgetPredicate(
+      (w) => w is FocusableButton && w.autofocus == true,
+      skipOffstage: false,
+    );
+    expect(autofocused, findsAtLeastNWidgets(1));
   });
 }

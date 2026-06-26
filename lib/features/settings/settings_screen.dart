@@ -4,6 +4,7 @@ import 'package:noor_iptv/core/a11y/accessibility_cubit.dart';
 import 'package:noor_iptv/core/a11y/accessibility_settings.dart';
 import 'package:noor_iptv/core/i18n/locale_cubit.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
+import 'package:noor_iptv/core/widgets/focusable_button.dart';
 import 'package:noor_iptv/l10n/generated/app_localizations.dart';
 
 /// Settings & Accessibility screen for NOOR IPTV.
@@ -100,6 +101,7 @@ class _LanguageSelector extends StatelessWidget {
                 _LangChip(
                   label: 'EN',
                   selected: isEn,
+                  autofocus: true,
                   onTap: () => ctx.read<LocaleCubit>().setEnglish(),
                   semanticLabel: 'English',
                 ),
@@ -123,12 +125,14 @@ class _LangChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final String semanticLabel;
+  final bool autofocus;
 
   const _LangChip({
     required this.label,
     required this.selected,
     required this.onTap,
     required this.semanticLabel,
+    this.autofocus = false,
   });
 
   @override
@@ -138,8 +142,10 @@ class _LangChip extends StatelessWidget {
         label: semanticLabel,
         selected: selected,
         button: true,
-        child: GestureDetector(
-          onTap: onTap,
+        child: FocusableButton(
+          autofocus: autofocus,
+          semanticLabel: semanticLabel,
+          onPressed: onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -344,8 +350,9 @@ class _SegmentChip extends StatelessWidget {
         label: semanticLabel,
         selected: selected,
         button: true,
-        child: GestureDetector(
-          onTap: onTap,
+        child: FocusableButton(
+          semanticLabel: semanticLabel,
+          onPressed: onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(vertical: 12),
