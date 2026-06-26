@@ -53,6 +53,13 @@ void main() {
 
   testWidgets('shows AnimatedScale with scale > 1.0 when focused and reduceMotion is false',
       (tester) async {
+    // Force traditional (keyboard/D-pad) highlight mode so onShowFocusHighlight
+    // fires in the test environment (the default is touch mode).
+    FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
+    addTearDown(
+      () => FocusManager.instance.highlightStrategy = FocusHighlightStrategy.automatic,
+    );
+
     await tester.pumpWidget(MaterialApp(
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       home: Scaffold(
@@ -73,6 +80,12 @@ void main() {
 
   testWidgets('AnimatedScale stays at 1.0 when focused but reduceMotion is true',
       (tester) async {
+    // Even in traditional mode the scale must stay 1.0 when reduceMotion is true.
+    FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
+    addTearDown(
+      () => FocusManager.instance.highlightStrategy = FocusHighlightStrategy.automatic,
+    );
+
     await tester.pumpWidget(MaterialApp(
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       home: Scaffold(

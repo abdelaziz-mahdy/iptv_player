@@ -139,9 +139,7 @@ class _LangChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Semantics(
-        label: semanticLabel,
         selected: selected,
-        button: true,
         child: FocusableButton(
           autofocus: autofocus,
           semanticLabel: semanticLabel,
@@ -347,9 +345,7 @@ class _SegmentChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Semantics(
-        label: semanticLabel,
         selected: selected,
-        button: true,
         child: FocusableButton(
           semanticLabel: semanticLabel,
           onPressed: onTap,

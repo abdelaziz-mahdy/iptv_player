@@ -46,8 +46,10 @@ class _FocusableButtonState extends State<FocusableButton> {
       label: widget.semanticLabel,
       child: FocusableActionDetector(
         autofocus: widget.autofocus,
-        onFocusChange: (f) => setState(() => _focused = f),
-        onShowFocusHighlight: (f) => setState(() => _focused = f),
+        onShowFocusHighlight: (f) {
+          if (_focused == f) return;
+          setState(() => _focused = f);
+        },
         shortcuts: const {
           SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
           SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
