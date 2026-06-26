@@ -130,6 +130,7 @@ class _WideLayout extends StatelessWidget {
                         name: cat.name,
                         count: null, // categories don't have a count in CategoryRef
                         isSelected: isSelected,
+                        autofocus: index == 0,
                         onTap: () => ctx
                             .read<GridCubit>()
                             .selectCategory(isAll ? null : cat.id),
@@ -222,6 +223,7 @@ class _NarrowLayout extends StatelessWidget {
               final cat = state.categories[index];
               final isAll = cat.id.isEmpty;
               return FocusableButton(
+                autofocus: index == 0,
                 semanticLabel: cat.name,
                 onPressed: () {
                   final cubit = ctx.read<GridCubit>();
@@ -322,6 +324,7 @@ class CategoryResultsScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final entry = items[index];
                 return PosterCard(
+                  autofocus: index == 0,
                   title: entry.title,
                   subtitle: entry.subtitle,
                   imageUrl: entry.posterUrl,
@@ -342,18 +345,21 @@ class _CategoryTile extends StatelessWidget {
     required this.name,
     required this.count,
     required this.isSelected,
+    required this.autofocus,
     required this.onTap,
   });
 
   final String name;
   final int? count;
   final bool isSelected;
+  final bool autofocus;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     return FocusableButton(
+      autofocus: autofocus,
       semanticLabel: name,
       onPressed: onTap,
       child: Container(

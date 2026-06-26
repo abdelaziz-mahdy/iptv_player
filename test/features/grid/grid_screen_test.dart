@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:noor_iptv/core/di/injection.dart';
 import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
+import 'package:noor_iptv/core/widgets/focusable_button.dart';
 import 'package:noor_iptv/features/grid/cubit/grid_cubit.dart';
 import 'package:noor_iptv/features/grid/grid_screen.dart';
 import 'package:noor_iptv/l10n/generated/app_localizations.dart';
@@ -159,5 +160,17 @@ void main() {
     // without throwing.
     expect(find.byType(GridScreen), findsOneWidget);
     expect(tapped, isNotNull); // suppress lint on tapped
+  });
+
+  testWidgets(
+      'GridScreen has at least one autofocused FocusableButton when content loads',
+      (tester) async {
+    await _pumpAndIgnoreOverflow(tester, _buildTestApp());
+
+    final autofocused = find.byWidgetPredicate(
+      (w) => w is FocusableButton && w.autofocus == true,
+      skipOffstage: false,
+    );
+    expect(autofocused, findsAtLeastNWidgets(1));
   });
 }
