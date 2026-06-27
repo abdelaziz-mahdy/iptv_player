@@ -1,5 +1,5 @@
 import 'package:m3u_nullsafe/m3u_nullsafe.dart';
-import 'package:noor_iptv/data/models/models.dart';
+import 'package:iptv_player/data/models/models.dart';
 
 /// Parses M3U / M3U_Plus content into a list of [Channel]s.
 class M3uSource {

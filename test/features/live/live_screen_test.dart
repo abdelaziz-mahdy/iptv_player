@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/core/a11y/accessibility_cubit.dart';
-import 'package:noor_iptv/core/di/injection.dart';
-import 'package:noor_iptv/core/theme/app_palette.dart';
-import 'package:noor_iptv/core/theme/app_theme.dart';
-import 'package:noor_iptv/core/widgets/focusable_button.dart';
-import 'package:noor_iptv/data/models/models.dart';
-import 'package:noor_iptv/data/repositories/fakes/fake_repositories.dart';
-import 'package:noor_iptv/data/repositories/repositories.dart';
-import 'package:noor_iptv/features/live/channel_list_screen.dart';
-import 'package:noor_iptv/features/live/cubit/live_cubit.dart';
-import 'package:noor_iptv/features/live/live_screen.dart';
-import 'package:noor_iptv/l10n/generated/app_localizations.dart';
+import 'package:iptv_player/core/a11y/accessibility_cubit.dart';
+import 'package:iptv_player/core/di/injection.dart';
+import 'package:iptv_player/core/theme/app_palette.dart';
+import 'package:iptv_player/core/theme/app_theme.dart';
+import 'package:iptv_player/core/widgets/focusable_button.dart';
+import 'package:iptv_player/data/models/models.dart';
+import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
+import 'package:iptv_player/data/repositories/repositories.dart';
+import 'package:iptv_player/features/live/channel_list_screen.dart';
+import 'package:iptv_player/features/live/cubit/live_cubit.dart';
+import 'package:iptv_player/features/live/live_screen.dart';
+import 'package:iptv_player/l10n/generated/app_localizations.dart';
 
 import '../../support/fake_hydrated_storage.dart';
 

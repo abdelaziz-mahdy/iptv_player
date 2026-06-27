@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/data/sources/m3u_source.dart';
+import 'package:iptv_player/data/sources/m3u_source.dart';
 
 void main() {
   late M3uSource source;

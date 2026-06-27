@@ -1,4 +1,4 @@
-import 'package:noor_iptv/data/models/models.dart' as noor;
+import 'package:iptv_player/data/models/models.dart' as noor;
 import 'package:xtream_code_client/xtream_code_client.dart'
     as xc
     show

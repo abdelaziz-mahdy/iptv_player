@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/core/a11y/accessibility_cubit.dart';
-import 'package:noor_iptv/core/i18n/locale_cubit.dart';
-import 'package:noor_iptv/core/theme/app_palette.dart';
-import 'package:noor_iptv/core/theme/app_theme.dart';
-import 'package:noor_iptv/core/widgets/focusable_button.dart';
-import 'package:noor_iptv/features/settings/settings_screen.dart';
-import 'package:noor_iptv/l10n/generated/app_localizations.dart';
+import 'package:iptv_player/core/a11y/accessibility_cubit.dart';
+import 'package:iptv_player/core/i18n/locale_cubit.dart';
+import 'package:iptv_player/core/theme/app_palette.dart';
+import 'package:iptv_player/core/theme/app_theme.dart';
+import 'package:iptv_player/core/widgets/focusable_button.dart';
+import 'package:iptv_player/features/settings/settings_screen.dart';
+import 'package:iptv_player/l10n/generated/app_localizations.dart';
 
 import '../../support/fake_hydrated_storage.dart';
 

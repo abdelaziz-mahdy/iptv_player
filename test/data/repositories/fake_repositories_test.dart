@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/data/models/models.dart';
-import 'package:noor_iptv/data/repositories/fakes/fake_repositories.dart';
+import 'package:iptv_player/data/models/models.dart';
+import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
 
 void main() {
   test('fake content repo streams seeded movies', () async {

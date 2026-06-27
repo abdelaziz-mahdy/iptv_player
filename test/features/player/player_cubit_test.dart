@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/data/models/models.dart';
-import 'package:noor_iptv/features/player/cubit/player_cubit.dart';
-import 'package:noor_iptv/data/repositories/fakes/fake_repositories.dart';
+import 'package:iptv_player/data/models/models.dart';
+import 'package:iptv_player/features/player/cubit/player_cubit.dart';
+import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
 
 import 'fake_player_controller.dart';
 

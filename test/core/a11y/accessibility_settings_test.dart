@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/core/a11y/accessibility_settings.dart';
+import 'package:iptv_player/core/a11y/accessibility_settings.dart';
 
 void main() {
   test('defaults match design baseline', () {

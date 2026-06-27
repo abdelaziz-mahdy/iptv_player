@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @brand.
   ///
   /// In en, this message translates to:
-  /// **'NOOR'**
+  /// **'IPTV Player'**
   String get brand;
 
   /// No description provided for @home.
@@ -317,7 +317,7 @@ abstract class AppLocalizations {
   /// No description provided for @complianceNote.
   ///
   /// In en, this message translates to:
-  /// **'NOOR hosts no content. All channels and media come from playlists you provide.'**
+  /// **'IPTV Player hosts no content. All channels and media come from playlists you provide.'**
   String get complianceNote;
 
   /// No description provided for @getStarted.

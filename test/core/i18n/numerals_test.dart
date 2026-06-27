@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/core/i18n/numerals.dart';
+import 'package:iptv_player/core/i18n/numerals.dart';
 
 void main() {
   test('converts digits to Arabic-Indic when rtl', () {

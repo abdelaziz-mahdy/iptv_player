@@ -1,8 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:noor_iptv/data/models/models.dart';
-import 'package:noor_iptv/data/repositories/repositories.dart';
+import 'package:iptv_player/data/models/models.dart';
+import 'package:iptv_player/data/repositories/repositories.dart';
 
 // ---------------------------------------------------------------------------
 // State

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:noor_iptv/features/player/video_controller.dart';
+import 'package:iptv_player/features/player/video_controller.dart';
 
 class FakePlayerController implements PlayerController {
   final _statusCtrl = StreamController<PlayerStatus>.broadcast();

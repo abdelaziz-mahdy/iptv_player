@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/data/models/models.dart';
-import 'package:noor_iptv/data/repositories/fakes/fake_repositories.dart';
-import 'package:noor_iptv/features/home/cubit/home_cubit.dart';
+import 'package:iptv_player/data/models/models.dart';
+import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
+import 'package:iptv_player/features/home/cubit/home_cubit.dart';
 
 void main() {
   group('HomeCubit', () {

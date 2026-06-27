@@ -1,0 +1,23 @@
+<svg width="640" height="360" viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="640" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#171C28"/>
+      <stop offset="1" stop-color="#0A0D13"/>
+    </linearGradient>
+    <linearGradient id="g" x1="70" y1="110" x2="250" y2="250" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#00E5FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#bg)"/>
+  <g transform="translate(70,72) scale(0.21)">
+    <circle cx="512" cy="512" r="226" fill="none" stroke="url(#g)" stroke-width="44"
+            stroke-linecap="round" stroke-dasharray="1010 1420" transform="rotate(128 512 512)"/>
+    <path d="M455 410 L455 614 L638 512 Z" fill="url(#g)" stroke="url(#g)"
+          stroke-width="34" stroke-linejoin="round"/>
+  </g>
+  <text x="250" y="180" font-family="Helvetica, Arial, sans-serif" font-size="62"
+        font-weight="700" fill="#F3F6FB">IPTV</text>
+  <text x="250" y="248" font-family="Helvetica, Arial, sans-serif" font-size="62"
+        font-weight="700" fill="#A78BFA">Player</text>
+</svg>

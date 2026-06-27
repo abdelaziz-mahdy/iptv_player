@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/data/repositories/fakes/fake_repositories.dart';
-import 'package:noor_iptv/features/live/cubit/live_cubit.dart';
+import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
+import 'package:iptv_player/features/live/cubit/live_cubit.dart';
 
 void main() {
   group('LiveCubit', () {

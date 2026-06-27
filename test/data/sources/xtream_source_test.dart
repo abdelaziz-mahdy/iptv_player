@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/data/sources/xtream_source.dart';
+import 'package:iptv_player/data/sources/xtream_source.dart';
 import 'package:xtream_code_client/xtream_code_client.dart'
     as xc
     show LiveStreamItem, VodItem, SeriesItem;

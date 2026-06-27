@@ -12,9 +12,10 @@
     <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
 
     <application
-        android:label="noor_iptv"
+        android:label="IPTV Player"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:banner="@drawable/tv_banner">
         <!-- Use the Skia/OpenGLES renderer instead of Impeller (Vulkan).
              Impeller has known rendering bugs on Android TV hardware: video
              artifacts (flutter#177319), UI flicker / broken renders during

@@ -4,12 +4,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:noor_iptv/core/di/injection.dart';
-import 'package:noor_iptv/core/theme/app_theme.dart';
-import 'package:noor_iptv/core/widgets/focusable_button.dart';
-import 'package:noor_iptv/data/models/models.dart';
-import 'package:noor_iptv/data/repositories/repositories.dart';
-import 'package:noor_iptv/l10n/generated/app_localizations.dart';
+import 'package:iptv_player/core/di/injection.dart';
+import 'package:iptv_player/core/theme/app_theme.dart';
+import 'package:iptv_player/core/widgets/focusable_button.dart';
+import 'package:iptv_player/data/models/models.dart';
+import 'package:iptv_player/data/repositories/repositories.dart';
+import 'package:iptv_player/l10n/generated/app_localizations.dart';
 
 import 'cubit/details_cubit.dart';
 

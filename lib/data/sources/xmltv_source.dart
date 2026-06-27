@@ -1,4 +1,4 @@
-import 'package:noor_iptv/data/models/models.dart';
+import 'package:iptv_player/data/models/models.dart';
 import 'package:xml/xml.dart';
 
 /// Parses XMLTV documents into a list of [EpgProgramme] objects.

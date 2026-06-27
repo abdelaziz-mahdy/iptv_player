@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get brand => 'NOOR';
+  String get brand => 'IPTV Player';
 
   @override
   String get home => 'Home';
@@ -118,7 +118,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get complianceNote =>
-      'NOOR hosts no content. All channels and media come from playlists you provide.';
+      'IPTV Player hosts no content. All channels and media come from playlists you provide.';
 
   @override
   String get getStarted => 'Get Started';

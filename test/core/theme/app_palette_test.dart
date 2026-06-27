@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/core/theme/app_palette.dart';
+import 'package:iptv_player/core/theme/app_palette.dart';
 
 void main() {
   test('standard palette matches design tokens', () {

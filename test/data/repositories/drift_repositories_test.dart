@@ -2,16 +2,16 @@ import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/core/result.dart';
-import 'package:noor_iptv/data/credential_store_drift.dart';
-import 'package:noor_iptv/data/db/database.dart';
-import 'package:noor_iptv/data/models/models.dart';
-import 'package:noor_iptv/data/repositories/drift_content_repository.dart';
-import 'package:noor_iptv/data/repositories/drift_epg_repository.dart';
-import 'package:noor_iptv/data/repositories/drift_playback_repository.dart';
-import 'package:noor_iptv/data/repositories/drift_playlist_repository.dart';
-import 'package:noor_iptv/data/sources/m3u_source.dart';
-import 'package:noor_iptv/data/sources/xtream_source.dart';
+import 'package:iptv_player/core/result.dart';
+import 'package:iptv_player/data/credential_store_drift.dart';
+import 'package:iptv_player/data/db/database.dart';
+import 'package:iptv_player/data/models/models.dart';
+import 'package:iptv_player/data/repositories/drift_content_repository.dart';
+import 'package:iptv_player/data/repositories/drift_epg_repository.dart';
+import 'package:iptv_player/data/repositories/drift_playback_repository.dart';
+import 'package:iptv_player/data/repositories/drift_playlist_repository.dart';
+import 'package:iptv_player/data/sources/m3u_source.dart';
+import 'package:iptv_player/data/sources/xtream_source.dart';
 
 // ---------------------------------------------------------------------------
 // Stub M3uSource for importPlaylist test

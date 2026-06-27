@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/core/a11y/accessibility_settings.dart';
-import 'package:noor_iptv/core/a11y/caption_style.dart';
+import 'package:iptv_player/core/a11y/accessibility_settings.dart';
+import 'package:iptv_player/core/a11y/caption_style.dart';
 
 void main() {
   test('maps settings to caption style scaled by text scale', () {

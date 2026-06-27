@@ -1,4 +1,4 @@
-package com.noor.iptv.noor_iptv
+package com.iptvplayer
 
 import io.flutter.embedding.android.FlutterActivity
 

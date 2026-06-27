@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/data/sources/xmltv_source.dart';
-import 'package:noor_iptv/data/models/models.dart';
+import 'package:iptv_player/data/sources/xmltv_source.dart';
+import 'package:iptv_player/data/models/models.dart';
 
 void main() {
   late XmltvSource source;

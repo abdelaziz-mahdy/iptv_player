@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "brand": "NOOR",
+  "brand": "IPTV Player",
   "home": "Home",
   "favorites": "Favorites",
   "live": "Live TV",
@@ -36,7 +36,7 @@
   "colorWhite": "White",
   "colorYellow": "Yellow",
   "colorCyan": "Cyan",
-  "complianceNote": "NOOR hosts no content. All channels and media come from playlists you provide.",
+  "complianceNote": "IPTV Player hosts no content. All channels and media come from playlists you provide.",
   "getStarted": "Get Started",
   "tagline": "Your playlists. Your content. Beautifully organized.",
   "addPlaylist": "Add playlist",

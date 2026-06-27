@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/data/db/database.dart';
+import 'package:iptv_player/data/db/database.dart';
 
 void main() {
   late AppDatabase db;

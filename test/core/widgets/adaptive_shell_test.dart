@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/core/theme/app_palette.dart';
-import 'package:noor_iptv/core/theme/app_theme.dart';
-import 'package:noor_iptv/core/widgets/adaptive_shell.dart';
+import 'package:iptv_player/core/theme/app_palette.dart';
+import 'package:iptv_player/core/theme/app_theme.dart';
+import 'package:iptv_player/core/widgets/adaptive_shell.dart';
 
 Widget _wrap(Size size, {VoidCallback? onOpenSettings, VoidCallback? onOpenPlaylists}) =>
     MaterialApp(

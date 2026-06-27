@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/data/credential_store.dart';
-import 'package:noor_iptv/data/repositories/fakes/fake_repositories.dart';
-import 'package:noor_iptv/features/import/cubit/import_cubit.dart';
+import 'package:iptv_player/data/credential_store.dart';
+import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
+import 'package:iptv_player/features/import/cubit/import_cubit.dart';
 
 void main() {
   group('ImportCubit', () {

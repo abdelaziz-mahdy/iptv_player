@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/core/i18n/locale_cubit.dart';
+import 'package:iptv_player/core/i18n/locale_cubit.dart';
 
 import '../../support/fake_hydrated_storage.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:noor_iptv/core/result.dart';
-import 'package:noor_iptv/data/models/models.dart';
+import 'package:iptv_player/core/result.dart';
+import 'package:iptv_player/data/models/models.dart';
 
 void main() {
   test('Result.when dispatches ok/err', () {
