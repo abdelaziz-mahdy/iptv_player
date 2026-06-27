@@ -72,11 +72,11 @@ class VideoPlayerControllerAdapter implements PlayerController {
   @override
   Future<void> initialize(String url) async {
     if (!_fvpRegistered) {
-      // Register fvp (libmpv) for desktop only. On Android its texture
-      // rendering shows artifacts on some TV GPUs, so we leave Android on the
-      // default native video_player (ExoPlayer) backend by omitting it here.
+      // fvp (libmpv/MDK) backs video_player on all platforms — native
+      // ExoPlayer cannot demux many IPTV streams (TS/odd codecs) that fvp
+      // handles. Prefer hardware decoders, fall back to FFmpeg software.
       fvp.registerWith(options: {
-        'platforms': ['windows', 'macos', 'linux'],
+        'video.decoders': ['AMediaCodec', 'FFmpeg'],
       });
       _fvpRegistered = true;
     }
