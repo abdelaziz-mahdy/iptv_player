@@ -27,6 +27,37 @@ void main() {
 
     tearDown(() => cubit.close());
 
+    group('controls auto-hide', () {
+      test('controls start visible after start()', () async {
+        await cubit.start();
+        expect(cubit.state.showControls, isTrue);
+      });
+
+      test('revealControls re-shows controls after being hidden', () async {
+        await cubit.start();
+        cubit.hideControlsForTesting();
+        expect(cubit.state.showControls, isFalse);
+
+        cubit.revealControls();
+        expect(cubit.state.showControls, isTrue);
+      });
+
+      test('pausing keeps controls visible (no auto-hide while paused)',
+          () async {
+        await cubit.start();
+        expect(cubit.state.isPlaying, isTrue);
+        cubit.hideControlsForTesting();
+        expect(cubit.state.showControls, isFalse);
+
+        await cubit.togglePlayPause(); // pause
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        expect(cubit.state.isPlaying, isFalse);
+        expect(cubit.state.showControls, isTrue,
+            reason: 'Controls must reappear and stay when paused');
+      });
+    });
+
     group('live-aware progress', () {
       test('channel kind: after start()+close(), no progress saved', () async {
         final liveController = FakePlayerController();

@@ -136,7 +136,8 @@ void main() {
     );
   });
 
-  testWidgets('heart is independently focusable via its own FocusableButton', (tester) async {
+  testWidgets('heart is NOT a focus stop (read-only during D-pad navigation)',
+      (tester) async {
     var heartActivated = false;
     var cardTapped = false;
 
@@ -151,19 +152,17 @@ void main() {
       ),
     ));
 
-    // The heart must be wrapped in its own FocusableButton widget.
-    // There should be at least 2 FocusableButton instances: one for the card and
-    // one for the heart.
-    expect(find.byType(FocusableButton), findsAtLeastNWidgets(2));
+    // Only the card itself is a FocusableButton — the heart must not add a
+    // second focus stop, so D-pad grid navigation skips over it.
+    expect(find.byType(FocusableButton), findsOneWidget);
 
-    // The heart's FocusableButton must carry distinct button semantics
-    // (label containing "favorites"), separate from the card label "Dune".
+    // It still carries its own button semantics for screen readers / touch.
     expect(
       find.bySemanticsLabel(RegExp(r'[Ff]avorites')),
       findsAtLeastNWidgets(1),
     );
 
-    // Activating the heart button does NOT fire onTap.
+    // Tapping it still toggles favorite and does NOT fire the card's onTap.
     await tester.tap(find.byIcon(Icons.favorite_border));
     await tester.pump();
     expect(heartActivated, isTrue);

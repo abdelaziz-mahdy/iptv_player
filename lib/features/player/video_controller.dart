@@ -72,7 +72,12 @@ class VideoPlayerControllerAdapter implements PlayerController {
   @override
   Future<void> initialize(String url) async {
     if (!_fvpRegistered) {
-      fvp.registerWith();
+      // Register fvp (libmpv) for desktop only. On Android its texture
+      // rendering shows artifacts on some TV GPUs, so we leave Android on the
+      // default native video_player (ExoPlayer) backend by omitting it here.
+      fvp.registerWith(options: {
+        'platforms': ['windows', 'macos', 'linux'],
+      });
       _fvpRegistered = true;
     }
 

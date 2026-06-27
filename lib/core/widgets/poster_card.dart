@@ -97,26 +97,33 @@ class PosterCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  // Heart favorite button — only rendered when wired up.
+                  // Heart favorite indicator — only rendered when wired up.
+                  // Deliberately NOT a focus stop: D-pad grid navigation skips
+                  // over it (toggled by touch/mouse, or via the details screen
+                  // on a remote), so moving across the grid never lands on it.
                   if (onToggleFavorite != null)
                     PositionedDirectional(
                       top: 6,
                       start: 6,
-                      child: FocusableButton(
-                        semanticLabel:
-                            isFavorite ? 'Remove from favorites' : 'Add to favorites',
-                        onPressed: onToggleFavorite!,
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: Colors.black45,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Icon(
-                            isFavorite ? Icons.favorite : Icons.favorite_border,
-                            color: isFavorite ? p.accent : Colors.white,
-                            size: 16,
+                      child: Semantics(
+                        button: true,
+                        label: isFavorite
+                            ? 'Remove from favorites'
+                            : 'Add to favorites',
+                        child: GestureDetector(
+                          onTap: onToggleFavorite,
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: Colors.black45,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Icon(
+                              isFavorite ? Icons.favorite : Icons.favorite_border,
+                              color: isFavorite ? p.accent : Colors.white,
+                              size: 16,
+                            ),
                           ),
                         ),
                       ),

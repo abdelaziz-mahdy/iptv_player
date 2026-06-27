@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:noor_iptv/core/a11y/accessibility_cubit.dart';
+import 'package:noor_iptv/features/player/cubit/player_cubit.dart';
 import 'package:noor_iptv/core/theme/app_palette.dart';
 import 'package:noor_iptv/core/theme/app_theme.dart';
 import 'package:noor_iptv/data/models/models.dart';
@@ -42,6 +44,36 @@ void main() {
     expect(find.text('Dune'), findsOneWidget);
     // Play/pause button should exist
     expect(find.byType(PlayerScreen), findsOneWidget);
+  });
+
+  testWidgets('controls auto-hide after idle and reappear on key press',
+      (tester) async {
+    await tester.pumpWidget(_buildPlayer());
+    await tester.pump(); // let start() complete
+    await tester.pump(const Duration(milliseconds: 100));
+
+    List<double> targets() => tester
+        .widgetList<AnimatedOpacity>(find.byType(AnimatedOpacity))
+        .map((o) => o.opacity)
+        .toList();
+
+    // Playing → controls visible.
+    expect(targets(), isNotEmpty);
+    expect(targets().every((o) => o == 1.0), isTrue,
+        reason: 'Controls should be visible right after playback starts');
+
+    // Stay idle past the timeout → controls hide.
+    await tester
+        .pump(PlayerCubit.controlsIdleTimeout + const Duration(seconds: 1));
+    await tester.pump();
+    expect(targets().every((o) => o == 0.0), isTrue,
+        reason: 'Controls should auto-hide after idle timeout');
+
+    // A remote key press reveals them again.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    expect(targets().any((o) => o == 1.0), isTrue,
+        reason: 'Any key press should reveal the controls again');
   });
 
   testWidgets('tapping back invokes onBack', (tester) async {

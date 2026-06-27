@@ -20,6 +20,7 @@ class FocusableButton extends StatefulWidget {
   final String? semanticLabel;
   final bool autofocus;
   final bool reduceMotion;
+  final FocusNode? focusNode;
 
   const FocusableButton({
     super.key,
@@ -28,6 +29,7 @@ class FocusableButton extends StatefulWidget {
     this.semanticLabel,
     this.autofocus = false,
     this.reduceMotion = false,
+    this.focusNode,
   });
 
   @override
@@ -45,6 +47,7 @@ class _FocusableButtonState extends State<FocusableButton> {
       button: true,
       label: widget.semanticLabel,
       child: FocusableActionDetector(
+        focusNode: widget.focusNode,
         autofocus: widget.autofocus,
         onShowFocusHighlight: (f) {
           if (_focused == f) return;

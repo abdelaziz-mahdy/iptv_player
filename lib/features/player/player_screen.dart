@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:video_player/video_player.dart';
 
@@ -72,6 +73,41 @@ class PlayerScreen extends StatefulWidget {
 class _PlayerScreenState extends State<PlayerScreen> {
   PlayerCubit? _cubit;
 
+  // Root focus anchor: holds focus when the controls are hidden (and therefore
+  // excluded from focus), so a D-pad press has no control to activate — the
+  // first press only reveals the controls.
+  final FocusNode _rootFocus = FocusNode(debugLabel: 'player-root');
+  // Focus restored to the play/pause button each time controls are revealed.
+  final FocusNode _playPauseFocus = FocusNode(debugLabel: 'player-playpause');
+
+  @override
+  void initState() {
+    super.initState();
+    // Any key resets the idle timer (and reveals the controls if hidden),
+    // regardless of which widget consumes the key. Never consumes the event.
+    HardwareKeyboard.instance.addHandler(_handleHardwareKey);
+  }
+
+  bool _handleHardwareKey(KeyEvent event) {
+    if (event is KeyDownEvent || event is KeyRepeatEvent) {
+      _cubit?.revealControls();
+    }
+    return false;
+  }
+
+  /// Wraps an overlay so it fades out and becomes non-interactive /
+  /// non-focusable when [show] is false.
+  Widget _hideable(bool show, Widget child) {
+    return AnimatedOpacity(
+      opacity: show ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 250),
+      child: IgnorePointer(
+        ignoring: !show,
+        child: ExcludeFocus(excluding: !show, child: child),
+      ),
+    );
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -92,6 +128,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleHardwareKey);
+    _rootFocus.dispose();
+    _playPauseFocus.dispose();
     _cubit?.close();
     super.dispose();
   }
@@ -126,20 +165,38 @@ class _PlayerScreenState extends State<PlayerScreen> {
       value: _cubit!,
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: BlocBuilder<PlayerCubit, PlayerUiState>(
-          builder: (context, state) {
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                // Video surface
-                _buildVideoSurface(),
+        body: Focus(
+          focusNode: _rootFocus,
+          child: Listener(
+            behavior: HitTestBehavior.translucent,
+            // Pointer activity reveals controls and resets the idle timer.
+            onPointerDown: (_) => _cubit?.revealControls(),
+            onPointerHover: (_) => _cubit?.revealControls(),
+            child: BlocConsumer<PlayerCubit, PlayerUiState>(
+              // When controls reappear, move focus back onto a real control so
+              // the D-pad works immediately.
+              listenWhen: (prev, curr) =>
+                  !prev.showControls && curr.showControls,
+              listener: (context, state) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) _playPauseFocus.requestFocus();
+                });
+              },
+              builder: (context, state) {
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Video surface
+                    _buildVideoSurface(),
 
                 // Top gradient + back + title
                 Positioned(
                   top: 0,
                   left: 0,
                   right: 0,
-                  child: Container(
+                  child: _hideable(
+                    state.showControls,
+                    Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
@@ -243,6 +300,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       ],
                     ),
                   ),
+                  ),
                 ),
 
                 // Captions overlay
@@ -277,7 +335,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  child: Container(
+                  child: _hideable(
+                    state.showControls,
+                    Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.bottomCenter,
@@ -355,6 +415,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
                             ],
                             // Play/pause
                             FocusableButton(
+                              focusNode: _playPauseFocus,
+                              autofocus: true,
                               semanticLabel: state.isPlaying ? 'Pause' : 'Play',
                               onPressed: () => context.read<PlayerCubit>().togglePlayPause(),
                               child: Container(
@@ -452,10 +514,13 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       ],
                     ),
                   ),
+                  ),
                 ),
               ],
             );
-          },
+              },
+            ),
+          ),
         ),
       ),
     );

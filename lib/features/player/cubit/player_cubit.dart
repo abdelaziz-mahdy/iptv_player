@@ -77,6 +77,11 @@ class PlayerCubit extends Cubit<PlayerUiState> {
 
   StreamSubscription<PlayerStatus>? _statusSub;
   Timer? _bitrateTimer;
+  Timer? _controlsTimer;
+
+  /// How long the controls stay on screen after the last interaction before
+  /// auto-hiding (only while playing).
+  static const controlsIdleTimeout = Duration(seconds: 4);
 
   PlayerCubit(
     this._controller,
@@ -124,12 +129,13 @@ class PlayerCubit extends Cubit<PlayerUiState> {
 
     await _controller.play();
 
-    try {
-      await WakelockPlus.enable();
-    } catch (_) {}
+    // Best-effort: keep the screen awake during playback. Fire-and-forget so
+    // player setup never blocks on the platform channel.
+    unawaited(WakelockPlus.enable().catchError((_) {}));
 
     _statusSub = _controller.status.listen((s) {
       if (isClosed) return;
+      final wasPlaying = state.isPlaying;
       emit(state.copyWith(
         isPlaying: s.isPlaying,
         position: s.position,
@@ -139,6 +145,17 @@ class PlayerCubit extends Cubit<PlayerUiState> {
           resolutionBadge: _controller.streamBadge,
         ),
       ));
+      // React only to actual play/pause transitions — not every position tick,
+      // which would continuously reset the hide timer and never hide.
+      if (s.isPlaying != wasPlaying) {
+        if (s.isPlaying) {
+          _scheduleHideControls();
+        } else {
+          // Keep controls visible while paused.
+          _controlsTimer?.cancel();
+          emit(state.copyWith(showControls: true));
+        }
+      }
     });
 
     // Poll bitrate every 2 seconds and update the stream badge.
@@ -154,6 +171,33 @@ class PlayerCubit extends Cubit<PlayerUiState> {
         resolutionBadge: _controller.streamBadge,
       ),
     ));
+
+    // Begin the idle countdown so controls auto-hide once playback is running.
+    _scheduleHideControls();
+  }
+
+  /// Reveals the controls and (re)starts the idle countdown. Call on any user
+  /// interaction (key press, tap, pointer move).
+  void revealControls() {
+    if (isClosed) return;
+    if (!state.showControls) emit(state.copyWith(showControls: true));
+    _scheduleHideControls();
+  }
+
+  /// Arms the idle timer to hide controls after [controlsIdleTimeout].
+  /// Only auto-hides while playing — paused playback keeps controls visible.
+  void _scheduleHideControls() {
+    _controlsTimer?.cancel();
+    if (!state.isPlaying) return;
+    _controlsTimer = Timer(controlsIdleTimeout, () {
+      if (!isClosed) emit(state.copyWith(showControls: false));
+    });
+  }
+
+  /// Hides the controls immediately — **for testing only** (avoids waiting on
+  /// the real idle [Timer]).
+  void hideControlsForTesting() {
+    if (!isClosed) emit(state.copyWith(showControls: false));
   }
 
   /// Samples [PlayerController.currentBitRate] and emits an updated badge.
@@ -253,6 +297,8 @@ class PlayerCubit extends Cubit<PlayerUiState> {
   Future<void> close() async {
     _bitrateTimer?.cancel();
     _bitrateTimer = null;
+    _controlsTimer?.cancel();
+    _controlsTimer = null;
     try {
       await _saveProgress();
       try {
