@@ -4,7 +4,7 @@
 
 A real IPTV client for **Android (phone + TV)** and **desktop (macOS / Windows / Linux)**, built with Flutter.
 
-Xtream Codes • M3U / M3U8 • XMLTV EPG • real playback via libmpv (fvp)
+Xtream Codes • M3U / M3U8 • XMLTV EPG • real playback via libmpv (media_kit / fvp)
 
 </div>
 
@@ -19,14 +19,18 @@ Xtream Codes • M3U / M3U8 • XMLTV EPG • real playback via libmpv (fvp)
   - **Xtream Codes** portals (live, VOD, series, categories, EPG)
   - **M3U / M3U8** playlists (URL or file)
   - **XMLTV** EPG parsing
-- **Playback** via [`fvp`](https://pub.dev/packages/fvp) (libmpv/MDK) — handles the
-  wide range of codecs/containers IPTV streams use that native players often can't,
-  with hardware decoding (`AMediaCodec` → `FFmpeg` fallback). Live/VOD aware,
-  resume for VOD, real-time bitrate badge, auto-hiding controls.
+- **Playback** via libmpv — [`media_kit`](https://pub.dev/packages/media_kit) on
+  Android, [`fvp`](https://pub.dev/packages/fvp) on desktop — handling the wide
+  range of codecs/containers IPTV streams use that native players often can't,
+  with hardware decoding. Live/VOD aware, real-time bitrate badge, auto-hiding
+  controls.
+- **Continue Watching** — VOD resumes where you left off. The position is saved
+  continuously during playback and when the app is backgrounded, so it survives
+  the app being closed from the Home button or killed by the TV.
 - **TV-first UX** — full D-pad navigation, on-screen focus rings, native TV text
   entry, a side rail reachable with LEFT, and a leanback launcher banner.
 - **Library** — Home rails, Live TV (groups → channels → player), Movies & Series
-  grids with real category names, Favorites, Search, Continue Watching.
+  grids (on-demand seasons/episodes) with real category names, Favorites, Search.
 - **Accessibility** — text scaling, reduce-motion, high-contrast palette, captions,
   RTL + Arabic-Indic numerals, screen-reader semantics.
 
@@ -49,23 +53,29 @@ Xtream Codes • M3U / M3U8 • XMLTV EPG • real playback via libmpv (fvp)
 - **Persistence:** `drift` (SQLite) with schema migrations
 - **Models/codegen:** `freezed` + `json_serializable` + `build_runner`
 - **Data:** `xtream_code_client`, `m3u_nullsafe`, `xml` (XMLTV), `dio`
-- **Video:** `fvp` backing `video_player`
+- **Video:** libmpv — `media_kit` (Android), `fvp` backing `video_player` (desktop)
 - **Fonts:** bundled Hanken Grotesk (variable), IBM Plex Sans Arabic, Atkinson Hyperlegible
 
-## Android TV renderer note
+## Android TV renderer & video notes
 
-Flutter's default **Impeller (Vulkan)** backend has rendering bugs on some Android
-TV GPUs (notably **PowerVR**): grid-scroll flicker and video artifacts. This app
-ships with a renderer override in `AndroidManifest.xml`:
+On some Android TV GPUs (notably **PowerVR**) two *separate* rendering problems
+appear; both are worked around here:
 
-```xml
-<meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false" />
-```
+- **UI flicker** under Flutter's default **Impeller (Vulkan)** backend. The app
+  forces **Skia** via `AndroidManifest.xml` (confirmed stable on TCL/PowerVR).
+  Impeller's OpenGLES backend is **not** an escape hatch — Flutter 3.44.2 ignores
+  `ImpellerBackend=opengles` and still uses Vulkan. Helper:
+  `scripts/set_impeller.py {vulkan|opengles|skia}`.
 
-- **Current default:** Skia (`EnableImpeller=false`) — confirmed stable on TCL/PowerVR.
-- **Being evaluated:** Impeller with the **OpenGLES** backend
-  (`EnableImpeller=true` + `ImpellerBackend=opengles`) — keeps Impeller while
-  avoiding the broken Vulkan path. Helper: `scripts/set_impeller.py {vulkan|opengles|skia}`.
+  ```xml
+  <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false" />
+  ```
+
+- **Video corruption** with `fvp`/MDK's GL renderer (reproduces with every
+  decoder, even software — decoding is fine, the renderer isn't). Android
+  therefore plays via **`media_kit`** (mpv `vo_gpu`), which renders the same
+  streams correctly on the same GPU; desktop keeps `fvp`, where it works.
+  Upstream: wang-bin/fvp#374.
 
 Related upstream issues: flutter#177319, flutter#165983, flutter#161316.
 
