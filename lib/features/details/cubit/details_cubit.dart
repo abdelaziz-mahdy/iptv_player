@@ -13,12 +13,14 @@ class DetailsState extends Equatable {
   final List<Season> seasons;
   final int selectedSeasonIndex;
   final List<Episode> episodes;
+  final String? description;
 
   const DetailsState({
     this.loading = false,
     this.seasons = const [],
     this.selectedSeasonIndex = 0,
     this.episodes = const [],
+    this.description,
   });
 
   DetailsState copyWith({
@@ -26,17 +28,20 @@ class DetailsState extends Equatable {
     List<Season>? seasons,
     int? selectedSeasonIndex,
     List<Episode>? episodes,
+    String? description,
   }) {
     return DetailsState(
       loading: loading ?? this.loading,
       seasons: seasons ?? this.seasons,
       selectedSeasonIndex: selectedSeasonIndex ?? this.selectedSeasonIndex,
       episodes: episodes ?? this.episodes,
+      description: description ?? this.description,
     );
   }
 
   @override
-  List<Object?> get props => [loading, seasons, selectedSeasonIndex, episodes];
+  List<Object?> get props =>
+      [loading, seasons, selectedSeasonIndex, episodes, description];
 }
 
 // ---------------------------------------------------------------------------
@@ -48,48 +53,40 @@ class DetailsCubit extends Cubit<DetailsState> {
 
   DetailsCubit(this._content) : super(const DetailsState());
 
-  /// Loads seasons for the given series, then loads episodes for the first
-  /// season. For movie detail screens, no load is needed.
-  Future<void> loadSeries(String seriesId) async {
+  /// Episodes keyed by season domain id, cached from [loadSeries] so switching
+  /// seasons is instant (no extra fetch).
+  Map<String, List<Episode>> _episodesBySeason = const {};
+
+  /// Fetches the series' seasons + episodes on demand (Xtream series-info),
+  /// then shows the first season. For movie detail screens, no load is needed.
+  Future<void> loadSeries(Series series) async {
     emit(state.copyWith(loading: true));
 
-    final seasonsResult = await _content.seasons(seriesId);
-    final seasons = seasonsResult.when(
-      ok: (list) => list,
-      err: (_) => <Season>[],
+    final result = await _content.loadSeriesDetail(series);
+    final detail = result.when(
+      ok: (d) => d,
+      err: (_) => const SeriesDetail(),
     );
 
-    if (seasons.isEmpty) {
-      emit(state.copyWith(loading: false, seasons: seasons, episodes: []));
-      return;
-    }
-
-    final episodesResult = await _content.episodes(seasons.first.id);
-    final episodes = episodesResult.when(
-      ok: (list) => list,
-      err: (_) => <Episode>[],
-    );
+    _episodesBySeason = detail.episodesBySeason;
+    final seasons = detail.seasons;
+    final firstEpisodes = seasons.isEmpty
+        ? const <Episode>[]
+        : (_episodesBySeason[seasons.first.id] ?? const []);
 
     emit(state.copyWith(
       loading: false,
       seasons: seasons,
       selectedSeasonIndex: 0,
-      episodes: episodes,
+      episodes: firstEpisodes,
+      description: detail.description,
     ));
   }
 
-  /// Switches to the season at [index] and loads its episodes.
-  Future<void> selectSeason(int index) async {
+  /// Switches to the season at [index] using the cached episode map.
+  void selectSeason(int index) {
     if (index < 0 || index >= state.seasons.length) return;
-
-    emit(state.copyWith(loading: true, selectedSeasonIndex: index));
-
-    final episodesResult = await _content.episodes(state.seasons[index].id);
-    final episodes = episodesResult.when(
-      ok: (list) => list,
-      err: (_) => <Episode>[],
-    );
-
-    emit(state.copyWith(loading: false, episodes: episodes));
+    final episodes = _episodesBySeason[state.seasons[index].id] ?? const [];
+    emit(state.copyWith(selectedSeasonIndex: index, episodes: episodes));
   }
 }

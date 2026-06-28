@@ -18,6 +18,13 @@ abstract class ContentRepository {
   Stream<List<Series>> series(String playlistId);
   Future<Result<List<Season>>> seasons(String seriesId);
   Future<Result<List<Episode>>> episodes(String seasonId);
+
+  /// Fetches a series' full detail (plot, seasons, episodes) from the provider
+  /// on demand and caches it locally. Seasons/episodes are not fetched during
+  /// the initial import (too expensive per-series), so this is called when a
+  /// series detail screen opens. For sources without a series-info API (M3U)
+  /// or when credentials are unavailable, returns an empty [SeriesDetail].
+  Future<Result<SeriesDetail>> loadSeriesDetail(Series series);
   Stream<List<Favorite>> favorites(String playlistId);
   Future<void> toggleFavorite(String itemKey, String playlistId, MediaKind kind);
 

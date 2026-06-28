@@ -51,7 +51,7 @@ class DetailsScreen extends StatelessWidget {
       final onPlayEpisode = _onPlayEpisode!;
       return BlocProvider<DetailsCubit>(
         create: (_) =>
-            DetailsCubit(sl<ContentRepository>())..loadSeries(series.id),
+            DetailsCubit(sl<ContentRepository>())..loadSeries(series),
         child: _SeriesDetailBody(
           series: series,
           onBack: onBack,
@@ -68,112 +68,201 @@ class DetailsScreen extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Shared backdrop hero + back button
+// Responsive detail scaffold: full-bleed blurred backdrop, poster on the left
+// (wide) or on top (narrow), content/sections in the remaining space.
 // ---------------------------------------------------------------------------
 
-class _BackdropHero extends StatelessWidget {
+/// Width at/above which the two-column (poster-left) layout is used.
+const double _wideBreakpoint = 840;
+
+class _DetailScaffold extends StatelessWidget {
   final String? posterUrl;
   final String title;
   final VoidCallback onBack;
 
-  const _BackdropHero({
+  /// Header block: title, meta chips, action buttons, synopsis.
+  final Widget header;
+
+  /// Optional extra sections shown after the header (e.g. seasons + episodes).
+  final List<Widget> sections;
+
+  const _DetailScaffold({
     required this.posterUrl,
     required this.title,
     required this.onBack,
+    required this.header,
+    this.sections = const [],
   });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    // Cap the backdrop height so a full-width 16:9 image doesn't dominate on
-    // wide desktop / TV windows; on phones it still fills nicely.
-    final size = MediaQuery.sizeOf(context);
-    final backdropHeight =
-        (size.height * 0.42).clamp(220.0, 460.0).toDouble();
+    final p = context.palette;
 
-    Widget buildPosterContent() {
-      if (posterUrl == null) {
-        return _GradientPlaceholder(title: title);
-      }
-      return Stack(
+    return Scaffold(
+      backgroundColor: p.bg,
+      body: Stack(
         fit: StackFit.expand,
         children: [
-          // Bottom layer: blurred full-bleed poster for ambient glow
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-            child: Image.network(
-              posterUrl!,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stack) => _GradientPlaceholder(title: title),
+          // Ambient blurred backdrop fills the whole screen.
+          _AmbientBackdrop(posterUrl: posterUrl, title: title),
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final wide = constraints.maxWidth >= _wideBreakpoint;
+                if (wide) {
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Left: poster column
+                        SizedBox(
+                          width: 280,
+                          child: _Poster(posterUrl: posterUrl, title: title),
+                        ),
+                        const SizedBox(width: 28),
+                        // Right: scrollable content
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                header,
+                                ...sections,
+                                const SizedBox(height: 24),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                // Narrow (phone): poster on top, content below.
+                return SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 220),
+                            child: _Poster(posterUrl: posterUrl, title: title),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            header,
+                            ...sections,
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
-          // Dark scrim over the blurred layer
-          Container(
-            color: context.palette.bg.withValues(alpha: 0.55),
-          ),
-          // Foreground: full poster, contained (portrait box centred)
-          Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: backdropHeight,
-                maxWidth: backdropHeight * 0.67, // typical portrait aspect
-              ),
-              child: Image.network(
-                posterUrl!,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stack) => _GradientPlaceholder(title: title),
+          // Back button
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            left: 8,
+            child: FocusableButton(
+              semanticLabel: l10n.back,
+              onPressed: onBack,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: p.surface.withAlpha(200),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.arrow_back, color: p.fg, size: 22),
               ),
             ),
           ),
         ],
-      );
-    }
+      ),
+    );
+  }
+}
 
-    return Stack(
-      children: [
-        // Backdrop / ambient hero
-        SizedBox(
-          height: backdropHeight,
-          width: double.infinity,
-          child: buildPosterContent(),
-        ),
-        // Gradient overlay so text is readable
-        Positioned(
-          left: 0,
-          right: 0,
-          top: 0,
-          height: backdropHeight,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  context.palette.bg.withAlpha(230),
-                ],
-              ),
-            ),
+/// Full-screen blurred poster used as an ambient background, with a scrim so
+/// foreground content stays readable.
+class _AmbientBackdrop extends StatelessWidget {
+  final String? posterUrl;
+  final String title;
+  const _AmbientBackdrop({required this.posterUrl, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    if (posterUrl == null) {
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [p.surface, p.bg],
           ),
         ),
-        // Back button
-        Positioned(
-          top: MediaQuery.of(context).padding.top + 8,
-          left: 8,
-          child: FocusableButton(
-            semanticLabel: l10n.back,
-            onPressed: onBack,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: context.palette.surface.withAlpha(200),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(Icons.arrow_back, color: context.palette.fg, size: 22),
+      );
+    }
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+          child: Image.network(
+            posterUrl!,
+            fit: BoxFit.cover,
+            errorBuilder: (_, _, _) => ColoredBox(color: p.surface),
+          ),
+        ),
+        // Darken + fade toward the bottom so text is legible.
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                p.bg.withValues(alpha: 0.70),
+                p.bg.withValues(alpha: 0.92),
+              ],
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Sharp, contained portrait poster with rounded corners.
+class _Poster extends StatelessWidget {
+  final String? posterUrl;
+  final String title;
+  const _Poster({required this.posterUrl, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 2 / 3,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: posterUrl == null
+            ? _GradientPlaceholder(title: title)
+            : Image.network(
+                posterUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => _GradientPlaceholder(title: title),
+              ),
+      ),
     );
   }
 }
@@ -193,13 +282,16 @@ class _GradientPlaceholder extends StatelessWidget {
         ),
       ),
       child: Center(
-        child: Text(
-          title,
-          style: Theme.of(context)
-              .textTheme
-              .headlineSmall
-              ?.copyWith(color: context.palette.dim),
-          textAlign: TextAlign.center,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Text(
+            title,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(color: context.palette.dim),
+            textAlign: TextAlign.center,
+          ),
         ),
       ),
     );
@@ -207,7 +299,7 @@ class _GradientPlaceholder extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Meta chips (CC / AD / year / match)
+// Meta chips (CC / AD / year / rating)
 // ---------------------------------------------------------------------------
 
 class _MetaChip extends StatelessWidget {
@@ -315,6 +407,101 @@ class _MyListButtonState extends State<_MyListButton> {
 }
 
 // ---------------------------------------------------------------------------
+// Reusable play button
+// ---------------------------------------------------------------------------
+
+class _PlayButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  final bool autofocus;
+  const _PlayButton({required this.onPressed, this.autofocus = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final tt = Theme.of(context).textTheme;
+    return FocusableButton(
+      autofocus: autofocus,
+      semanticLabel: l10n.play,
+      onPressed: onPressed,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+        decoration: BoxDecoration(
+          color: context.palette.accent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.play_arrow, color: context.palette.bg, size: 20),
+            const SizedBox(width: 6),
+            Text(
+              l10n.play,
+              style: tt.labelLarge?.copyWith(
+                color: context.palette.bg,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Title + meta + synopsis header block
+// ---------------------------------------------------------------------------
+
+class _DetailHeader extends StatelessWidget {
+  final String title;
+  final List<Widget> chips;
+  final List<Widget> actions;
+  final String synopsis;
+
+  const _DetailHeader({
+    required this.title,
+    required this.chips,
+    required this.actions,
+    required this.synopsis,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final tt = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: tt.headlineMedium?.copyWith(
+            color: context.palette.fg,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(children: chips),
+        const SizedBox(height: 16),
+        Wrap(spacing: 12, runSpacing: 12, children: actions),
+        const SizedBox(height: 20),
+        Text(
+          l10n.synopsis,
+          style: tt.titleMedium?.copyWith(
+            color: context.palette.fg,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          synopsis,
+          style: tt.bodyMedium?.copyWith(color: context.palette.dim),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Movie detail body
 // ---------------------------------------------------------------------------
 
@@ -331,105 +518,29 @@ class _MovieDetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final tt = Theme.of(context).textTheme;
-
-    return Scaffold(
-      backgroundColor: context.palette.bg,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _BackdropHero(
-              posterUrl: movie.posterUrl,
-              title: movie.title,
-              onBack: onBack,
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Text(
-                    movie.title,
-                    style: tt.headlineMedium?.copyWith(
-                      color: context.palette.fg,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Meta chips row
-                  Row(
-                    children: [
-                      if (movie.year != null) _MetaChip(movie.year!),
-                      if (movie.rating != null)
-                        _MetaChip('${movie.rating!.toStringAsFixed(1)}★'),
-                      const _MetaChip('CC'),
-                      const _MetaChip('AD'),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Action buttons
-                  Row(
-                    children: [
-                      FocusableButton(
-                        autofocus: true,
-                        semanticLabel: l10n.play,
-                        onPressed: () => onPlay(movie),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 28, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: context.palette.accent,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.play_arrow,
-                                  color: context.palette.bg, size: 20),
-                              const SizedBox(width: 6),
-                              Text(
-                                l10n.play,
-                                style: tt.labelLarge?.copyWith(
-                                  color: context.palette.bg,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      _MyListButton(
-                        itemKey: 'movie:${movie.id}',
-                        playlistId: movie.playlistId,
-                        kind: MediaKind.movie,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  // Synopsis heading
-                  Text(
-                    l10n.synopsis,
-                    style: tt.titleMedium?.copyWith(
-                      color: context.palette.fg,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'An extraordinary story unfolds — action, drama, and suspense '
-                    'combine in this must-watch feature.',
-                    style: tt.bodyMedium?.copyWith(color: context.palette.dim),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return _DetailScaffold(
+      posterUrl: movie.posterUrl,
+      title: movie.title,
+      onBack: onBack,
+      header: _DetailHeader(
+        title: movie.title,
+        chips: [
+          if (movie.year != null) _MetaChip(movie.year!),
+          if (movie.rating != null)
+            _MetaChip('${movie.rating!.toStringAsFixed(1)}★'),
+          const _MetaChip('CC'),
+          const _MetaChip('AD'),
+        ],
+        actions: [
+          _PlayButton(autofocus: true, onPressed: () => onPlay(movie)),
+          _MyListButton(
+            itemKey: 'movie:${movie.id}',
+            playlistId: movie.playlistId,
+            kind: MediaKind.movie,
+          ),
+        ],
+        synopsis: 'An extraordinary story unfolds — action, drama, and '
+            'suspense combine in this must-watch feature.',
       ),
     );
   }
@@ -457,135 +568,70 @@ class _SeriesDetailBody extends StatelessWidget {
 
     return BlocBuilder<DetailsCubit, DetailsState>(
       builder: (ctx, state) {
-        return Scaffold(
-          backgroundColor: context.palette.bg,
-          body: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _BackdropHero(
-                  posterUrl: series.posterUrl,
-                  title: series.title,
-                  onBack: onBack,
+        final hasEpisodes = !state.loading && state.episodes.isNotEmpty;
+        return _DetailScaffold(
+          posterUrl: series.posterUrl,
+          title: series.title,
+          onBack: onBack,
+          header: _DetailHeader(
+            title: series.title,
+            chips: [
+              if (series.year != null) _MetaChip(series.year!),
+              if (series.rating != null)
+                _MetaChip('${series.rating!.toStringAsFixed(1)}★'),
+              const _MetaChip('CC'),
+              const _MetaChip('AD'),
+            ],
+            actions: [
+              if (hasEpisodes)
+                _PlayButton(
+                  autofocus: true,
+                  onPressed: () => onPlayEpisode(state.episodes.first),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title
-                      Text(
-                        series.title,
-                        style: tt.headlineMedium?.copyWith(
-                          color: context.palette.fg,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Meta chips row
-                      Row(
-                        children: [
-                          if (series.year != null) _MetaChip(series.year!),
-                          if (series.rating != null)
-                            _MetaChip('${series.rating!.toStringAsFixed(1)}★'),
-                          const _MetaChip('CC'),
-                          const _MetaChip('AD'),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      // Action buttons
-                      Row(
-                        children: [
-                          // Play button — only shown when episodes are available
-                          if (!state.loading && state.episodes.isNotEmpty) ...[
-                            FocusableButton(
-                              autofocus: true,
-                              semanticLabel: l10n.play,
-                              onPressed: () =>
-                                  onPlayEpisode(state.episodes.first),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 28, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: context.palette.accent,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.play_arrow,
-                                        color: context.palette.bg, size: 20),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      l10n.play,
-                                      style: tt.labelLarge?.copyWith(
-                                        color: context.palette.bg,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                          ],
-                          _MyListButton(
-                            itemKey: 'episode:${series.id}',
-                            playlistId: series.playlistId,
-                            kind: MediaKind.episode,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      // Synopsis
-                      Text(
-                        l10n.synopsis,
-                        style: tt.titleMedium?.copyWith(
-                          color: context.palette.fg,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'An epic multi-season series that will keep you on the '
-                        'edge of your seat from the very first episode.',
-                        style: tt.bodyMedium
-                            ?.copyWith(color: context.palette.dim),
-                      ),
-                      const SizedBox(height: 20),
-                      // Season chips
-                      if (state.seasons.isNotEmpty) ...[
-                        Text(
-                          l10n.episodes,
-                          style: tt.titleMedium?.copyWith(
-                            color: context.palette.fg,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        _SeasonChips(
-                          seasons: state.seasons,
-                          selectedIndex: state.selectedSeasonIndex,
-                          onSelect: (i) =>
-                              ctx.read<DetailsCubit>().selectSeason(i),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                      // Loading indicator or episode list
-                      if (state.loading)
-                        const Center(child: CircularProgressIndicator())
-                      else
-                        _EpisodeList(
-                          episodes: state.episodes,
-                          onPlay: onPlayEpisode,
-                        ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              _MyListButton(
+                itemKey: 'episode:${series.id}',
+                playlistId: series.playlistId,
+                kind: MediaKind.episode,
+              ),
+            ],
+            synopsis: state.description?.isNotEmpty == true
+                ? state.description!
+                : 'An epic multi-season series that will keep you on the edge '
+                    'of your seat from the very first episode.',
           ),
+          sections: [
+            const SizedBox(height: 20),
+            if (state.loading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (state.seasons.isEmpty)
+              Text(
+                'No episodes available for this series.',
+                style: tt.bodyMedium?.copyWith(color: context.palette.dim),
+              )
+            else ...[
+              Text(
+                l10n.episodes,
+                style: tt.titleMedium?.copyWith(
+                  color: context.palette.fg,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 10),
+              _SeasonChips(
+                seasons: state.seasons,
+                selectedIndex: state.selectedSeasonIndex,
+                onSelect: (i) => ctx.read<DetailsCubit>().selectSeason(i),
+              ),
+              const SizedBox(height: 12),
+              _EpisodeList(
+                episodes: state.episodes,
+                onPlay: onPlayEpisode,
+              ),
+            ],
+          ],
         );
       },
     );
@@ -669,11 +715,13 @@ class _EpisodeList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (episodes.isEmpty) return const SizedBox.shrink();
     return Column(
-      children: episodes.map((ep) => _EpisodeRow(
-            episode: ep,
-            onPlay: onPlay,
-            duration: _fmt(ep.durationSec),
-          )).toList(),
+      children: episodes
+          .map((ep) => _EpisodeRow(
+                episode: ep,
+                onPlay: onPlay,
+                duration: _fmt(ep.durationSec),
+              ))
+          .toList(),
     );
   }
 }
@@ -696,15 +744,14 @@ class _EpisodeRow extends StatelessWidget {
       semanticLabel: 'Play episode ${episode.number}: ${episode.title}',
       onPressed: () => onPlay(episode),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 2),
+        margin: const EdgeInsets.only(bottom: 6),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         decoration: BoxDecoration(
-          color: context.palette.surface,
+          color: context.palette.surface.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
           children: [
-            // Episode number badge
             SizedBox(
               width: 36,
               child: Text(
@@ -716,7 +763,6 @@ class _EpisodeRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            // Title + duration
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

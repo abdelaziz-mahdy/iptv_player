@@ -74,9 +74,15 @@ class VideoPlayerControllerAdapter implements PlayerController {
     if (!_fvpRegistered) {
       // fvp (libmpv/MDK) backs video_player on all platforms — native
       // ExoPlayer cannot demux many IPTV streams (TS/odd codecs) that fvp
-      // handles. Prefer hardware decoders, fall back to FFmpeg software.
+      // handles.
+      //
+      // `AMediaCodec:copy=1` copies decoded frames instead of importing the
+      // hardware 0-copy texture directly. The 0-copy path produces color/stride
+      // corruption on some TV GPUs (Realtek/PowerVR) — see fvp#56/#216 — so we
+      // copy to a clean texture while keeping hardware decoding. FFmpeg is the
+      // software fallback for codecs AMediaCodec can't handle.
       fvp.registerWith(options: {
-        'video.decoders': ['AMediaCodec', 'FFmpeg'],
+        'video.decoders': ['AMediaCodec:copy=1', 'FFmpeg'],
       });
       _fvpRegistered = true;
     }

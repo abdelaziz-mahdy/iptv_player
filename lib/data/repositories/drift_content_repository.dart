@@ -175,6 +175,75 @@ class DriftContentRepository implements ContentRepository {
     }
   }
 
+  @override
+  Future<Result<SeriesDetail>> loadSeriesDetail(Series series) async {
+    try {
+      // Locate the playlist (for server URL + type) and its credentials.
+      final playlists = await _db.getPlaylists();
+      final p =
+          playlists.where((r) => r.id == series.playlistId).firstOrNull;
+      final serverUrl = p?.serverUrl;
+      final creds = await _credentials.read(series.playlistId);
+
+      // Only Xtream exposes a series-info API. Without a server URL or
+      // credentials (e.g. M3U), return whatever is cached locally.
+      if (serverUrl == null || serverUrl.isEmpty || creds == null) {
+        return Ok(await _cachedSeriesDetail(series.id));
+      }
+
+      // Raw numeric id is the last segment of '<playlistId>:series:<sid>'.
+      final rawId = series.id.split(':series:').last;
+
+      final detail = await _xtream.seriesDetail(
+        serverUrl: serverUrl,
+        username: creds.username,
+        password: creds.password,
+        seriesId: rawId,
+        playlistId: series.playlistId,
+      );
+
+      // Cache seasons + episodes for offline/repeat views.
+      await _db.upsertSeasons([
+        for (final s in detail.seasons)
+          SeasonsCompanion.insert(
+              id: s.id, seriesId: s.seriesId, number: s.number),
+      ]);
+      for (final entry in detail.episodesBySeason.entries) {
+        await _db.upsertEpisodes([
+          for (final e in entry.value)
+            EpisodesCompanion.insert(
+              id: e.id,
+              seasonId: e.seasonId,
+              title: e.title,
+              number: e.number,
+              durationSec: Value(e.durationSec),
+              streamUrl: e.streamUrl,
+            ),
+        ]);
+      }
+      return Ok(detail);
+    } catch (e) {
+      // On failure, fall back to any cached detail rather than erroring out.
+      try {
+        return Ok(await _cachedSeriesDetail(series.id));
+      } catch (_) {
+        return Err(Failure('Failed to load series detail', cause: e));
+      }
+    }
+  }
+
+  /// Builds a [SeriesDetail] from locally cached season/episode rows.
+  Future<SeriesDetail> _cachedSeriesDetail(String seriesDomainId) async {
+    final seasonRows = await _db.getSeasons(seriesDomainId);
+    final seasons = seasonRows.map(_seasonFromRow).toList();
+    final bySeason = <String, List<Episode>>{};
+    for (final s in seasons) {
+      final eps = await _db.getEpisodes(s.id);
+      bySeason[s.id] = eps.map(_episodeFromRow).toList();
+    }
+    return SeriesDetail(seasons: seasons, episodesBySeason: bySeason);
+  }
+
   // ---------------------------------------------------------------------------
   // ContentRepository — favorites
   // ---------------------------------------------------------------------------

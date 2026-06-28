@@ -116,6 +116,19 @@ class FakeContentRepository implements ContentRepository {
       Ok(_episodes[seasonId] ?? const []);
 
   @override
+  Future<Result<SeriesDetail>> loadSeriesDetail(Series series) async {
+    final seasons = _seasons[series.id] ?? const <Season>[];
+    final bySeason = {
+      for (final s in seasons) s.id: _episodes[s.id] ?? const <Episode>[],
+    };
+    return Ok(SeriesDetail(
+      description: 'A gripping ${series.title} story.',
+      seasons: seasons,
+      episodesBySeason: bySeason,
+    ));
+  }
+
+  @override
   Stream<List<Favorite>> favorites(String playlistId) => _favorites.stream;
 
   @override
