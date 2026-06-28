@@ -57,6 +57,17 @@ dependencies:
   connectivity_plus: ^7.1.1
   video_player: ^2.11.1
   fvp: ^0.37.2
+  # Alternate libmpv-based player (real mpv vo_gpu renderer) — evaluated as a
+  # fallback for GPUs where fvp/MDK's renderer corrupts video.
+  media_kit: ^1.1.11
+  media_kit_video: ^1.2.5
+  media_kit_libs_android_video: ^1.3.6
+  # Desktop libmpv libs — media_kit_video registers on all platforms, so these
+  # must be present for desktop builds to link (Android is the only platform
+  # that actually plays via media_kit; desktop still uses fvp).
+  media_kit_libs_macos_video: ^1.1.4
+  media_kit_libs_windows_video: ^1.0.10
+  media_kit_libs_linux: ^1.2.1
   wakelock_plus: ^1.6.1
   subtitle: ^0.2.0
   flutter_android_tv_text_field:

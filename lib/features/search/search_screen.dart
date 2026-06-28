@@ -1,4 +1,7 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_android_tv_text_field/native_textfield_tv.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/di/injection.dart';
@@ -39,11 +42,43 @@ class _SearchView extends StatefulWidget {
 }
 
 class _SearchViewState extends State<_SearchView> {
-  final _controller = TextEditingController();
+  // NativeTextFieldController works with both the native Android-TV field and a
+  // plain TextField (it extends TextEditingController).
+  final NativeTextFieldController _controller = NativeTextFieldController();
+  final FocusNode _fieldFocus = FocusNode(debugLabel: 'search-field');
+  SearchCubit? _cubit;
+  bool _listening = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _cubit ??= context.read<SearchCubit>();
+    if (!_listening) {
+      _controller.addListener(_onText);
+      _listening = true;
+    }
+  }
+
+  /// Live search as the user types.
+  void _onText() {
+    final text = _controller.text;
+    if (_cubit != null && text != _cubit!.state.query) {
+      _cubit!.setQuery(text);
+    }
+  }
+
+  /// Pressing the keyboard's Done/Search action moves focus into the results,
+  /// so the remote can scroll the posters.
+  void _moveToResults() {
+    _fieldFocus.unfocus();
+    FocusScope.of(context).nextFocus();
+  }
 
   @override
   void dispose() {
+    _controller.removeListener(_onText);
     _controller.dispose();
+    _fieldFocus.dispose();
     super.dispose();
   }
 
@@ -58,24 +93,24 @@ class _SearchViewState extends State<_SearchView> {
       listener: (context, state) {
         if (_controller.text != state.query) {
           _controller.text = state.query;
-          _controller.selection =
-              TextSelection.collapsed(offset: state.query.length);
         }
       },
       builder: (context, state) {
         return Scaffold(
           backgroundColor: p.bg,
+          // The IME is an overlay on TV; don't resize the body for it.
+          resizeToAvoidBottomInset: false,
           body: SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _SearchBar(
                   controller: _controller,
+                  focusNode: _fieldFocus,
                   hint: l10n.search,
                   palette: p,
                   textTheme: textTheme,
-                  onChanged: (q) =>
-                      context.read<SearchCubit>().setQuery(q),
+                  onSubmitted: _moveToResults,
                 ),
                 Expanded(
                   child: _ResultsRails(
@@ -101,21 +136,43 @@ class _SearchViewState extends State<_SearchView> {
 class _SearchBar extends StatelessWidget {
   const _SearchBar({
     required this.controller,
+    required this.focusNode,
     required this.hint,
     required this.palette,
     required this.textTheme,
-    required this.onChanged,
+    required this.onSubmitted,
   });
 
-  final TextEditingController controller;
+  final NativeTextFieldController controller;
+  final FocusNode focusNode;
   final String hint;
   final dynamic palette;
   final TextTheme textTheme;
-  final void Function(String) onChanged;
+  final VoidCallback onSubmitted;
 
   @override
   Widget build(BuildContext context) {
     final p = palette;
+
+    // Android (incl. TV): native EditText for working D-pad text entry.
+    if (Platform.isAndroid) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: AndroidTVTextField(
+          focusNode: focusNode,
+          controller: controller,
+          hint: hint,
+          height: 56,
+          backgroundColor: p.surface,
+          textColor: p.fg,
+          focusedBorderColor: p.accent,
+          unfocusedBorderColor: p.border,
+          onSubmitted: (_) => onSubmitted(),
+        ),
+      );
+    }
+
+    // Desktop / other: standard editable field.
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Container(
@@ -133,8 +190,10 @@ class _SearchBar extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: controller,
+                focusNode: focusNode,
                 autofocus: true,
-                onChanged: onChanged,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => onSubmitted(),
                 style: textTheme.bodyLarge?.copyWith(color: p.fg),
                 decoration: InputDecoration(
                   hintText: hint,

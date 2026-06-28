@@ -15,9 +15,9 @@ set -uo pipefail
 APKDIR="build/app/outputs/flutter-apk"
 sel="${1:-opengles}"
 case "$sel" in
-  opengles|skia) APK="$APKDIR/app-$sel.apk" ;;
-  release)       APK="$APKDIR/app-release.apk" ;;
-  *)             APK="$sel" ;;   # treat as a path
+  opengles|skia|image0|tunnel|sw|exo|mediakit) APK="$APKDIR/app-$sel.apk" ;;
+  release)                     APK="$APKDIR/app-release.apk" ;;
+  *)                           APK="$sel" ;;   # treat as a path
 esac
 if [ ! -f "$APK" ]; then
   echo "✗ APK not found: $APK"

@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -11,6 +13,7 @@ import '../../features/home/home_screen.dart';
 import '../../features/import/import_screen.dart';
 import '../../features/live/live_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
+import '../../features/player/media_kit_controller.dart';
 import '../../features/player/player_screen.dart';
 import '../../features/player/video_controller.dart';
 import '../../features/playlists/playlists_screen.dart';
@@ -221,7 +224,11 @@ GoRouter buildRouter() {
             );
           }
           return PlayerScreen(
-            controller: VideoPlayerControllerAdapter(),
+            // media_kit (mpv vo_gpu) renders correctly on Android TV GPUs where
+            // fvp/MDK corrupts; fvp stays on desktop where it works well.
+            controller: Platform.isAndroid
+                ? MediaKitPlayerController()
+                : VideoPlayerControllerAdapter(),
             itemKey: a.itemKey,
             url: a.url,
             title: a.title,

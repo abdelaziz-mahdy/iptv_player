@@ -1,0 +1,75 @@
+06-28 15:45:01.439   702   752 I ActivityManager: Start proc 12603:com.amazon.amazonvideo.livingroom/u0a64 for service {com.amazon.amazonvideo.livingroom/com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService}
+06-28 15:50:03.206   702   941 D ActivityManager: froze 12603 com.amazon.amazonvideo.livingroom
+06-28 16:02:45.600 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:25/s, ROB num:53011
+06-28 16:02:46.139 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:25/s, QIB num:53088
+06-28 16:02:46.603 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:24/s, ROB num:53035
+06-28 16:02:47.133   555   555 I VIDEOFUNC: TclPqManager ++ bool TvPqManager::setCallBackTest()
+06-28 16:02:47.134   555   555 I VIDEOFUNC: TclPqManager -- bool TvPqManager::setCallBackTest() Done:0000.000004
+06-28 16:02:47.146 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:24/s, QIB num:53112
+06-28 16:02:47.177   555   664 I VIDEOFUNC: TclpqDBC [Check,677] update display alive to pqalg service
+06-28 16:02:47.177   555   664 I VIDEOFUNC: TclPqBase [pq_callback_process,62] callback 0 doing !!!
+06-28 16:02:47.642 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:25/s, ROB num:53060
+06-28 16:02:48.175 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:25/s, QIB num:53137
+06-28 16:02:48.687 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:25/s, ROB num:53085
+06-28 16:02:49.134   555   555 I VIDEOFUNC: TclPqManager ++ bool TvPqManager::setCallBackTest()
+06-28 16:02:49.134   555   555 I VIDEOFUNC: TclPqManager -- bool TvPqManager::setCallBackTest() Done:0000.000005
+06-28 16:02:49.179   555   664 I VIDEOFUNC: TclpqDBC [Check,677] update display alive to pqalg service
+06-28 16:02:49.179   555   664 I VIDEOFUNC: TclPqBase [pq_callback_process,62] callback 0 doing !!!
+06-28 16:02:49.181 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:24/s, QIB num:53161
+06-28 16:02:49.691 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:24/s, ROB num:53109
+06-28 16:02:50.187 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:24/s, QIB num:53185
+06-28 16:02:50.730 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:25/s, ROB num:53134
+06-28 16:02:51.134   555   555 I VIDEOFUNC: TclPqManager ++ bool TvPqManager::setCallBackTest()
+06-28 16:02:51.134   555   555 I VIDEOFUNC: TclPqManager -- bool TvPqManager::setCallBackTest() Done:0000.000005
+06-28 16:02:51.181   555   664 I VIDEOFUNC: TclpqDBC [Check,677] update display alive to pqalg service
+06-28 16:02:51.181   555   664 I VIDEOFUNC: TclPqBase [pq_callback_process,62] callback 0 doing !!!
+06-28 16:02:51.227 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:25/s, QIB num:53210
+06-28 16:02:51.770 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:25/s, ROB num:53159
+06-28 16:02:52.270 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:25/s, QIB num:53235
+06-28 16:02:52.810 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:25/s, ROB num:53184
+06-28 16:02:53.135   555   555 I VIDEOFUNC: TclPqManager ++ bool TvPqManager::setCallBackTest()
+06-28 16:02:53.135   555   555 I VIDEOFUNC: TclPqManager -- bool TvPqManager::setCallBackTest() Done:0000.000004
+06-28 16:02:53.183   555   664 I VIDEOFUNC: TclpqDBC [Check,677] update display alive to pqalg service
+06-28 16:02:53.183   555   664 I VIDEOFUNC: TclPqBase [pq_callback_process,62] callback 0 doing !!!
+06-28 16:02:53.274 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:24/s, QIB num:53259
+06-28 16:02:53.818 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:24/s, ROB num:53208
+06-28 16:02:54.316 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:25/s, QIB num:53284
+06-28 16:02:54.860 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:25/s, ROB num:53233
+06-28 16:02:55.135   555   555 I VIDEOFUNC: TclPqManager ++ bool TvPqManager::setCallBackTest()
+06-28 16:02:55.135   555   555 I VIDEOFUNC: TclPqManager -- bool TvPqManager::setCallBackTest() Done:0000.000003
+06-28 16:02:55.184   555   664 I VIDEOFUNC: TclpqDBC [Check,677] update display alive to pqalg service
+06-28 16:02:55.184   555   664 I VIDEOFUNC: TclPqBase [pq_callback_process,62] callback 0 doing !!!
+06-28 16:02:55.357 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:25/s, QIB num:53309
+06-28 16:02:55.900 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:25/s, ROB num:53258
+06-28 16:02:56.362 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:24/s, QIB num:53333
+06-28 16:02:56.941 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:25/s, ROB num:53283
+06-28 16:02:57.135   555   555 I VIDEOFUNC: TclPqManager ++ bool TvPqManager::setCallBackTest()
+06-28 16:02:57.135   555   555 I VIDEOFUNC: TclPqManager -- bool TvPqManager::setCallBackTest() Done:0000.000003
+06-28 16:02:57.186   555   664 I VIDEOFUNC: TclpqDBC [Check,677] update display alive to pqalg service
+06-28 16:02:57.186   555   664 I VIDEOFUNC: TclPqBase [pq_callback_process,62] callback 0 doing !!!
+06-28 16:02:57.403 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:25/s, QIB num:53358
+06-28 16:02:57.947 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:24/s, ROB num:53307
+06-28 16:02:58.403 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:24/s, QIB num:53382
+06-28 16:02:58.987 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:25/s, ROB num:53332
+06-28 16:02:59.136   555   555 I VIDEOFUNC: TclPqManager ++ bool TvPqManager::setCallBackTest()
+06-28 16:02:59.136   555   555 I VIDEOFUNC: TclPqManager -- bool TvPqManager::setCallBackTest() Done:0000.000004
+06-28 16:02:59.188   555   664 I VIDEOFUNC: TclpqDBC [Check,677] update display alive to pqalg service
+06-28 16:02:59.188   555   664 I VIDEOFUNC: TclPqBase [pq_callback_process,62] callback 0 doing !!!
+06-28 16:02:59.450 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:25/s, QIB num:53407
+06-28 16:02:59.995 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:24/s, ROB num:53356
+06-28 16:03:00.490 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:25/s, QIB num:53432
+06-28 16:03:01.037 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:25/s, ROB num:53381
+06-28 16:03:01.136   555   555 I VIDEOFUNC: TclPqManager ++ bool TvPqManager::setCallBackTest()
+06-28 16:03:01.136   555   555 I VIDEOFUNC: TclPqManager -- bool TvPqManager::setCallBackTest() Done:0000.000004
+06-28 16:03:01.190   555   664 I VIDEOFUNC: TclpqDBC [Check,677] update display alive to pqalg service
+06-28 16:03:01.190   555   664 I VIDEOFUNC: TclPqBase [pq_callback_process,62] callback 0 doing !!!
+06-28 16:03:01.533 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:25/s, QIB num:53457
+06-28 16:03:02.077 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:25/s, ROB num:53406
+06-28 16:03:02.573 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:25/s, QIB num:53482
+06-28 16:03:03.116 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:25/s, ROB num:53431
+06-28 16:03:03.136   555   555 I VIDEOFUNC: TclPqManager ++ bool TvPqManager::setCallBackTest()
+06-28 16:03:03.136   555   555 I VIDEOFUNC: TclPqManager -- bool TvPqManager::setCallBackTest() Done:0000.000005
+06-28 16:03:03.191   555   664 I VIDEOFUNC: TclpqDBC [Check,677] update display alive to pqalg service
+06-28 16:03:03.191   555   664 I VIDEOFUNC: TclPqBase [pq_callback_process,62] callback 0 doing !!!
+06-28 16:03:03.615 11668 12222 I MediaCodec: [0xad3ea9d0][QIB]V, QIB:25/s, QIB num:53507
+06-28 16:03:04.160 11668 12222 I MediaCodec: [0xad3ea9d0][ROB]V, ROB:25/s, ROB num:53456

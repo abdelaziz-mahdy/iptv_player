@@ -72,18 +72,12 @@ class VideoPlayerControllerAdapter implements PlayerController {
   @override
   Future<void> initialize(String url) async {
     if (!_fvpRegistered) {
-      // fvp (libmpv/MDK) backs video_player on all platforms — native
-      // ExoPlayer cannot demux many IPTV streams (TS/odd codecs) that fvp
-      // handles.
-      //
-      // `AMediaCodec:copy=1` copies decoded frames instead of importing the
-      // hardware 0-copy texture directly. The 0-copy path produces color/stride
-      // corruption on some TV GPUs (Realtek/PowerVR) — see fvp#56/#216 — so we
-      // copy to a clean texture while keeping hardware decoding. FFmpeg is the
-      // software fallback for codecs AMediaCodec can't handle.
-      fvp.registerWith(options: {
-        'video.decoders': ['AMediaCodec:copy=1', 'FFmpeg'],
-      });
+      // fvp (libmpv/MDK) is the DESKTOP player (macOS/Windows/Linux), where its
+      // renderer works well. Android uses media_kit instead
+      // (MediaKitPlayerController) because MDK's GL renderer corrupts video on
+      // some TV GPUs (PowerVR) — see fvp#374. Default options let fvp pick the
+      // right per-platform hardware decoders.
+      fvp.registerWith();
       _fvpRegistered = true;
     }
 
