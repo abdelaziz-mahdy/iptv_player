@@ -97,6 +97,53 @@ void main() {
         expect(saved, isNotNull, reason: 'VOD (movie) must persist watch progress on close');
       });
 
+      test('movie kind: saveProgressNow() persists mid-playback (no close)',
+          () async {
+        final controller = FakePlayerController();
+        final playback = FakePlaybackRepository();
+        final cubit = PlayerCubit(
+          controller,
+          playback,
+          itemKey: 'movie:m2',
+          url: 'http://vod',
+          title: 'Dune',
+          kind: MediaKind.movie,
+          playlistId: 'p1',
+        );
+        await cubit.start();
+        await controller.seek(const Duration(seconds: 120));
+
+        // Simulates the periodic timer / app-background checkpoint firing
+        // before any clean close().
+        await cubit.saveProgressNow();
+
+        final saved = await playback.progressFor('movie:m2');
+        expect(saved, isNotNull,
+            reason: 'progress must persist mid-playback, not only on close');
+        expect(saved!.positionSec, 120);
+        await cubit.close();
+      });
+
+      test('channel kind: saveProgressNow() persists nothing (live)', () async {
+        final controller = FakePlayerController();
+        final playback = FakePlaybackRepository();
+        final cubit = PlayerCubit(
+          controller,
+          playback,
+          itemKey: 'channel:c2',
+          url: 'http://live',
+          title: 'NOOR One',
+          kind: MediaKind.channel,
+          playlistId: 'p1',
+        );
+        await cubit.start();
+        await controller.seek(const Duration(seconds: 120));
+        await cubit.saveProgressNow();
+
+        expect(await playback.progressFor('channel:c2'), isNull);
+        await cubit.close();
+      });
+
       test('isLive returns true for channel, false for movie', () {
         final liveController = FakePlayerController();
         final liveCubit = PlayerCubit(

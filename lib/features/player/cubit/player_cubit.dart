@@ -78,10 +78,16 @@ class PlayerCubit extends Cubit<PlayerUiState> {
   StreamSubscription<PlayerStatus>? _statusSub;
   Timer? _bitrateTimer;
   Timer? _controlsTimer;
+  Timer? _progressTimer;
 
   /// How long the controls stay on screen after the last interaction before
   /// auto-hiding (only while playing).
   static const controlsIdleTimeout = Duration(seconds: 4);
+
+  /// How often watch progress is persisted during playback. On a TV the app is
+  /// usually killed/backgrounded without a clean [close], so relying on close()
+  /// alone loses the position — we checkpoint periodically instead.
+  static const progressSaveInterval = Duration(seconds: 10);
 
   PlayerCubit(
     this._controller,
@@ -160,6 +166,14 @@ class PlayerCubit extends Cubit<PlayerUiState> {
 
     // Poll bitrate every 2 seconds and update the stream badge.
     _bitrateTimer = Timer.periodic(const Duration(seconds: 2), (_) => _tickBitrate());
+
+    // Checkpoint watch progress periodically so an abrupt TV kill/background
+    // (no clean close) doesn't lose the position. Live channels are skipped
+    // inside _saveProgress().
+    if (!isLive) {
+      _progressTimer =
+          Timer.periodic(progressSaveInterval, (_) => _tickSaveProgress());
+    }
 
     // Emit initial state from the controller
     emit(state.copyWith(
@@ -279,6 +293,20 @@ class PlayerCubit extends Cubit<PlayerUiState> {
     await _controller.seek(position);
   }
 
+  /// Periodic checkpoint driven by [_progressTimer]. Skips saving while the
+  /// position is still zero (e.g. buffering, or before the resume seek lands)
+  /// so a fresh tick can't clobber an existing resume point with 0.
+  void _tickSaveProgress() {
+    if (isClosed) return;
+    if (_controller.position <= Duration.zero) return;
+    unawaited(_saveProgress());
+  }
+
+  /// Forces one progress checkpoint immediately. Called when the app is
+  /// backgrounded/paused (the common TV exit, where [close] may never run) and
+  /// usable by tests to avoid waiting on the periodic [Timer].
+  Future<void> saveProgressNow() => _saveProgress();
+
   Future<void> _saveProgress() async {
     if (isLive) return;
     await _playback.saveProgress(
@@ -299,6 +327,8 @@ class PlayerCubit extends Cubit<PlayerUiState> {
     _bitrateTimer = null;
     _controlsTimer?.cancel();
     _controlsTimer = null;
+    _progressTimer?.cancel();
+    _progressTimer = null;
     try {
       await _saveProgress();
       try {

@@ -73,7 +73,8 @@ class PlayerScreen extends StatefulWidget {
   State<PlayerScreen> createState() => _PlayerScreenState();
 }
 
-class _PlayerScreenState extends State<PlayerScreen> {
+class _PlayerScreenState extends State<PlayerScreen>
+    with WidgetsBindingObserver {
   PlayerCubit? _cubit;
 
   // Root focus anchor: holds focus when the controls are hidden (and therefore
@@ -86,9 +87,21 @@ class _PlayerScreenState extends State<PlayerScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Any key resets the idle timer (and reveals the controls if hidden),
     // regardless of which widget consumes the key. Never consumes the event.
     HardwareKeyboard.instance.addHandler(_handleHardwareKey);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // On TV, leaving the app (Home/recents) backgrounds it without a clean
+    // dispose; checkpoint the position now so resume works after a kill.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      _cubit?.saveProgressNow();
+    }
   }
 
   bool _handleHardwareKey(KeyEvent event) {
@@ -131,6 +144,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     HardwareKeyboard.instance.removeHandler(_handleHardwareKey);
     _rootFocus.dispose();
     _playPauseFocus.dispose();
