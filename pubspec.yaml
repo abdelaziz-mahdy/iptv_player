@@ -64,6 +64,9 @@ dependencies:
   media_kit_libs_android_video: ^1.3.6
   wakelock_plus: ^1.6.1
   subtitle: ^0.2.0
+  # Used only by the FVP_CAPTURE debug build to surface MDK's log=all output
+  # (fvp forwards MDK logs through package:logging) — see core/debug_flags.dart.
+  logging: ^1.3.0
   flutter_android_tv_text_field:
     path: packages/flutter_android_tv_text_field
 

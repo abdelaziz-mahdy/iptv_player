@@ -21,6 +21,7 @@ import '../../features/search/cubit/search_cubit.dart';
 import '../../features/search/search_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../debug_flags.dart';
 import '../di/injection.dart';
 import '../widgets/adaptive_shell.dart';
 
@@ -226,7 +227,7 @@ GoRouter buildRouter() {
           return PlayerScreen(
             // media_kit (mpv vo_gpu) renders correctly on Android TV GPUs where
             // fvp/MDK corrupts; fvp stays on desktop where it works well.
-            controller: Platform.isAndroid
+            controller: (Platform.isAndroid && !kFvpCaptureBuild)
                 ? MediaKitPlayerController()
                 : VideoPlayerControllerAdapter(),
             itemKey: a.itemKey,

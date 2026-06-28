@@ -3,17 +3,31 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/widgets.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'package:logging/logging.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:path_provider/path_provider.dart';
 import 'app.dart';
+import 'core/debug_flags.dart';
 import 'core/di/injection.dart';
 import 'core/sync_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (kFvpCaptureBuild) {
+    // fvp routes MDK's `log=all` output through package:logging; with no root
+    // listener those lines are dropped before reaching logcat. Surface them so
+    // the fvp#374 report carries the complete MDK log. (`print`, not
+    // `debugPrint`, so long runs aren't throttled/truncated.)
+    Logger.root.level = Level.ALL;
+    Logger.root.onRecord.listen((r) {
+      // ignore: avoid_print
+      print('[${r.loggerName}] ${r.level.name}: ${r.message}');
+    });
+  }
   // media_kit is the Android player (libmpv vo_gpu renders correctly on TV GPUs
   // where fvp/MDK corrupts). Desktop keeps fvp, so only init media_kit here.
-  if (Platform.isAndroid) MediaKit.ensureInitialized();
+  // The FVP_CAPTURE build forces fvp on Android instead, so skip media_kit.
+  if (Platform.isAndroid && !kFvpCaptureBuild) MediaKit.ensureInitialized();
   HydratedBloc.storage = await HydratedStorage.build(
     storageDirectory: HydratedStorageDirectory(
       (await getApplicationSupportDirectory()).path,
