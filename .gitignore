@@ -9,3 +9,11 @@ build/
 .flutter-plugins-dependencies
 migrate_working_dir/
 .dart_tool/package_config.json
+
+# Local diagnostic write-up, capture artifacts, and helper scripts for upstream
+# bug reports — kept out of git (attached to the issue directly). The gated
+# FVP_CAPTURE build flag itself stays in the source; only these helpers don't.
+docs/issue-374/
+docs/fvp-issue.md
+scripts/build_fvp_capture.sh
+scripts/fvp_capture_logs.sh

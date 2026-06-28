@@ -88,5 +88,14 @@ MDK: 0.36.0 (git d3ec2cc) - Multimedia Development Kit.
 MDK: Build for: Android21/31(12.0) 5.4.284+ 4KB ARMv7; libc++180000; Clang18.0.4 ... NDK27.3.13750724. Smart TV TCL TCL
 ```
 
-Full MDK debug log (`SetGlobalOption("logLevel","all")`) and the corrupted-frame
-screenshot available on request — happy to capture whatever traces help.
+**Complete MDK log:** `fvp-capture-full.log` (full process logcat) and
+`fvp-capture-mdk.log` (MDK-only extract) in `docs/issue-374/`.
+
+> Note on capturing the full log: fvp already calls
+> `setGlobalOption("log", "all")`, but it routes MDK's output through
+> `package:logging`'s `Logger`. With no listener attached to `Logger.root`
+> (the default), every MDK line is dropped before it reaches logcat — which is
+> why an earlier capture only contained Android system noise (`MediaCodec`,
+> `TclPqManager`) and none of MDK's internals. The complete log above was
+> obtained by attaching a root `Logger` listener in `main()` that prints every
+> record, so `log=all` actually surfaces.
