@@ -14,7 +14,10 @@ class LiveCubit extends Cubit<LiveState> {
   final ContentRepository _content;
   final PlaylistRepository _playlists;
 
+  StreamSubscription<Playlist?>? _activeSub;
   StreamSubscription<List<Channel>>? _channelsSub;
+  String? _playlistId;
+  bool _hasBound = false;
 
   /// All channels loaded from the repository (raw, not filtered).
   List<Channel> _allChannels = [];
@@ -22,12 +25,34 @@ class LiveCubit extends Cubit<LiveState> {
   /// Category name lookup: categoryId → name.
   Map<String, String> _categoryNames = {};
 
+  /// React to the ACTIVE playlist so an imported/switched playlist shows live,
+  /// without an app restart.
   Future<void> load() async {
     emit(state.copyWith(loading: true));
+    _activeSub = _playlists.active().listen(_onActivePlaylistChanged);
+  }
 
-    final pid = (await _playlists.active().first)?.id ?? 'p1';
+  Future<void> _onActivePlaylistChanged(Playlist? playlist) async {
+    final pid = playlist?.id;
+    if (_hasBound && pid == _playlistId) return;
+    _hasBound = true;
+    _playlistId = pid;
 
-    // Load categories once so we can resolve names for group labels.
+    await _channelsSub?.cancel();
+    _channelsSub = null;
+
+    if (pid == null) {
+      _allChannels = [];
+      _categoryNames = {};
+      emit(state.copyWith(
+        loading: false,
+        groups: const [],
+        channelsInGroup: const [],
+      ));
+      return;
+    }
+
+    // Load categories so we can resolve names for group labels.
     final cats = await _content.categories(pid, MediaKind.channel);
     _categoryNames = {for (final c in cats) c.id: c.name};
 
@@ -117,6 +142,7 @@ class LiveCubit extends Cubit<LiveState> {
 
   @override
   Future<void> close() async {
+    await _activeSub?.cancel();
     await _channelsSub?.cancel();
     return super.close();
   }

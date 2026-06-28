@@ -23,6 +23,7 @@ void main() {
       );
 
       await cubit.load();
+      await Future<void>.delayed(Duration.zero);
 
       expect(cubit.state.loading, isFalse);
     });
@@ -33,6 +34,7 @@ void main() {
         FakePlaylistRepository(),
       );
       await cubit.load();
+      await Future<void>.delayed(Duration.zero);
 
       cubit.setQuery('dune');
 
@@ -51,6 +53,7 @@ void main() {
         FakePlaylistRepository(),
       );
       await cubit.load();
+      await Future<void>.delayed(Duration.zero);
 
       cubit.setQuery('dune');
       cubit.setQuery('');
@@ -65,6 +68,7 @@ void main() {
         FakePlaylistRepository(),
       );
       await cubit.load();
+      await Future<void>.delayed(Duration.zero);
 
       cubit.setQuery('DUNE');
 
@@ -82,6 +86,7 @@ void main() {
         FakePlaylistRepository(),
       );
       await cubit.load();
+      await Future<void>.delayed(Duration.zero);
 
       cubit.setQuery('horizon');
 
@@ -114,6 +119,7 @@ void main() {
         FakePlaylistRepository(),
       );
       await cubit.load();
+      await Future<void>.delayed(Duration.zero);
 
       cubit.setQuery('dune');
 
@@ -133,6 +139,7 @@ void main() {
         FakePlaylistRepository(),
       );
       await cubit.load();
+      await Future<void>.delayed(Duration.zero);
 
       // Search for something that returns both movies and series if available,
       // or verify the split works independently.
@@ -157,6 +164,7 @@ void main() {
         FakePlaylistRepository(),
       );
       await cubit.load();
+      await Future<void>.delayed(Duration.zero);
 
       // Search for 'noor' — matches channel names but channels should be
       // excluded from VOD search.

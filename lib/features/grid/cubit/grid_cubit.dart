@@ -107,16 +107,42 @@ class GridCubit extends Cubit<GridState> {
   final PlaylistRepository _playlists;
   final GridKind kind;
 
+  StreamSubscription<Playlist?>? _activeSub;
   StreamSubscription<List<VodItem>>? _moviesSub;
   StreamSubscription<List<Series>>? _seriesSub;
   StreamSubscription<List<Favorite>>? _favoritesSub;
   String? _playlistId;
+  bool _hasBound = false;
 
+  /// React to the ACTIVE playlist so an imported/switched playlist shows live,
+  /// without an app restart.
   Future<void> load() async {
     emit(state.copyWith(loading: true));
+    _activeSub = _playlists.active().listen(_onActivePlaylistChanged);
+  }
 
-    final pid = (await _playlists.active().first)?.id ?? 'p1';
+  Future<void> _onActivePlaylistChanged(Playlist? playlist) async {
+    final pid = playlist?.id;
+    if (_hasBound && pid == _playlistId) return;
+    _hasBound = true;
     _playlistId = pid;
+
+    await _moviesSub?.cancel();
+    _moviesSub = null;
+    await _seriesSub?.cancel();
+    _seriesSub = null;
+    await _favoritesSub?.cancel();
+    _favoritesSub = null;
+
+    if (pid == null) {
+      emit(state.copyWith(
+        loading: false,
+        items: const [],
+        categories: const [],
+        favoriteKeys: const {},
+      ));
+      return;
+    }
 
     // Determine the MediaKind for category resolution.
     final mediaKind = kind == GridKind.movies ? MediaKind.movie : MediaKind.episode;
@@ -213,6 +239,7 @@ class GridCubit extends Cubit<GridState> {
 
   @override
   Future<void> close() async {
+    await _activeSub?.cancel();
     await _moviesSub?.cancel();
     await _seriesSub?.cancel();
     await _favoritesSub?.cancel();

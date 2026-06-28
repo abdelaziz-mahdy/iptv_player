@@ -47,10 +47,13 @@ class FavoritesCubit extends Cubit<FavoritesState> {
   final ContentRepository _content;
   final PlaylistRepository _playlists;
 
+  StreamSubscription<Playlist?>? _activeSub;
   StreamSubscription<List<Favorite>>? _favsSub;
   StreamSubscription<List<VodItem>>? _moviesSub;
   StreamSubscription<List<Series>>? _seriesSub;
   StreamSubscription<List<Channel>>? _channelsSub;
+  String? _playlistId;
+  bool _hasBound = false;
 
   // latest snapshots
   List<Favorite> _favorites = [];
@@ -58,10 +61,32 @@ class FavoritesCubit extends Cubit<FavoritesState> {
   List<Series> _series = [];
   List<Channel> _channels = [];
 
+  /// React to the ACTIVE playlist so favorites reflect the imported/switched
+  /// playlist live, without an app restart.
   Future<void> load() async {
     emit(state.copyWith(loading: true));
+    _activeSub = _playlists.active().listen(_onActivePlaylistChanged);
+  }
 
-    final pid = (await _playlists.active().first)?.id ?? 'p1';
+  void _onActivePlaylistChanged(Playlist? playlist) {
+    final pid = playlist?.id;
+    if (_hasBound && pid == _playlistId) return;
+    _hasBound = true;
+    _playlistId = pid;
+
+    _favsSub?.cancel();
+    _moviesSub?.cancel();
+    _seriesSub?.cancel();
+    _channelsSub?.cancel();
+    _favorites = [];
+    _movies = [];
+    _series = [];
+    _channels = [];
+
+    if (pid == null) {
+      emit(state.copyWith(loading: false, entries: const []));
+      return;
+    }
 
     _favsSub = _content.favorites(pid).listen((favs) {
       _favorites = favs;
@@ -142,6 +167,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 
   @override
   Future<void> close() async {
+    await _activeSub?.cancel();
     await _favsSub?.cancel();
     await _moviesSub?.cancel();
     await _seriesSub?.cancel();

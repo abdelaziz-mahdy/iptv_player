@@ -16,17 +16,44 @@ class HomeCubit extends Cubit<HomeState> {
   final PlaybackRepository _playback;
   final PlaylistRepository _playlists;
 
+  StreamSubscription<Playlist?>? _activeSub;
   StreamSubscription<List<VodItem>>? _moviesSub;
   StreamSubscription<List<Series>>? _seriesSub;
   StreamSubscription<List<WatchProgress>>? _continueSub;
   StreamSubscription<List<Favorite>>? _favoritesSub;
   String? _playlistId;
+  bool _hasBound = false;
 
+  /// Subscribe to the ACTIVE playlist stream and (re)bind content whenever it
+  /// changes — so importing/switching a playlist updates Home live, with no
+  /// app restart. (Previously this read `active().first` once and got stuck on
+  /// the startup fallback id.)
   Future<void> load() async {
     emit(state.copyWith(loading: true));
+    _activeSub = _playlists.active().listen(_onActivePlaylistChanged);
+  }
 
-    final pid = (await _playlists.active().first)?.id ?? 'p1';
+  void _onActivePlaylistChanged(Playlist? playlist) {
+    final pid = playlist?.id;
+    if (_hasBound && pid == _playlistId) return;
+    _hasBound = true;
     _playlistId = pid;
+
+    _moviesSub?.cancel();
+    _seriesSub?.cancel();
+    _continueSub?.cancel();
+    _favoritesSub?.cancel();
+
+    if (pid == null) {
+      emit(state.copyWith(
+        movies: const [],
+        series: const [],
+        continueWatching: const [],
+        favoriteKeys: const {},
+        loading: false,
+      ));
+      return;
+    }
 
     _moviesSub = _content.movies(pid).listen(
       (movies) => emit(state.copyWith(movies: movies, loading: false)),
@@ -65,6 +92,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   @override
   Future<void> close() async {
+    await _activeSub?.cancel();
     await _moviesSub?.cancel();
     await _seriesSub?.cancel();
     await _continueSub?.cancel();

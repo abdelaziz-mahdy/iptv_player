@@ -16,20 +16,59 @@ class SearchCubit extends Cubit<SearchState> {
 
   // Cached content
   List<SearchEntry> _allEntries = const [];
+  List<VodItem> _movies = const [];
+  List<Series> _series = const [];
+  StreamSubscription<Playlist?>? _activeSub;
+  StreamSubscription<List<VodItem>>? _moviesSub;
+  StreamSubscription<List<Series>>? _seriesSub;
   StreamSubscription<List<Favorite>>? _favoritesSub;
   String? _playlistId;
+  bool _hasBound = false;
 
+  /// React to the ACTIVE playlist so search covers the imported/switched
+  /// playlist live, without an app restart.
   Future<void> load() async {
     emit(state.copyWith(loading: true));
+    _activeSub = _playlists.active().listen(_onActivePlaylistChanged);
+  }
 
-    final pid = (await _playlists.active().first)?.id ?? 'p1';
+  void _onActivePlaylistChanged(Playlist? playlist) {
+    final pid = playlist?.id;
+    if (_hasBound && pid == _playlistId) return;
+    _hasBound = true;
     _playlistId = pid;
 
-    final movies = await _content.movies(pid).first;
-    final series = await _content.series(pid).first;
+    _moviesSub?.cancel();
+    _seriesSub?.cancel();
+    _favoritesSub?.cancel();
+    _movies = const [];
+    _series = const [];
+    _allEntries = const [];
 
+    if (pid == null) {
+      emit(state.copyWith(
+          loading: false, results: const [], favoriteKeys: const {}));
+      return;
+    }
+
+    _moviesSub = _content.movies(pid).listen((m) {
+      _movies = m;
+      _rebuildEntries();
+    });
+    _seriesSub = _content.series(pid).listen((s) {
+      _series = s;
+      _rebuildEntries();
+    });
+    _favoritesSub = _content.favorites(pid).listen(
+      (favs) => emit(
+        state.copyWith(favoriteKeys: favs.map((f) => f.itemKey).toSet()),
+      ),
+    );
+  }
+
+  void _rebuildEntries() {
     _allEntries = [
-      ...movies.map(
+      ..._movies.map(
         (m) => SearchEntry(
           id: m.id,
           title: m.title,
@@ -39,7 +78,7 @@ class SearchCubit extends Cubit<SearchState> {
           streamUrl: m.streamUrl,
         ),
       ),
-      ...series.map(
+      ..._series.map(
         (s) => SearchEntry(
           id: s.id,
           title: s.title,
@@ -51,14 +90,9 @@ class SearchCubit extends Cubit<SearchState> {
       ),
       // Live channels are excluded from VOD/series search results.
     ];
-
-    _favoritesSub = _content.favorites(pid).listen(
-      (favs) => emit(
-        state.copyWith(favoriteKeys: favs.map((f) => f.itemKey).toSet()),
-      ),
-    );
-
     emit(state.copyWith(loading: false));
+    // Re-apply the current query against the refreshed catalog.
+    if (state.query.isNotEmpty) setQuery(state.query);
   }
 
   /// Toggles favorite for a search result entry.
@@ -74,6 +108,9 @@ class SearchCubit extends Cubit<SearchState> {
 
   @override
   Future<void> close() async {
+    await _activeSub?.cancel();
+    await _moviesSub?.cancel();
+    await _seriesSub?.cancel();
     await _favoritesSub?.cancel();
     return super.close();
   }
