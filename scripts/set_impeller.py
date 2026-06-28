@@ -34,7 +34,11 @@ elif mode == "opengles":
 else:
     sys.exit(f"unknown mode: {mode}")
 
-t = t.replace('android:icon="@mipmap/ic_launcher">',
-              'android:icon="@mipmap/ic_launcher">' + block, 1)
+# Insert the meta-data just before the first <activity> — a stable anchor that
+# doesn't depend on which attributes the <application> tag ends with.
+needle = "        <activity"
+if needle not in t:
+    sys.exit("could not find <activity> anchor in AndroidManifest.xml")
+t = t.replace(needle, block.lstrip("\n") + "\n" + needle, 1)
 mf.write_text(t)
 print(f"manifest set: {mode}")
