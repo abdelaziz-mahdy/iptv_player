@@ -50,4 +50,13 @@ abstract class PlaybackRepository {
   Future<void> saveProgress(WatchProgress p);
   Future<void> removeProgress(String itemKey);
   Stream<List<WatchProgress>> continueWatching(String playlistId);
+
+  /// Records that [itemKey] (a browsable key — `movie:<id>` / `series:<id>` /
+  /// `channel:<id>`) was just opened in the player. Unlike [saveProgress] this
+  /// also tracks live channels, and powers the "Recently Viewed" category.
+  Future<void> recordView({required String playlistId, required String itemKey});
+
+  /// The browsable keys recently opened in [playlistId], most-recent first.
+  /// Consumers filter by key prefix (`movie:`/`series:`/`channel:`).
+  Stream<List<String>> recentlyViewed(String playlistId);
 }

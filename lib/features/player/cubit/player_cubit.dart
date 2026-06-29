@@ -98,7 +98,12 @@ class PlayerCubit extends Cubit<PlayerUiState> {
     this.subtitle,
     required this.kind,
     required this.playlistId,
+    this.recentKey,
   }) : super(const PlayerUiState());
+
+  /// Browsable key recorded in "recently viewed" (e.g. `series:<id>` for an
+  /// episode). Falls back to [itemKey] when null (movies/channels).
+  final String? recentKey;
 
   /// Whether this is a live channel (not resumable VOD).
   bool get isLive => kind == MediaKind.channel;
@@ -134,6 +139,12 @@ class PlayerCubit extends Cubit<PlayerUiState> {
     }
 
     await _controller.play();
+
+    // Record in "recently viewed" for ALL kinds (incl. live, which isn't saved
+    // as resumable progress). Fire-and-forget — never block playback start.
+    unawaited(_playback
+        .recordView(playlistId: playlistId, itemKey: recentKey ?? itemKey)
+        .catchError((_) {}));
 
     // Best-effort: keep the screen awake during playback. Fire-and-forget so
     // player setup never blocks on the platform channel.

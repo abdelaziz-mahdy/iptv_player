@@ -56,6 +56,10 @@ class PlayerScreen extends StatefulWidget {
   final MediaKind kind;
   final String playlistId;
 
+  /// Browsable key for "recently viewed" (e.g. `series:<id>` for an episode);
+  /// null falls back to [itemKey].
+  final String? recentKey;
+
   const PlayerScreen({
     super.key,
     required this.controller,
@@ -67,6 +71,7 @@ class PlayerScreen extends StatefulWidget {
     required this.playbackRepository,
     required this.kind,
     required this.playlistId,
+    this.recentKey,
   });
 
   @override
@@ -137,6 +142,7 @@ class _PlayerScreenState extends State<PlayerScreen>
         subtitle: widget.subtitle,
         kind: widget.kind,
         playlistId: widget.playlistId,
+        recentKey: widget.recentKey,
       );
       _cubit!.start();
     }

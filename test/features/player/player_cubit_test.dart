@@ -144,6 +144,50 @@ void main() {
         await cubit.close();
       });
 
+      test('start() records the item in recently-viewed (live included)',
+          () async {
+        final playback = FakePlaybackRepository();
+        final cubit = PlayerCubit(
+          FakePlayerController(),
+          playback,
+          itemKey: 'channel:c1',
+          url: 'http://live',
+          title: 'NOOR One',
+          kind: MediaKind.channel,
+          playlistId: 'p1',
+        );
+        await cubit.start();
+        await Future<void>.delayed(Duration.zero);
+
+        final recent = await playback.recentlyViewed('p1').first;
+        expect(recent, contains('channel:c1'));
+
+        await cubit.close();
+      });
+
+      test('start() records recentKey (series) when playing an episode',
+          () async {
+        final playback = FakePlaybackRepository();
+        final cubit = PlayerCubit(
+          FakePlayerController(),
+          playback,
+          itemKey: 'episode:e9',
+          url: 'http://vod',
+          title: 'Ep 9',
+          kind: MediaKind.episode,
+          playlistId: 'p1',
+          recentKey: 'series:s1',
+        );
+        await cubit.start();
+        await Future<void>.delayed(Duration.zero);
+
+        final recent = await playback.recentlyViewed('p1').first;
+        expect(recent, contains('series:s1'));
+        expect(recent, isNot(contains('episode:e9')));
+
+        await cubit.close();
+      });
+
       test('isLive returns true for channel, false for movie', () {
         final liveController = FakePlayerController();
         final liveCubit = PlayerCubit(

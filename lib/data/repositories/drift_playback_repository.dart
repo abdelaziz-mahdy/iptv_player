@@ -57,4 +57,25 @@ class DriftPlaybackRepository implements PlaybackRepository {
           (rows) => rows.map(_fromRow).toList(),
         );
   }
+
+  @override
+  Future<void> recordView({
+    required String playlistId,
+    required String itemKey,
+  }) {
+    return _db.recordRecentlyViewed(
+      RecentlyViewedRowsCompanion.insert(
+        itemKey: itemKey,
+        playlistId: playlistId,
+        viewedAt: DateTime.now().toUtc(),
+      ),
+    );
+  }
+
+  @override
+  Stream<List<String>> recentlyViewed(String playlistId) {
+    return _db.watchRecentlyViewed(playlistId).map(
+          (rows) => rows.map((r) => r.itemKey).toList(),
+        );
+  }
 }

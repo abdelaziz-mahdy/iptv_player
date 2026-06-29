@@ -29,6 +29,7 @@ class LiveScreen extends StatelessWidget {
       create: (_) => LiveCubit(
         sl<ContentRepository>(),
         sl<PlaylistRepository>(),
+        playback: sl<PlaybackRepository>(),
       )..load(),
       child: _LiveView(onPlayChannel: onPlayChannel),
     );

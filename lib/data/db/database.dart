@@ -20,6 +20,7 @@ part 'database.g.dart';
     Favorites,
     XtreamCredentials,
     Categories,
+    RecentlyViewedRows,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -27,7 +28,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'noor'));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -38,6 +39,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 3) {
             await m.createTable(categories);
+          }
+          if (from < 4) {
+            await m.createTable(recentlyViewedRows);
           }
         },
       );
@@ -129,6 +133,18 @@ class AppDatabase extends _$AppDatabase {
       });
   Future<List<CategoryRow>> getCategories(String playlistId, String type) =>
       (select(categories)..where((t) => t.playlistId.equals(playlistId) & t.type.equals(type))).get();
+
+  // --- Recently viewed ---
+  Future<void> recordRecentlyViewed(RecentlyViewedRowsCompanion r) =>
+      into(recentlyViewedRows).insertOnConflictUpdate(r);
+  Stream<List<RecentlyViewedRow>> watchRecentlyViewed(String playlistId) =>
+      (select(recentlyViewedRows)
+            ..where((t) => t.playlistId.equals(playlistId))
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.viewedAt, mode: OrderingMode.desc)
+            ])
+            ..limit(50))
+          .watch();
 
   // --- Xtream credentials ---
   Future<void> upsertCredentials(XtreamCredentialsCompanion c) =>

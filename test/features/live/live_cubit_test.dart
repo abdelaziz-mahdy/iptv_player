@@ -30,6 +30,33 @@ void main() {
       await cubit.close();
     });
 
+    test('viewing a channel pins "Recently Viewed" group first', () async {
+      final playback = FakePlaybackRepository();
+      final cubit = LiveCubit(
+        FakeContentRepository(),
+        FakePlaylistRepository(),
+        playback: playback,
+      );
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      // No recent group until a channel is viewed.
+      expect(cubit.state.groups.map((g) => g.id),
+          isNot(contains(kRecentGroupId)));
+
+      await playback.recordView(playlistId: 'p1', itemKey: 'channel:c2');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.groups.first.id, kRecentGroupId);
+      expect(cubit.state.groups.first.count, 1);
+
+      cubit.selectGroup(kRecentGroupId);
+      expect(cubit.state.channelsInGroup.map((c) => c.id), ['c2']);
+
+      await cubit.close();
+    });
+
     test('load() includes an "All" group', () async {
       final cubit = LiveCubit(
         FakeContentRepository(),

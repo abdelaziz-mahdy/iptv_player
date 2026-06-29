@@ -138,3 +138,17 @@ class Categories extends Table {
   @override
   Set<Column> get primaryKey => {playlistId, type, categoryId};
 }
+
+/// "Recently viewed" history — one row per browsable item that has been opened
+/// in the player. [itemKey] is the BROWSABLE key (`movie:<id>`, `series:<id>`,
+/// `channel:<id>`) so a series records once regardless of which episode played.
+/// Unlike [WatchProgressRows] this also tracks live channels.
+@DataClassName('RecentlyViewedRow')
+class RecentlyViewedRows extends Table {
+  TextColumn get itemKey => text()();
+  TextColumn get playlistId => text()();
+  DateTimeColumn get viewedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {itemKey};
+}

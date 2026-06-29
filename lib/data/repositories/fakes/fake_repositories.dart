@@ -186,6 +186,10 @@ class FakePlaybackRepository implements PlaybackRepository {
   final _progress = <String, WatchProgress>{};
   final _continue = _Store<List<WatchProgress>>([]);
 
+  /// Recently-viewed browsable keys, most-recent first.
+  final _recentKeys = <String>[];
+  final _recents = _Store<List<String>>([]);
+
   List<WatchProgress> _filtered() {
     final all = _progress.values
         .where((p) => p.kind != MediaKind.channel)
@@ -211,4 +215,18 @@ class FakePlaybackRepository implements PlaybackRepository {
 
   @override
   Stream<List<WatchProgress>> continueWatching(String playlistId) => _continue.stream;
+
+  @override
+  Future<void> recordView({
+    required String playlistId,
+    required String itemKey,
+  }) async {
+    _recentKeys
+      ..remove(itemKey)
+      ..insert(0, itemKey);
+    _recents.value = List<String>.from(_recentKeys);
+  }
+
+  @override
+  Stream<List<String>> recentlyViewed(String playlistId) => _recents.stream;
 }

@@ -187,6 +187,64 @@ void main() {
     });
   });
 
+  group('GridCubit — recently viewed + counts', () {
+    test('no "Recently Viewed" category until something is viewed', () async {
+      final cubit = GridCubit(
+        FakeContentRepository(),
+        FakePlaylistRepository(),
+        GridKind.movies,
+        playback: FakePlaybackRepository(),
+      );
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.categories.map((c) => c.id),
+          isNot(contains(kRecentCategoryId)));
+
+      await cubit.close();
+    });
+
+    test('viewing a movie pins "Recently Viewed" first and filters to it',
+        () async {
+      final playback = FakePlaybackRepository();
+      final cubit = GridCubit(
+        FakeContentRepository(),
+        FakePlaylistRepository(),
+        GridKind.movies,
+        playback: playback,
+      );
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      final dune = cubit.state.items.firstWhere((e) => e.title == 'Dune');
+      await playback.recordView(playlistId: 'p1', itemKey: 'movie:${dune.id}');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.categories.first.id, kRecentCategoryId);
+      expect(cubit.state.categories.first.count, 1);
+
+      cubit.selectCategory(kRecentCategoryId);
+      expect(cubit.state.filteredItems.map((e) => e.title), ['Dune']);
+
+      await cubit.close();
+    });
+
+    test('"All" category count equals total item count', () async {
+      final cubit = GridCubit(
+        FakeContentRepository(),
+        FakePlaylistRepository(),
+        GridKind.movies,
+      );
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      final all = cubit.state.categories.firstWhere((c) => c.id == '');
+      expect(all.count, cubit.state.items.length);
+
+      await cubit.close();
+    });
+  });
+
   group('GridCubit — favorites', () {
     test('initial favoriteKeys is empty', () {
       final cubit = GridCubit(

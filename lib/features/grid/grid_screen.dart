@@ -32,6 +32,7 @@ class GridScreen extends StatelessWidget {
         sl<ContentRepository>(),
         sl<PlaylistRepository>(),
         kind,
+        playback: sl<PlaybackRepository>(),
       )..load(),
       child: _GridView(kind: kind, onOpen: onOpen),
     );
@@ -128,7 +129,7 @@ class _WideLayout extends StatelessWidget {
                           : state.selectedCategoryId == cat.id;
                       return _CategoryTile(
                         name: cat.name,
-                        count: null, // categories don't have a count in CategoryRef
+                        count: cat.count,
                         isSelected: isSelected,
                         autofocus: index == 0,
                         onTap: () => ctx
@@ -256,6 +257,14 @@ class _NarrowLayout extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (cat.count != null)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Text(
+                            '${cat.count}',
+                            style: tt.labelSmall?.copyWith(color: p.dim),
+                          ),
+                        ),
                       Icon(Icons.chevron_right, color: p.dim, size: 20),
                     ],
                   ),

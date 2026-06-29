@@ -8,19 +8,30 @@ import '../../../data/repositories/repositories.dart';
 
 part 'live_state.dart';
 
+/// Id of the synthetic "Recently Viewed" group pinned at the top.
+const kRecentGroupId = 'recent';
+
 class LiveCubit extends Cubit<LiveState> {
-  LiveCubit(this._content, this._playlists) : super(const LiveState());
+  LiveCubit(this._content, this._playlists, {this._playback})
+      : super(const LiveState());
 
   final ContentRepository _content;
   final PlaylistRepository _playlists;
 
+  /// Optional — when provided, powers the pinned "Recently Viewed" group.
+  final PlaybackRepository? _playback;
+
   StreamSubscription<Playlist?>? _activeSub;
   StreamSubscription<List<Channel>>? _channelsSub;
+  StreamSubscription<List<String>>? _recentSub;
   String? _playlistId;
   bool _hasBound = false;
 
   /// All channels loaded from the repository (raw, not filtered).
   List<Channel> _allChannels = [];
+
+  /// Recently-viewed browsable keys, most-recent first.
+  List<String> _recentKeys = const [];
 
   /// Category name lookup: categoryId → name.
   Map<String, String> _categoryNames = {};
@@ -40,6 +51,9 @@ class LiveCubit extends Cubit<LiveState> {
 
     await _channelsSub?.cancel();
     _channelsSub = null;
+    await _recentSub?.cancel();
+    _recentSub = null;
+    _recentKeys = const [];
 
     if (pid == null) {
       _allChannels = [];
@@ -56,20 +70,15 @@ class LiveCubit extends Cubit<LiveState> {
     final cats = await _content.categories(pid, MediaKind.channel);
     _categoryNames = {for (final c in cats) c.id: c.name};
 
+    // Recently-viewed (optional dependency).
+    _recentSub = _playback?.recentlyViewed(pid).listen((keys) {
+      _recentKeys = keys;
+      _recompute();
+    });
+
     _channelsSub = _content.channels(pid).listen((channels) {
       _allChannels = channels;
-      final groups = _buildGroups(channels);
-
-      // Default selected group is 'all'.
-      final selectedId = state.selectedGroupId ?? 'all';
-      final filtered = _filterChannels(channels, selectedId);
-
-      emit(state.copyWith(
-        loading: false,
-        groups: groups,
-        selectedGroupId: selectedId,
-        channelsInGroup: filtered,
-      ));
+      _recompute();
     });
   }
 
@@ -80,6 +89,32 @@ class LiveCubit extends Cubit<LiveState> {
       selectedGroupId: id,
       channelsInGroup: filtered,
     ));
+  }
+
+  /// Rebuilds groups + the current group's channels from raw channels and
+  /// recent keys, preserving the selected group.
+  void _recompute() {
+    final selectedId = state.selectedGroupId ?? 'all';
+    emit(state.copyWith(
+      loading: false,
+      groups: _buildGroups(_allChannels),
+      selectedGroupId: selectedId,
+      channelsInGroup: _filterChannels(_allChannels, selectedId),
+    ));
+  }
+
+  /// Recently-viewed channels in recency order, only those still present.
+  List<Channel> _recentChannels() {
+    final byId = {for (final c in _allChannels) c.id: c};
+    final out = <Channel>[];
+    final seen = <String>{};
+    for (final key in _recentKeys) {
+      if (!key.startsWith('channel:')) continue;
+      final id = key.substring('channel:'.length);
+      final ch = byId[id];
+      if (ch != null && seen.add(id)) out.add(ch);
+    }
+    return out;
   }
 
   // ---------------------------------------------------------------------------
@@ -106,7 +141,10 @@ class LiveCubit extends Cubit<LiveState> {
       }
     }
 
+    final recentCount = _recentChannels().length;
     final groups = <ChannelGroup>[
+      if (recentCount > 0)
+        (id: kRecentGroupId, name: 'Recently Viewed', count: recentCount),
       (id: 'all', name: 'All', count: channels.length),
     ];
 
@@ -127,6 +165,7 @@ class LiveCubit extends Cubit<LiveState> {
 
   /// Returns channels belonging to the group identified by [groupId].
   List<Channel> _filterChannels(List<Channel> channels, String groupId) {
+    if (groupId == kRecentGroupId) return _recentChannels();
     if (groupId == 'all') return List.unmodifiable(channels);
     if (groupId == 'other') {
       return channels
@@ -144,6 +183,7 @@ class LiveCubit extends Cubit<LiveState> {
   Future<void> close() async {
     await _activeSub?.cancel();
     await _channelsSub?.cancel();
+    await _recentSub?.cancel();
     return super.close();
   }
 }

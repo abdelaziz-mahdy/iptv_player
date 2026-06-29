@@ -34,6 +34,11 @@ class PlayerArgs {
   final String? subtitle;
   final MediaKind kind;
   final String playlistId;
+
+  /// Browsable key for "recently viewed" (e.g. `series:<id>` when playing an
+  /// episode, so the parent series is recorded). Null falls back to [itemKey].
+  final String? recentKey;
+
   const PlayerArgs({
     required this.itemKey,
     required this.url,
@@ -41,6 +46,7 @@ class PlayerArgs {
     this.subtitle,
     required this.kind,
     required this.playlistId,
+    this.recentKey,
   });
 }
 
@@ -209,6 +215,8 @@ GoRouter buildRouter() {
                 title: ep.title,
                 kind: MediaKind.episode,
                 playlistId: 'p1',
+                // Record the parent series (not the episode) as recently viewed.
+                recentKey: 'series:${series.id}',
               ),
             ),
           );
@@ -238,6 +246,7 @@ GoRouter buildRouter() {
             playbackRepository: sl<PlaybackRepository>(),
             kind: a.kind,
             playlistId: a.playlistId,
+            recentKey: a.recentKey,
           );
         },
       ),
