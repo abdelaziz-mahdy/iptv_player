@@ -51,6 +51,28 @@ void main() {
       await cubit.close();
     });
 
+    test('series favorited as episode:<seriesId> resolves and shows', () async {
+      final contentRepo = FakeContentRepository();
+
+      // Series are favorited app-wide as `episode:<seriesId>` (grid/search/
+      // details). The favorites list must still resolve them as the series.
+      await contentRepo.toggleFavorite('episode:s1', 'p1', MediaKind.episode);
+
+      final cubit = FavoritesCubit(
+        contentRepo,
+        FakePlaylistRepository(),
+      );
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.entries, hasLength(1));
+      expect(cubit.state.entries.first.title, equals('Deep Field'));
+      expect(cubit.state.entries.first.isSeries, isTrue);
+
+      await cubit.close();
+    });
+
     test('toggleFavorite twice removes the entry (toggle off)', () async {
       final contentRepo = FakeContentRepository();
       await contentRepo.toggleFavorite('movie:m1', 'p1', MediaKind.movie);

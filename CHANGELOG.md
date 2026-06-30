@@ -15,3 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Continue Watching now remembers where you left off even if you exit from the
   Home button or the app is closed in the background.
+- Series opened from Search or the Movies/Series grids now load their seasons
+  and episodes (previously they could show as empty).
+- Series added to Favorites now appear in the Favorites list.

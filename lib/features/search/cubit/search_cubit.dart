@@ -71,6 +71,7 @@ class SearchCubit extends Cubit<SearchState> {
       ..._movies.map(
         (m) => SearchEntry(
           id: m.id,
+          playlistId: m.playlistId,
           title: m.title,
           subtitle: m.year,
           posterUrl: m.posterUrl,
@@ -81,6 +82,7 @@ class SearchCubit extends Cubit<SearchState> {
       ..._series.map(
         (s) => SearchEntry(
           id: s.id,
+          playlistId: s.playlistId,
           title: s.title,
           subtitle: s.year,
           posterUrl: s.posterUrl,

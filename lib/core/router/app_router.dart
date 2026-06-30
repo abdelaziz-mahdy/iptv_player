@@ -214,7 +214,7 @@ GoRouter buildRouter() {
                 url: ep.streamUrl,
                 title: ep.title,
                 kind: MediaKind.episode,
-                playlistId: 'p1',
+                playlistId: series.playlistId,
                 // Record the parent series (not the episode) as recently viewed.
                 recentKey: 'series:${series.id}',
               ),
@@ -287,7 +287,7 @@ void _openGridEntry(BuildContext c, GridEntry e) {
       '/details/series',
       extra: Series(
         id: e.id,
-        playlistId: 'p1',
+        playlistId: e.playlistId,
         title: e.title,
         posterUrl: e.posterUrl,
       ),
@@ -297,7 +297,7 @@ void _openGridEntry(BuildContext c, GridEntry e) {
       '/details/movie',
       extra: VodItem(
         id: e.id,
-        playlistId: 'p1',
+        playlistId: e.playlistId,
         title: e.title,
         posterUrl: e.posterUrl,
         streamUrl: e.streamUrl ?? '',
@@ -313,7 +313,7 @@ void _openSearchEntry(BuildContext c, SearchEntry e) {
         '/details/movie',
         extra: VodItem(
           id: e.id,
-          playlistId: 'p1',
+          playlistId: e.playlistId,
           title: e.title,
           posterUrl: e.posterUrl,
           streamUrl: e.streamUrl ?? '',
@@ -324,7 +324,7 @@ void _openSearchEntry(BuildContext c, SearchEntry e) {
         '/details/series',
         extra: Series(
           id: e.id,
-          playlistId: 'p1',
+          playlistId: e.playlistId,
           title: e.title,
           posterUrl: e.posterUrl,
         ),
@@ -337,7 +337,7 @@ void _openSearchEntry(BuildContext c, SearchEntry e) {
           url: e.streamUrl ?? '',
           title: e.title,
           kind: MediaKind.channel,
-          playlistId: 'p1',
+          playlistId: e.playlistId,
         ),
       );
   }

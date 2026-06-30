@@ -131,20 +131,26 @@ class FavoritesCubit extends Cubit<FavoritesState> {
         if (movie == null) return null;
         return GridEntry(
           id: movie.id,
+          playlistId: movie.playlistId,
           title: movie.title,
           subtitle: movie.year,
           posterUrl: movie.posterUrl,
         );
 
+      // Series are favorited as `episode:<seriesId>` app-wide (grid, search and
+      // details all use that key), so resolve both prefixes against series.
       case 'series':
+      case 'episode':
         final show =
             _series.cast<Series?>().firstWhere((s) => s?.id == id, orElse: () => null);
         if (show == null) return null;
         return GridEntry(
           id: show.id,
+          playlistId: show.playlistId,
           title: show.title,
           subtitle: show.year,
           posterUrl: show.posterUrl,
+          isSeries: true,
         );
 
       case 'channel':
@@ -154,6 +160,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
         if (ch == null) return null;
         return GridEntry(
           id: ch.id,
+          playlistId: ch.playlistId,
           title: ch.name,
           subtitle: ch.number,
           posterUrl: ch.logoUrl,

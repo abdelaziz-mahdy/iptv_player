@@ -5,6 +5,7 @@ enum SearchEntryKind { movie, series, channel }
 class SearchEntry extends Equatable {
   const SearchEntry({
     required this.id,
+    required this.playlistId,
     required this.title,
     this.subtitle,
     this.posterUrl,
@@ -13,6 +14,7 @@ class SearchEntry extends Equatable {
   });
 
   final String id;
+  final String playlistId;
   final String title;
   final String? subtitle;
   final String? posterUrl;
@@ -20,7 +22,8 @@ class SearchEntry extends Equatable {
   final String? streamUrl;
 
   @override
-  List<Object?> get props => [id, title, subtitle, posterUrl, kind, streamUrl];
+  List<Object?> get props =>
+      [id, playlistId, title, subtitle, posterUrl, kind, streamUrl];
 }
 
 class SearchState extends Equatable {

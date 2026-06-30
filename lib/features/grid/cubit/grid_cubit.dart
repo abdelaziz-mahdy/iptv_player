@@ -18,6 +18,7 @@ enum GridKind { movies, series }
 
 class GridEntry extends Equatable {
   final String id;
+  final String playlistId;
   final String title;
   final String? subtitle;
   final String? posterUrl;
@@ -27,6 +28,7 @@ class GridEntry extends Equatable {
 
   const GridEntry({
     required this.id,
+    required this.playlistId,
     required this.title,
     this.subtitle,
     this.posterUrl,
@@ -36,7 +38,8 @@ class GridEntry extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, title, subtitle, posterUrl, badge, streamUrl, isSeries];
+  List<Object?> get props =>
+      [id, playlistId, title, subtitle, posterUrl, badge, streamUrl, isSeries];
 }
 
 // ---------------------------------------------------------------------------
@@ -214,6 +217,7 @@ class GridCubit extends Cubit<GridState> {
         .map(
           (m) => GridEntry(
             id: m.id,
+            playlistId: m.playlistId,
             title: m.title,
             subtitle: m.year,
             posterUrl: m.posterUrl,
@@ -231,6 +235,7 @@ class GridCubit extends Cubit<GridState> {
         .map(
           (s) => GridEntry(
             id: s.id,
+            playlistId: s.playlistId,
             title: s.title,
             subtitle: s.year,
             posterUrl: s.posterUrl,
