@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -403,23 +405,35 @@ class _PlayerScreenState extends State<PlayerScreen>
                                 style: const TextStyle(color: Colors.white, fontSize: 12),
                               ),
                               Expanded(
-                                child: Slider(
-                                  value: state.duration.inMilliseconds > 0
-                                      ? state.position.inMilliseconds
-                                          .clamp(0, state.duration.inMilliseconds)
-                                          .toDouble()
-                                      : 0.0,
-                                  min: 0,
-                                  max: state.duration.inMilliseconds > 0
-                                      ? state.duration.inMilliseconds.toDouble()
-                                      : 1.0,
-                                  onChanged: (value) {
-                                    context.read<PlayerCubit>().seekTo(
-                                          Duration(milliseconds: value.toInt()),
-                                        );
-                                  },
-                                  activeColor: context.palette.accent,
-                                  inactiveColor: Colors.white.withValues(alpha: 0.3),
+                                // Divisions make each D-pad step exactly 10s
+                                // (instead of a large fraction of the whole
+                                // video); the tick marks they'd draw are hidden.
+                                child: SliderTheme(
+                                  data: SliderTheme.of(context).copyWith(
+                                    activeTickMarkColor: Colors.transparent,
+                                    inactiveTickMarkColor: Colors.transparent,
+                                  ),
+                                  child: Slider(
+                                    value: state.duration.inMilliseconds > 0
+                                        ? state.position.inMilliseconds
+                                            .clamp(0, state.duration.inMilliseconds)
+                                            .toDouble()
+                                        : 0.0,
+                                    min: 0,
+                                    max: state.duration.inMilliseconds > 0
+                                        ? state.duration.inMilliseconds.toDouble()
+                                        : 1.0,
+                                    divisions: state.duration.inSeconds >= 10
+                                        ? state.duration.inSeconds ~/ 10
+                                        : null,
+                                    onChanged: (value) {
+                                      context.read<PlayerCubit>().seekTo(
+                                            Duration(milliseconds: value.toInt()),
+                                          );
+                                    },
+                                    activeColor: context.palette.accent,
+                                    inactiveColor: Colors.white.withValues(alpha: 0.3),
+                                  ),
                                 ),
                               ),
                               Text(
@@ -499,19 +513,24 @@ class _PlayerScreenState extends State<PlayerScreen>
                                 ),
                               ),
                             ),
-                            // Volume slider (compact, desktop-friendly)
-                            SizedBox(
-                              width: 100,
-                              child: Slider(
-                                value: state.volume,
-                                min: 0.0,
-                                max: 1.0,
-                                onChanged: (v) => context.read<PlayerCubit>().setVolume(v),
-                                activeColor: Colors.white,
-                                inactiveColor: Colors.white.withValues(alpha: 0.3),
+                            // Volume slider (desktop only). On Android/TV volume
+                            // is hardware-controlled, so the slider is just a
+                            // dead focus stop — the mute button stays.
+                            if (!Platform.isAndroid) ...[
+                              SizedBox(
+                                width: 100,
+                                child: Slider(
+                                  value: state.volume,
+                                  min: 0.0,
+                                  max: 1.0,
+                                  onChanged: (v) =>
+                                      context.read<PlayerCubit>().setVolume(v),
+                                  activeColor: Colors.white,
+                                  inactiveColor: Colors.white.withValues(alpha: 0.3),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
+                              const SizedBox(width: 8),
+                            ],
                             // CC toggle
                             FocusableButton(
                               semanticLabel: state.captionsOn ? 'Captions on' : 'Captions off',

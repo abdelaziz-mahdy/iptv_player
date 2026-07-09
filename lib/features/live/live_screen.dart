@@ -386,15 +386,19 @@ class _ChannelTile extends StatelessWidget {
                   : _Abbr(name: channel.name, palette: p),
             ),
             const SizedBox(height: 6),
-            Text(
-              channel.name,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: p.fg,
-                    fontWeight: FontWeight.w600,
-                  ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
+            // Flexible so the tile tolerates a few px less height (e.g. the
+            // focus ring's inner padding) by ellipsizing instead of overflowing.
+            Flexible(
+              child: Text(
+                channel.name,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: p.fg,
+                      fontWeight: FontWeight.w600,
+                    ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
             ),
             Text(
               channel.number,

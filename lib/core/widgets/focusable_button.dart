@@ -73,10 +73,12 @@ class _FocusableButtonState extends State<FocusableButton> {
           curve: Curves.easeOutCubic,
           child: GestureDetector(
             onTap: widget.onPressed,
-            // foregroundDecoration paints the focus ring OVER the child without
-            // adding to layout size, so wrapping fixed-width widgets (e.g. EPG
-            // cells) doesn't shift or overflow their layout.
+            // foregroundDecoration paints the focus ring OVER the child. The
+            // 3 px inner padding keeps the ring in a gutter around the content
+            // instead of covering its edges (reserved even when unfocused so
+            // gaining focus never shifts layout).
             child: Container(
+              padding: const EdgeInsets.all(3),
               foregroundDecoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
