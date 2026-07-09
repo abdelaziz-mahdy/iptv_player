@@ -99,9 +99,7 @@ GoRouter buildRouter() {
               GoRoute(
                 path: '/favorites',
                 builder: (context, state) => FavoritesScreen(
-                  onOpen: (_) {
-                    // TODO: resolve favorite to detail (needs full object, not just id)
-                  },
+                  onOpen: (e) => _openFavorite(context, e),
                 ),
               ),
             ],
@@ -280,6 +278,25 @@ GoRouter buildRouter() {
 // ---------------------------------------------------------------------------
 // Navigation helpers
 // ---------------------------------------------------------------------------
+
+/// Opens a favorite entry by kind: series/movie → details, channel → player.
+/// Channels are marked with `badge == 'LIVE'` and carry their stream URL.
+void _openFavorite(BuildContext c, GridEntry e) {
+  if (e.badge == 'LIVE') {
+    c.push(
+      '/player',
+      extra: PlayerArgs(
+        itemKey: 'channel:${e.id}',
+        url: e.streamUrl ?? '',
+        title: e.title,
+        kind: MediaKind.channel,
+        playlistId: e.playlistId,
+      ),
+    );
+    return;
+  }
+  _openGridEntry(c, e);
+}
 
 void _openGridEntry(BuildContext c, GridEntry e) {
   if (e.isSeries) {

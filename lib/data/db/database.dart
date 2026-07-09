@@ -85,6 +85,8 @@ class AppDatabase extends _$AppDatabase {
       batch((b) => b.insertAll(seasons, rows, mode: InsertMode.insertOrReplace));
   Future<List<EpisodeRow>> getEpisodes(String seasonId) =>
       (select(episodes)..where((t) => t.seasonId.equals(seasonId))).get();
+  Future<List<EpisodeRow>> getEpisodesByIds(List<String> ids) =>
+      (select(episodes)..where((t) => t.id.isIn(ids))).get();
   Future<void> upsertEpisodes(List<EpisodesCompanion> rows) =>
       batch((b) => b.insertAll(episodes, rows, mode: InsertMode.insertOrReplace));
 

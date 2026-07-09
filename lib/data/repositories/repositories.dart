@@ -19,6 +19,11 @@ abstract class ContentRepository {
   Future<Result<List<Season>>> seasons(String seriesId);
   Future<Result<List<Episode>>> episodes(String seasonId);
 
+  /// Fetches cached episodes by their domain ids (used to label Continue
+  /// Watching entries with their season/episode). Returns only those present
+  /// locally; missing ids are simply omitted.
+  Future<List<Episode>> episodesByIds(List<String> ids);
+
   /// Fetches a series' full detail (plot, seasons, episodes) from the provider
   /// on demand and caches it locally. Seasons/episodes are not fetched during
   /// the initial import (too expensive per-series), so this is called when a

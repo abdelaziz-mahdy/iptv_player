@@ -103,6 +103,7 @@ class _HomeView extends StatelessWidget {
                   items: state.continueWatching,
                   movies: state.movies,
                   series: state.series,
+                  episodesById: state.episodesById,
                   onOpenMovie: onOpenMovie,
                   onOpenSeries: onOpenSeries,
                 ),
@@ -286,11 +287,39 @@ class _HeroBanner extends StatelessWidget {
   }
 }
 
+/// Resolves a watch-progress `itemKey` to a `(seriesDomainId, seasonNumber)`.
+///
+/// Handles episode keys — `episode:<playlistId>:series:<sid>:season:<n>:ep:<id>`
+/// — by taking the series id (before `:season:`) and the season number (between
+/// `:season:` and `:ep:`), plus direct `series:` keys. Returns `(null, null)`
+/// for movie/channel keys so the caller falls through to the movie branch.
+(String?, String?) resolveContinueWatchingSeriesRef(String itemKey) {
+  if (itemKey.startsWith('movie:') || itemKey.startsWith('channel:')) {
+    return (null, null);
+  }
+  if (itemKey.startsWith('episode:')) {
+    final ep = itemKey.substring('episode:'.length);
+    final parts = ep.split(':season:');
+    final seriesId = parts.first;
+    String? seasonNumber;
+    if (parts.length > 1) {
+      final num = parts[1].split(':ep:').first;
+      if (num.isNotEmpty) seasonNumber = num;
+    }
+    return (seriesId, seasonNumber);
+  }
+  if (itemKey.startsWith('series:')) {
+    return (itemKey.substring('series:'.length), null);
+  }
+  return (itemKey, null); // bare id (defensive)
+}
+
 class _ContinueWatchingRail extends StatelessWidget {
   const _ContinueWatchingRail({
     required this.items,
     required this.movies,
     required this.series,
+    required this.episodesById,
     required this.onOpenMovie,
     required this.onOpenSeries,
   });
@@ -298,6 +327,7 @@ class _ContinueWatchingRail extends StatelessWidget {
   final List<WatchProgress> items;
   final List<VodItem> movies;
   final List<Series> series;
+  final Map<String, Episode> episodesById;
   final void Function(VodItem) onOpenMovie;
   final void Function(Series) onOpenSeries;
 
@@ -328,17 +358,37 @@ class _ContinueWatchingRail extends StatelessWidget {
           onTap: () => onOpenMovie(movie),
         );
       } else {
-        // Try to find the matching series
-        final show = series.cast<Series?>().firstWhere(
-              (s) =>
-                  s?.id == progress.itemKey ||
-                  'series:${s?.id}' == progress.itemKey,
-              orElse: () => null,
-            );
+        // Resolve a series either from a direct series key, or from an episode
+        // key `episode:<playlistId>:series:<sid>:season:<n>:ep:<id>` — the
+        // series id is the segment before ':season:', and the season number
+        // sits between ':season:' and ':ep:'.
+        final (seriesId, seasonNumber) =
+            resolveContinueWatchingSeriesRef(progress.itemKey);
+        final show = seriesId == null
+            ? null
+            : series.cast<Series?>().firstWhere(
+                  (s) => s?.id == seriesId,
+                  orElse: () => null,
+                );
         if (show != null) {
+          // Prefer "S{season} · E{number}" when the episode is cached locally,
+          // else fall back to the season, else the year.
+          final ep = progress.itemKey.startsWith('episode:')
+              ? episodesById[progress.itemKey.substring('episode:'.length)]
+              : null;
+          String? subtitle;
+          if (ep != null) {
+            subtitle = seasonNumber != null
+                ? 'S$seasonNumber · E${ep.number}'
+                : 'E${ep.number}';
+          } else if (seasonNumber != null) {
+            subtitle = 'Season $seasonNumber';
+          } else {
+            subtitle = show.year;
+          }
           card = PosterCard(
             title: show.title,
-            subtitle: show.year,
+            subtitle: subtitle,
             imageUrl: show.posterUrl,
             progress: progress0.clamp(0.0, 1.0),
             onTap: () => onOpenSeries(show),

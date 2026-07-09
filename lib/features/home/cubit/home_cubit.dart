@@ -61,14 +61,34 @@ class HomeCubit extends Cubit<HomeState> {
     _seriesSub = _content.series(pid).listen(
       (series) => emit(state.copyWith(series: series)),
     );
-    _continueSub = _playback.continueWatching(pid).listen(
-      (cw) => emit(state.copyWith(continueWatching: cw)),
-    );
+    _continueSub = _playback.continueWatching(pid).listen(_onContinueWatching);
     _favoritesSub = _content.favorites(pid).listen(
       (favs) => emit(
         state.copyWith(favoriteKeys: favs.map((f) => f.itemKey).toSet()),
       ),
     );
+  }
+
+  /// Emits Continue Watching, then enriches series-episode entries by fetching
+  /// their cached [Episode] rows (for the "S{season} · E{number}" label).
+  Future<void> _onContinueWatching(List<WatchProgress> cw) async {
+    if (isClosed) return;
+    emit(state.copyWith(continueWatching: cw));
+
+    final episodeIds = [
+      for (final p in cw)
+        if (p.itemKey.startsWith('episode:'))
+          p.itemKey.substring('episode:'.length),
+    ];
+    if (episodeIds.isEmpty) {
+      if (state.episodesById.isNotEmpty) {
+        emit(state.copyWith(episodesById: const {}));
+      }
+      return;
+    }
+    final eps = await _content.episodesByIds(episodeIds);
+    if (isClosed) return;
+    emit(state.copyWith(episodesById: {for (final e in eps) e.id: e}));
   }
 
   Future<void> removeFromContinueWatching(String itemKey) async {

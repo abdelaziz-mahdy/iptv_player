@@ -6,11 +6,12 @@ import 'package:iptv_player/core/theme/app_theme.dart';
 import 'package:iptv_player/core/widgets/focusable_button.dart';
 import 'package:iptv_player/core/widgets/poster_card.dart';
 import 'package:iptv_player/features/favorites/favorites_screen.dart';
+import 'package:iptv_player/features/grid/cubit/grid_cubit.dart' show GridEntry;
 import 'package:iptv_player/l10n/generated/app_localizations.dart';
 
 import '../../support/fake_hydrated_storage.dart';
 
-Widget _buildTestApp({void Function(String)? onOpen}) {
+Widget _buildTestApp({void Function(GridEntry)? onOpen}) {
   return MaterialApp(
     theme: buildTheme(
       palette: AppPalette.standard,

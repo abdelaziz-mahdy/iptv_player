@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/poster_card.dart';
 import '../../data/repositories/repositories.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../grid/cubit/grid_cubit.dart' show GridEntry;
 import 'cubit/favorites_cubit.dart';
 
 class FavoritesScreen extends StatelessWidget {
@@ -14,7 +15,7 @@ class FavoritesScreen extends StatelessWidget {
     required this.onOpen,
   });
 
-  final void Function(String id) onOpen;
+  final void Function(GridEntry entry) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +32,7 @@ class FavoritesScreen extends StatelessWidget {
 class _FavoritesView extends StatelessWidget {
   const _FavoritesView({required this.onOpen});
 
-  final void Function(String id) onOpen;
+  final void Function(GridEntry entry) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +121,7 @@ class _FavoritesView extends StatelessWidget {
                           subtitle: entry.subtitle,
                           imageUrl: entry.posterUrl,
                           badge: entry.badge,
-                          onTap: () => onOpen(entry.id),
+                          onTap: () => onOpen(entry),
                         );
                       },
                       childCount: state.entries.length,

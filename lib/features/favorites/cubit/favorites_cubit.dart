@@ -165,6 +165,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
           subtitle: ch.number,
           posterUrl: ch.logoUrl,
           badge: 'LIVE',
+          streamUrl: ch.streamUrl,
         );
 
       default:

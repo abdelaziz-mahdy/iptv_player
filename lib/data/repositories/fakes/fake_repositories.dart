@@ -116,6 +116,16 @@ class FakeContentRepository implements ContentRepository {
       Ok(_episodes[seasonId] ?? const []);
 
   @override
+  Future<List<Episode>> episodesByIds(List<String> ids) async {
+    final idSet = ids.toSet();
+    return [
+      for (final list in _episodes.values)
+        for (final e in list)
+          if (idSet.contains(e.id)) e,
+    ];
+  }
+
+  @override
   Future<Result<SeriesDetail>> loadSeriesDetail(Series series) async {
     final seasons = _seasons[series.id] ?? const <Season>[];
     final bySeason = {

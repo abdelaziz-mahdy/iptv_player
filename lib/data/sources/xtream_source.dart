@@ -389,20 +389,27 @@ class XtreamSource {
       final xcSeasons = info.seasons ?? const [];
       final xcEpisodeMap = info.episodes ?? const {};
 
-      // Map seasons.
-      final domainSeasons = xcSeasons
-          .map((s) => seasonFromXtreamSeason(
-                s,
-                seriesId: seriesId,
-                playlistId: playlistId,
-              ))
-          .toList();
+      // Season numbers can come from the `seasons` array, the `episodes` map
+      // keys, or both. Many Xtream providers omit `seasons` entirely and only
+      // return episodes keyed by season number — so union both sources instead
+      // of iterating `seasons` alone (which would drop every episode).
+      final domainSeriesId = '$playlistId:series:$seriesId';
+      final seasonNumbers = <int>{
+        for (final s in xcSeasons) s.seasonNumber ?? 1,
+        for (final k in xcEpisodeMap.keys) int.tryParse(k) ?? 1,
+      }.toList()
+        ..sort();
 
-      // Map episodes: xcEpisodeMap keys are season numbers as strings.
+      final domainSeasons = <noor.Season>[];
       final episodesBySeason = <String, List<noor.Episode>>{};
-      for (final season in domainSeasons) {
-        final seasonNum = season.number.toString();
-        final xcEps = xcEpisodeMap[seasonNum] ?? const [];
+      for (final num in seasonNumbers) {
+        final season = noor.Season(
+          id: '$domainSeriesId:season:$num',
+          seriesId: domainSeriesId,
+          number: num,
+        );
+        domainSeasons.add(season);
+        final xcEps = xcEpisodeMap[num.toString()] ?? const [];
         episodesBySeason[season.id] = xcEps
             .map((e) => episodeFromXtreamEpisode(
                   e,

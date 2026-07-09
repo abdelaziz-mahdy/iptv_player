@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/foundation.dart' show debugPrint;
 
 import '../../core/result.dart';
 import '../credential_store.dart';
@@ -176,7 +177,16 @@ class DriftContentRepository implements ContentRepository {
   }
 
   @override
+  Future<List<Episode>> episodesByIds(List<String> ids) async {
+    if (ids.isEmpty) return const [];
+    final rows = await _db.getEpisodesByIds(ids);
+    return rows.map(_episodeFromRow).toList();
+  }
+
+  @override
   Future<Result<SeriesDetail>> loadSeriesDetail(Series series) async {
+    debugPrint(
+        '[series-detail] load id="${series.id}" pid="${series.playlistId}"');
     try {
       // Locate the playlist (for server URL + type) and its credentials.
       final playlists = await _db.getPlaylists();
@@ -184,15 +194,23 @@ class DriftContentRepository implements ContentRepository {
           playlists.where((r) => r.id == series.playlistId).firstOrNull;
       final serverUrl = p?.serverUrl;
       final creds = await _credentials.read(series.playlistId);
+      debugPrint('[series-detail] playlistFound=${p != null} '
+          'serverUrl=${serverUrl != null && serverUrl.isNotEmpty} '
+          'creds=${creds != null}');
 
       // Only Xtream exposes a series-info API. Without a server URL or
       // credentials (e.g. M3U), return whatever is cached locally.
       if (serverUrl == null || serverUrl.isEmpty || creds == null) {
-        return Ok(await _cachedSeriesDetail(series.id));
+        final cached = await _cachedSeriesDetail(series.id);
+        debugPrint('[series-detail] no url/creds -> cached '
+            'seasons=${cached.seasons.length} '
+            'eps=${cached.episodesBySeason.values.fold(0, (a, b) => a + b.length)}');
+        return Ok(cached);
       }
 
       // Raw numeric id is the last segment of '<playlistId>:series:<sid>'.
       final rawId = series.id.split(':series:').last;
+      debugPrint('[series-detail] fetching seriesId="$rawId" from $serverUrl');
 
       final detail = await _xtream.seriesDetail(
         serverUrl: serverUrl,
@@ -201,6 +219,8 @@ class DriftContentRepository implements ContentRepository {
         seriesId: rawId,
         playlistId: series.playlistId,
       );
+      debugPrint('[series-detail] fetched seasons=${detail.seasons.length} '
+          'eps=${detail.episodesBySeason.values.fold(0, (a, b) => a + b.length)}');
 
       // Cache seasons + episodes for offline/repeat views.
       await _db.upsertSeasons([
@@ -223,6 +243,7 @@ class DriftContentRepository implements ContentRepository {
       }
       return Ok(detail);
     } catch (e) {
+      debugPrint('[series-detail] ERROR: $e');
       // On failure, fall back to any cached detail rather than erroring out.
       try {
         return Ok(await _cachedSeriesDetail(series.id));

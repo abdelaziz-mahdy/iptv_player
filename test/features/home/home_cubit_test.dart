@@ -5,6 +5,35 @@ import 'package:iptv_player/features/home/cubit/home_cubit.dart';
 
 void main() {
   group('HomeCubit', () {
+    test('continue-watching episodes are enriched with their Episode row',
+        () async {
+      final playback = FakePlaybackRepository();
+      // A part-watched episode (fake episode id 's1-1-e1', number 1).
+      await playback.saveProgress(WatchProgress(
+        itemKey: 'episode:s1-1-e1',
+        playlistId: 'p1',
+        kind: MediaKind.episode,
+        positionSec: 100,
+        durationSec: 1000,
+        updatedAt: DateTime.now().toUtc(),
+      ));
+
+      final cubit = HomeCubit(
+        FakeContentRepository(),
+        playback,
+        FakePlaylistRepository(),
+      );
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero); // active bind + continue emit
+      await Future<void>.delayed(Duration.zero); // async episodesByIds fetch
+
+      expect(cubit.state.continueWatching, hasLength(1));
+      expect(cubit.state.episodesById['s1-1-e1']?.number, 1);
+      expect(cubit.state.episodesById['s1-1-e1']?.title, 'Pilot');
+
+      await cubit.close();
+    });
+
     test('load() emits state with non-empty movies and series', () async {
       final cubit = HomeCubit(
         FakeContentRepository(),
