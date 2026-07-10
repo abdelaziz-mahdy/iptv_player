@@ -52,6 +52,71 @@ void main() {
     });
   });
 
+  group('seriesDetailFromXtreamInfo', () {
+    xc.Episode ep(int id, int num) => xc.Episode(
+          id: id,
+          episodeNum: num,
+          containerExtension: 'mp4',
+          info: const xc.EpisodeInfo(),
+        );
+
+    test('drops seasons advertised in metadata that have no episodes', () {
+      // Provider lists 4 seasons (related shows grouped together) but only
+      // ships episodes for seasons 1 and 2.
+      final detail = seriesDetailFromXtreamInfo(
+        xcSeasons: const [
+          xc.Season(seasonNumber: 1),
+          xc.Season(seasonNumber: 2),
+          xc.Season(seasonNumber: 3),
+          xc.Season(seasonNumber: 4),
+        ],
+        xcEpisodeMap: {
+          '1': [ep(11, 1), ep(12, 2)],
+          '2': [ep(21, 1)],
+        },
+        seriesId: '901',
+        playlistId: playlistId,
+        serverUrl: serverUrl,
+        username: username,
+        password: password,
+      );
+      expect(detail.seasons.map((s) => s.number), [1, 2]);
+      expect(detail.episodesBySeason.keys, hasLength(2));
+    });
+
+    test('keeps seasons that exist only in the episodes map', () {
+      final detail = seriesDetailFromXtreamInfo(
+        xcSeasons: const [],
+        xcEpisodeMap: {
+          '3': [ep(31, 1)],
+        },
+        seriesId: '901',
+        playlistId: playlistId,
+        serverUrl: serverUrl,
+        username: username,
+        password: password,
+      );
+      expect(detail.seasons.map((s) => s.number), [3]);
+      expect(detail.episodesBySeason['pl1:series:901:season:3'], hasLength(1));
+    });
+
+    test('drops seasons whose episode list is present but empty', () {
+      final detail = seriesDetailFromXtreamInfo(
+        xcSeasons: const [],
+        xcEpisodeMap: {
+          '1': [ep(11, 1)],
+          '2': const [],
+        },
+        seriesId: '901',
+        playlistId: playlistId,
+        serverUrl: serverUrl,
+        username: username,
+        password: password,
+      );
+      expect(detail.seasons.map((s) => s.number), [1]);
+    });
+  });
+
   group('episodeFromXtreamEpisode', () {
     test('id is prefixed as seasonId:ep:episodeId', () {
       const xcEp = xc.Episode(

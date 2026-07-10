@@ -32,4 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Series opened from Search or the Movies/Series grids now load their seasons
   and episodes (previously they could show as empty).
 - Series added to Favorites now appear in the Favorites list.
+- Series details no longer list **empty seasons** — some providers advertise
+  related shows as extra seasons with no episodes in them; only seasons that
+  actually have episodes are shown now.
 - The focus highlight no longer covers the edge of the item it's on.

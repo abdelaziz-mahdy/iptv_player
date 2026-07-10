@@ -254,13 +254,19 @@ class DriftContentRepository implements ContentRepository {
   }
 
   /// Builds a [SeriesDetail] from locally cached season/episode rows.
+  ///
+  /// Seasons with no cached episodes are omitted — older caches may still
+  /// hold provider-advertised seasons that never had anything to play.
   Future<SeriesDetail> _cachedSeriesDetail(String seriesDomainId) async {
     final seasonRows = await _db.getSeasons(seriesDomainId);
-    final seasons = seasonRows.map(_seasonFromRow).toList();
+    final seasons = <Season>[];
     final bySeason = <String, List<Episode>>{};
-    for (final s in seasons) {
-      final eps = await _db.getEpisodes(s.id);
-      bySeason[s.id] = eps.map(_episodeFromRow).toList();
+    for (final row in seasonRows) {
+      final eps = await _db.getEpisodes(row.id);
+      if (eps.isEmpty) continue;
+      final season = _seasonFromRow(row);
+      seasons.add(season);
+      bySeason[season.id] = eps.map(_episodeFromRow).toList();
     }
     return SeriesDetail(seasons: seasons, episodesBySeason: bySeason);
   }

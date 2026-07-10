@@ -89,6 +89,46 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // 1b. loadSeriesDetail cached fallback hides episode-less seasons
+  // -------------------------------------------------------------------------
+  group('DriftContentRepository.loadSeriesDetail (cached)', () {
+    test('omits cached seasons that have no episodes', () async {
+      final db = _makeDb();
+      addTearDown(db.close);
+
+      final repo = DriftContentRepository(db);
+
+      const seriesId = '$_playlistId:series:9';
+      await db.upsertSeasons([
+        SeasonsCompanion.insert(
+            id: '$seriesId:season:1', seriesId: seriesId, number: 1),
+        SeasonsCompanion.insert(
+            id: '$seriesId:season:2', seriesId: seriesId, number: 2),
+      ]);
+      await db.upsertEpisodes([
+        EpisodesCompanion.insert(
+          id: '$seriesId:season:1:ep:1',
+          seasonId: '$seriesId:season:1',
+          title: 'Ep 1',
+          number: 1,
+          streamUrl: 'http://example.com/1.mp4',
+        ),
+      ]);
+
+      // No playlist row / credentials -> repo returns the cached detail.
+      final result = await repo.loadSeriesDetail(const Series(
+        id: seriesId,
+        playlistId: _playlistId,
+        title: 'Cached series',
+      ));
+
+      final detail = (result as Ok<SeriesDetail>).value;
+      expect(detail.seasons.map((s) => s.number), [1]);
+      expect(detail.episodesBySeason.keys, ['$seriesId:season:1']);
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // 2. toggleFavorite adds then removes (favorites stream reflects it)
   // -------------------------------------------------------------------------
   group('DriftContentRepository.toggleFavorite', () {

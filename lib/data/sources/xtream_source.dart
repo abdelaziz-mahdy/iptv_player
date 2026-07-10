@@ -179,6 +179,63 @@ noor.Episode episodeFromXtreamEpisode(
   );
 }
 
+/// Assembles a [noor.SeriesDetail] from the raw pieces of an Xtream
+/// series-info payload.
+///
+/// Season numbers can come from the `seasons` array, the `episodes` map keys,
+/// or both. Many Xtream providers omit `seasons` entirely and only return
+/// episodes keyed by season number — so union both sources instead of
+/// iterating `seasons` alone (which would drop every episode).
+///
+/// Seasons with no episodes are dropped: some providers advertise related
+/// shows as extra entries in the `seasons` metadata array without shipping
+/// any episodes for them, and an episode-less season has nothing to play.
+noor.SeriesDetail seriesDetailFromXtreamInfo({
+  required List<xc.Season> xcSeasons,
+  required Map<String, List<xc.Episode>> xcEpisodeMap,
+  String? description,
+  required String seriesId,
+  required String playlistId,
+  required String serverUrl,
+  required String username,
+  required String password,
+}) {
+  final domainSeriesId = '$playlistId:series:$seriesId';
+  final seasonNumbers = <int>{
+    for (final s in xcSeasons) s.seasonNumber ?? 1,
+    for (final k in xcEpisodeMap.keys) int.tryParse(k) ?? 1,
+  }.toList()
+    ..sort();
+
+  final domainSeasons = <noor.Season>[];
+  final episodesBySeason = <String, List<noor.Episode>>{};
+  for (final num in seasonNumbers) {
+    final xcEps = xcEpisodeMap[num.toString()] ?? const [];
+    if (xcEps.isEmpty) continue;
+    final season = noor.Season(
+      id: '$domainSeriesId:season:$num',
+      seriesId: domainSeriesId,
+      number: num,
+    );
+    domainSeasons.add(season);
+    episodesBySeason[season.id] = xcEps
+        .map((e) => episodeFromXtreamEpisode(
+              e,
+              seasonId: season.id,
+              serverUrl: serverUrl,
+              username: username,
+              password: password,
+            ))
+        .toList();
+  }
+
+  return noor.SeriesDetail(
+    description: description?.isNotEmpty == true ? description : null,
+    seasons: domainSeasons,
+    episodesBySeason: episodesBySeason,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Private URL builders
 // ---------------------------------------------------------------------------
@@ -385,46 +442,15 @@ class XtreamSource {
         xc.SeriesItem(seriesId: int.parse(seriesId)),
       );
 
-      final description = info.info.plot;
-      final xcSeasons = info.seasons ?? const [];
-      final xcEpisodeMap = info.episodes ?? const {};
-
-      // Season numbers can come from the `seasons` array, the `episodes` map
-      // keys, or both. Many Xtream providers omit `seasons` entirely and only
-      // return episodes keyed by season number — so union both sources instead
-      // of iterating `seasons` alone (which would drop every episode).
-      final domainSeriesId = '$playlistId:series:$seriesId';
-      final seasonNumbers = <int>{
-        for (final s in xcSeasons) s.seasonNumber ?? 1,
-        for (final k in xcEpisodeMap.keys) int.tryParse(k) ?? 1,
-      }.toList()
-        ..sort();
-
-      final domainSeasons = <noor.Season>[];
-      final episodesBySeason = <String, List<noor.Episode>>{};
-      for (final num in seasonNumbers) {
-        final season = noor.Season(
-          id: '$domainSeriesId:season:$num',
-          seriesId: domainSeriesId,
-          number: num,
-        );
-        domainSeasons.add(season);
-        final xcEps = xcEpisodeMap[num.toString()] ?? const [];
-        episodesBySeason[season.id] = xcEps
-            .map((e) => episodeFromXtreamEpisode(
-                  e,
-                  seasonId: season.id,
-                  serverUrl: serverUrl,
-                  username: username,
-                  password: password,
-                ))
-            .toList();
-      }
-
-      return noor.SeriesDetail(
-        description: description?.isNotEmpty == true ? description : null,
-        seasons: domainSeasons,
-        episodesBySeason: episodesBySeason,
+      return seriesDetailFromXtreamInfo(
+        xcSeasons: info.seasons ?? const [],
+        xcEpisodeMap: info.episodes ?? const {},
+        description: info.info.plot,
+        seriesId: seriesId,
+        playlistId: playlistId,
+        serverUrl: serverUrl,
+        username: username,
+        password: password,
       );
     } finally {
       if (_overrideClient == null) client.close();
