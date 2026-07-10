@@ -62,6 +62,12 @@ class PlayerScreen extends StatefulWidget {
   /// null falls back to [itemKey].
   final String? recentKey;
 
+  /// Move to the previous / next queue entry (previous episode in the season,
+  /// previous channel in the group). Null hides the button — no queue, or at an
+  /// end of the queue (no wrap-around).
+  final VoidCallback? onPlayPrevious;
+  final VoidCallback? onPlayNext;
+
   const PlayerScreen({
     super.key,
     required this.controller,
@@ -74,6 +80,8 @@ class PlayerScreen extends StatefulWidget {
     required this.kind,
     required this.playlistId,
     this.recentKey,
+    this.onPlayPrevious,
+    this.onPlayNext,
   });
 
   @override
@@ -447,6 +455,22 @@ class _PlayerScreenState extends State<PlayerScreen>
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            // Previous episode / channel — only when a queue
+                            // neighbour exists on this side.
+                            if (widget.onPlayPrevious != null) ...[
+                              FocusableButton(
+                                semanticLabel: isLive
+                                    ? 'Previous channel'
+                                    : 'Previous episode',
+                                onPressed: widget.onPlayPrevious!,
+                                child: const Padding(
+                                  padding: EdgeInsets.all(8),
+                                  child: Icon(Icons.skip_previous,
+                                      color: Colors.white, size: 28),
+                                ),
+                              ),
+                              const SizedBox(width: 24),
+                            ],
                             // Skip backward 10s — VOD only
                             if (!isLive) ...[
                               FocusableButton(
@@ -488,6 +512,22 @@ class _PlayerScreenState extends State<PlayerScreen>
                                 child: const Padding(
                                   padding: EdgeInsets.all(8),
                                   child: Icon(Icons.forward_10, color: Colors.white, size: 28),
+                                ),
+                              ),
+                            ],
+                            // Next episode / channel — only when a queue
+                            // neighbour exists on this side.
+                            if (widget.onPlayNext != null) ...[
+                              const SizedBox(width: 24),
+                              FocusableButton(
+                                semanticLabel: isLive
+                                    ? 'Next channel'
+                                    : 'Next episode',
+                                onPressed: widget.onPlayNext!,
+                                child: const Padding(
+                                  padding: EdgeInsets.all(8),
+                                  child: Icon(Icons.skip_next,
+                                      color: Colors.white, size: 28),
                                 ),
                               ),
                             ],

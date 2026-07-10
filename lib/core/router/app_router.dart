@@ -29,6 +29,24 @@ import '../widgets/adaptive_shell.dart';
 // Pushed-route argument classes
 // ---------------------------------------------------------------------------
 
+/// One playable entry in a player [PlayerArgs.queue] — a neighbour the player
+/// can move to with Previous/Next (an episode in the same season, or a channel
+/// in the same group). [kind] and [playlistId] are shared across the queue, so
+/// they live on [PlayerArgs], not here.
+class PlayerQueueItem {
+  final String itemKey, url, title;
+  final String? subtitle;
+  final String? recentKey;
+
+  const PlayerQueueItem({
+    required this.itemKey,
+    required this.url,
+    required this.title,
+    this.subtitle,
+    this.recentKey,
+  });
+}
+
 class PlayerArgs {
   final String itemKey, url, title;
   final String? subtitle;
@@ -39,6 +57,12 @@ class PlayerArgs {
   /// episode, so the parent series is recorded). Null falls back to [itemKey].
   final String? recentKey;
 
+  /// Ordered neighbours for Previous/Next (same season / same group). Null or a
+  /// single-item list means no queue navigation. [queueIndex] is this item's
+  /// position within it.
+  final List<PlayerQueueItem>? queue;
+  final int queueIndex;
+
   const PlayerArgs({
     required this.itemKey,
     required this.url,
@@ -47,7 +71,26 @@ class PlayerArgs {
     required this.kind,
     required this.playlistId,
     this.recentKey,
+    this.queue,
+    this.queueIndex = 0,
   });
+
+  /// Builds args for the queue entry at [i], carrying the same queue, kind and
+  /// playlist — used by the player's Previous/Next actions.
+  PlayerArgs atQueueIndex(int i) {
+    final item = queue![i];
+    return PlayerArgs(
+      itemKey: item.itemKey,
+      url: item.url,
+      title: item.title,
+      subtitle: item.subtitle,
+      kind: kind,
+      playlistId: playlistId,
+      recentKey: item.recentKey,
+      queue: queue,
+      queueIndex: i,
+    );
+  }
 }
 
 /// Builds the app router: a [StatefulShellRoute] hosting the six main tabs in
@@ -110,14 +153,24 @@ GoRouter buildRouter() {
               GoRoute(
                 path: '/live',
                 builder: (context, state) => LiveScreen(
-                  onPlayChannel: (c) => context.push(
+                  onPlayChannel: (channels, index) => context.push(
                     '/player',
                     extra: PlayerArgs(
-                      itemKey: 'channel:${c.id}',
-                      url: c.streamUrl,
-                      title: c.name,
+                      itemKey: 'channel:${channels[index].id}',
+                      url: channels[index].streamUrl,
+                      title: channels[index].name,
                       kind: MediaKind.channel,
-                      playlistId: c.playlistId,
+                      playlistId: channels[index].playlistId,
+                      // Next/Previous surf the channels in this group.
+                      queue: [
+                        for (final c in channels)
+                          PlayerQueueItem(
+                            itemKey: 'channel:${c.id}',
+                            url: c.streamUrl,
+                            title: c.name,
+                          ),
+                      ],
+                      queueIndex: index,
                     ),
                   ),
                 ),
@@ -205,16 +258,27 @@ GoRouter buildRouter() {
           return DetailsScreen.series(
             series,
             onBack: () => context.pop(),
-            onPlayEpisode: (ep) => context.push(
+            onPlayEpisode: (episodes, index) => context.push(
               '/player',
               extra: PlayerArgs(
-                itemKey: 'episode:${ep.id}',
-                url: ep.streamUrl,
-                title: ep.title,
+                itemKey: 'episode:${episodes[index].id}',
+                url: episodes[index].streamUrl,
+                title: episodes[index].title,
                 kind: MediaKind.episode,
                 playlistId: series.playlistId,
                 // Record the parent series (not the episode) as recently viewed.
                 recentKey: 'series:${series.id}',
+                // Next/Previous walk the episodes of the shown season.
+                queue: [
+                  for (final ep in episodes)
+                    PlayerQueueItem(
+                      itemKey: 'episode:${ep.id}',
+                      url: ep.streamUrl,
+                      title: ep.title,
+                      recentKey: 'series:${series.id}',
+                    ),
+                ],
+                queueIndex: index,
               ),
             ),
           );
@@ -230,12 +294,33 @@ GoRouter buildRouter() {
               body: const Center(child: Text('Nothing to play')),
             );
           }
+          // Previous/Next move within the queue (episodes in a season, channels
+          // in a group) by replacing this route — reusing all the player's
+          // start/save/dispose logic. Null at the ends (no wrap-around) and
+          // when there is no queue, so the buttons hide.
+          final queue = a.queue;
+          VoidCallback? onPrev;
+          VoidCallback? onNext;
+          if (queue != null) {
+            if (a.queueIndex > 0) {
+              onPrev = () =>
+                  context.replace('/player', extra: a.atQueueIndex(a.queueIndex - 1));
+            }
+            if (a.queueIndex < queue.length - 1) {
+              onNext = () =>
+                  context.replace('/player', extra: a.atQueueIndex(a.queueIndex + 1));
+            }
+          }
           return PlayerScreen(
             // media_kit (mpv vo_gpu) renders correctly on Android TV GPUs where
             // fvp/MDK corrupts; fvp stays on desktop where it works well.
             controller: (Platform.isAndroid && !kFvpCaptureBuild)
                 ? MediaKitPlayerController()
                 : VideoPlayerControllerAdapter(),
+            // Key by queue position so `context.replace` to a neighbour tears
+            // down the old player State (and its controller) and builds a fresh
+            // one, instead of reusing the state with a stale controller.
+            key: ValueKey('player-${a.itemKey}'),
             itemKey: a.itemKey,
             url: a.url,
             title: a.title,
@@ -245,6 +330,8 @@ GoRouter buildRouter() {
             kind: a.kind,
             playlistId: a.playlistId,
             recentKey: a.recentKey,
+            onPlayPrevious: onPrev,
+            onPlayNext: onNext,
           );
         },
       ),

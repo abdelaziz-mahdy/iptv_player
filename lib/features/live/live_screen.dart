@@ -21,7 +21,7 @@ const double _kSidebarWidth = 180.0;
 class LiveScreen extends StatelessWidget {
   const LiveScreen({super.key, required this.onPlayChannel});
 
-  final void Function(Channel) onPlayChannel;
+  final void Function(List<Channel> channels, int index) onPlayChannel;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +39,7 @@ class LiveScreen extends StatelessWidget {
 class _LiveView extends StatelessWidget {
   const _LiveView({required this.onPlayChannel});
 
-  final void Function(Channel) onPlayChannel;
+  final void Function(List<Channel> channels, int index) onPlayChannel;
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +108,7 @@ class _LiveView extends StatelessWidget {
 class _WideLayout extends StatelessWidget {
   const _WideLayout({required this.onPlayChannel});
 
-  final void Function(Channel) onPlayChannel;
+  final void Function(List<Channel> channels, int index) onPlayChannel;
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +161,7 @@ class _WideLayout extends StatelessWidget {
 class _NarrowLayout extends StatelessWidget {
   const _NarrowLayout({required this.onPlayChannel});
 
-  final void Function(Channel) onPlayChannel;
+  final void Function(List<Channel> channels, int index) onPlayChannel;
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +298,7 @@ class _ChannelGrid extends StatelessWidget {
   });
 
   final List<Channel> channels;
-  final void Function(Channel) onPlayChannel;
+  final void Function(List<Channel> channels, int index) onPlayChannel;
 
   @override
   Widget build(BuildContext context) {
@@ -328,7 +328,7 @@ class _ChannelGrid extends StatelessWidget {
         return _ChannelTile(
           channel: channel,
           palette: p,
-          onPlayChannel: onPlayChannel,
+          onPlay: () => onPlayChannel(channels, index),
         );
       },
     );
@@ -340,19 +340,19 @@ class _ChannelTile extends StatelessWidget {
   const _ChannelTile({
     required this.channel,
     required this.palette,
-    required this.onPlayChannel,
+    required this.onPlay,
   });
 
   final Channel channel;
   final dynamic palette;
-  final void Function(Channel) onPlayChannel;
+  final VoidCallback onPlay;
 
   @override
   Widget build(BuildContext context) {
     final p = palette as dynamic;
     return FocusableButton(
       semanticLabel: channel.name,
-      onPressed: () => onPlayChannel(channel),
+      onPressed: onPlay,
       child: Container(
         decoration: BoxDecoration(
           color: p.surface,

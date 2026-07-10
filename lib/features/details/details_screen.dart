@@ -22,7 +22,7 @@ class DetailsScreen extends StatelessWidget {
   final Series? _series;
   final VoidCallback onBack;
   final void Function(VodItem)? _onPlay;
-  final void Function(Episode)? _onPlayEpisode;
+  final void Function(List<Episode> episodes, int index)? _onPlayEpisode;
 
   /// Show movie details.
   const DetailsScreen.movie(
@@ -34,12 +34,15 @@ class DetailsScreen extends StatelessWidget {
         _series = null,
         _onPlayEpisode = null;
 
-  /// Show series details with season/episode browsing.
+  /// Show series details with season/episode browsing. [onPlayEpisode] receives
+  /// the shown season's episode list and the tapped index, so the player can
+  /// offer Previous/Next within the season.
   const DetailsScreen.series(
     Series series, {
     super.key,
     required this.onBack,
-    required void Function(Episode) this._onPlayEpisode,
+    required void Function(List<Episode> episodes, int index)
+        this._onPlayEpisode,
   })  : _movie = null,
         _series = series,
         _onPlay = null;
@@ -553,7 +556,7 @@ class _MovieDetailBody extends StatelessWidget {
 class _SeriesDetailBody extends StatelessWidget {
   final Series series;
   final VoidCallback onBack;
-  final void Function(Episode) onPlayEpisode;
+  final void Function(List<Episode> episodes, int index) onPlayEpisode;
 
   const _SeriesDetailBody({
     required this.series,
@@ -586,7 +589,7 @@ class _SeriesDetailBody extends StatelessWidget {
               if (hasEpisodes)
                 _PlayButton(
                   autofocus: true,
-                  onPressed: () => onPlayEpisode(state.episodes.first),
+                  onPressed: () => onPlayEpisode(state.episodes, 0),
                 ),
               _MyListButton(
                 itemKey: 'episode:${series.id}',
@@ -628,7 +631,7 @@ class _SeriesDetailBody extends StatelessWidget {
               const SizedBox(height: 12),
               _EpisodeList(
                 episodes: state.episodes,
-                onPlay: onPlayEpisode,
+                onPlayAt: (i) => onPlayEpisode(state.episodes, i),
               ),
             ],
           ],
@@ -701,9 +704,11 @@ class _SeasonChips extends StatelessWidget {
 
 class _EpisodeList extends StatelessWidget {
   final List<Episode> episodes;
-  final void Function(Episode) onPlay;
 
-  const _EpisodeList({required this.episodes, required this.onPlay});
+  /// Called with the tapped episode's index within [episodes].
+  final void Function(int index) onPlayAt;
+
+  const _EpisodeList({required this.episodes, required this.onPlayAt});
 
   static String _fmt(int? secs) {
     if (secs == null) return '';
@@ -715,20 +720,21 @@ class _EpisodeList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (episodes.isEmpty) return const SizedBox.shrink();
     return Column(
-      children: episodes
-          .map((ep) => _EpisodeRow(
-                episode: ep,
-                onPlay: onPlay,
-                duration: _fmt(ep.durationSec),
-              ))
-          .toList(),
+      children: [
+        for (var i = 0; i < episodes.length; i++)
+          _EpisodeRow(
+            episode: episodes[i],
+            onPlay: () => onPlayAt(i),
+            duration: _fmt(episodes[i].durationSec),
+          ),
+      ],
     );
   }
 }
 
 class _EpisodeRow extends StatelessWidget {
   final Episode episode;
-  final void Function(Episode) onPlay;
+  final VoidCallback onPlay;
   final String duration;
 
   const _EpisodeRow({
@@ -742,7 +748,7 @@ class _EpisodeRow extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     return FocusableButton(
       semanticLabel: 'Play episode ${episode.number}: ${episode.title}',
-      onPressed: () => onPlay(episode),
+      onPressed: onPlay,
       child: Container(
         margin: const EdgeInsets.only(bottom: 6),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

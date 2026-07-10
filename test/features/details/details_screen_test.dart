@@ -110,7 +110,7 @@ void main() {
         DetailsScreen.series(
           series,
           onBack: () {},
-          onPlayEpisode: (_) {},
+          onPlayEpisode: (_, _) {},
         ),
       ),
     );
@@ -136,7 +136,7 @@ void main() {
         DetailsScreen.series(
           series,
           onBack: () {},
-          onPlayEpisode: (e) => played = e,
+          onPlayEpisode: (episodes, index) => played = episodes[index],
         ),
       ),
     );
@@ -162,7 +162,7 @@ void main() {
         DetailsScreen.series(
           series,
           onBack: () {},
-          onPlayEpisode: (_) {},
+          onPlayEpisode: (_, _) {},
         ),
       ),
     );
@@ -184,7 +184,7 @@ void main() {
         DetailsScreen.series(
           series,
           onBack: () {},
-          onPlayEpisode: (e) => played = e,
+          onPlayEpisode: (episodes, index) => played = episodes[index],
         ),
       ),
     );

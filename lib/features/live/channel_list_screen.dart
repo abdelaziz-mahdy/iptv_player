@@ -18,7 +18,7 @@ class ChannelListScreen extends StatelessWidget {
 
   final String groupName;
   final List<Channel> channels;
-  final void Function(Channel) onPlayChannel;
+  final void Function(List<Channel> channels, int index) onPlayChannel;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +53,7 @@ class ChannelListScreen extends StatelessWidget {
                   channel: channel,
                   palette: p,
                   autofocus: index == 0,
-                  onPlayChannel: onPlayChannel,
+                  onPlay: () => onPlayChannel(channels, index),
                 );
               },
             ),
@@ -66,13 +66,13 @@ class _ChannelRow extends StatelessWidget {
     required this.channel,
     required this.palette,
     required this.autofocus,
-    required this.onPlayChannel,
+    required this.onPlay,
   });
 
   final Channel channel;
   final dynamic palette;
   final bool autofocus;
-  final void Function(Channel) onPlayChannel;
+  final VoidCallback onPlay;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +80,7 @@ class _ChannelRow extends StatelessWidget {
     return FocusableButton(
       autofocus: autofocus,
       semanticLabel: channel.name,
-      onPressed: () => onPlayChannel(channel),
+      onPressed: onPlay,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(

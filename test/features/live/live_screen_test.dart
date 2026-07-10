@@ -61,7 +61,7 @@ class _CategorisedContentRepository extends FakeContentRepository {
 /// supplied [contentRepo], so we can inject a custom content repository.
 Widget _buildNarrowAppWithRepo(
   ContentRepository contentRepo, {
-  void Function(Channel)? onPlayChannel,
+  void Function(List<Channel>, int)? onPlayChannel,
 }) {
   return BlocProvider<AccessibilityCubit>(
     create: (_) => AccessibilityCubit(),
@@ -76,7 +76,7 @@ Widget _buildNarrowAppWithRepo(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         // Build _LiveView directly so we can supply our own cubit.
-        home: _LiveViewForTest(onPlayChannel: onPlayChannel ?? (_) {}),
+        home: _LiveViewForTest(onPlayChannel: onPlayChannel ?? (_, _) {}),
       ),
     ),
   );
@@ -86,7 +86,7 @@ Widget _buildNarrowAppWithRepo(
 /// inherited BlocProvider instead of creating a new one.
 class _LiveViewForTest extends StatelessWidget {
   const _LiveViewForTest({required this.onPlayChannel});
-  final void Function(Channel) onPlayChannel;
+  final void Function(List<Channel>, int) onPlayChannel;
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +116,7 @@ class _LiveViewForTest extends StatelessWidget {
 /// from private Flutter internals; any divergence here is intentional.
 class _NarrowLayoutForTest extends StatelessWidget {
   const _NarrowLayoutForTest({required this.onPlayChannel});
-  final void Function(Channel) onPlayChannel;
+  final void Function(List<Channel>, int) onPlayChannel;
 
   @override
   Widget build(BuildContext context) {
@@ -159,7 +159,7 @@ Future<void> _pumpLive(WidgetTester tester, Widget widget) async {
 }
 
 Widget _buildTestApp({
-  void Function(Channel)? onPlayChannel,
+  void Function(List<Channel>, int)? onPlayChannel,
 }) {
   return BlocProvider(
     create: (_) => AccessibilityCubit(),
@@ -171,7 +171,7 @@ Widget _buildTestApp({
       ),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: LiveScreen(onPlayChannel: onPlayChannel ?? (_) {}),
+      home: LiveScreen(onPlayChannel: onPlayChannel ?? (_, _) {}),
     ),
   );
 }
@@ -243,7 +243,7 @@ void main() {
     Channel? tappedChannel;
     await _pumpLive(
       tester,
-      _buildTestApp(onPlayChannel: (ch) => tappedChannel = ch),
+      _buildTestApp(onPlayChannel: (channels, index) => tappedChannel = channels[index]),
     );
 
     // Tap the first visible channel tile (find by text 'NOOR One').

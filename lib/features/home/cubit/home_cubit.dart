@@ -8,6 +8,35 @@ import '../../../data/repositories/repositories.dart';
 
 part 'home_state.dart';
 
+/// Collapses Continue Watching so each series contributes a single card — its
+/// most recently watched episode — instead of one card per watched episode.
+///
+/// [rows] must be ordered newest-first (as [PlaybackRepository.continueWatching]
+/// returns them); the first row seen for a given series wins. Movies and other
+/// non-series entries are keyed by their own itemKey, so they are never merged.
+List<WatchProgress> collapseContinueWatching(List<WatchProgress> rows) {
+  final seen = <String>{};
+  final result = <WatchProgress>[];
+  for (final p in rows) {
+    final key = _continueGroupKey(p.itemKey);
+    if (seen.add(key)) result.add(p);
+  }
+  return result;
+}
+
+/// Grouping key for [collapseContinueWatching]: the series domain id for
+/// episode/series keys (so all episodes of a series share one key), otherwise
+/// the itemKey itself.
+String _continueGroupKey(String itemKey) {
+  if (itemKey.startsWith('episode:')) {
+    return itemKey.substring('episode:'.length).split(':season:').first;
+  }
+  if (itemKey.startsWith('series:')) {
+    return itemKey.substring('series:'.length);
+  }
+  return itemKey;
+}
+
 class HomeCubit extends Cubit<HomeState> {
   HomeCubit(this._content, this._playback, this._playlists)
       : super(const HomeState());
@@ -71,8 +100,9 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// Emits Continue Watching, then enriches series-episode entries by fetching
   /// their cached [Episode] rows (for the "S{season} · E{number}" label).
-  Future<void> _onContinueWatching(List<WatchProgress> cw) async {
+  Future<void> _onContinueWatching(List<WatchProgress> rows) async {
     if (isClosed) return;
+    final cw = collapseContinueWatching(rows);
     emit(state.copyWith(continueWatching: cw));
 
     final episodeIds = [

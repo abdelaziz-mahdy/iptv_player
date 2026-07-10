@@ -4,6 +4,84 @@ import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
 import 'package:iptv_player/features/home/cubit/home_cubit.dart';
 
 void main() {
+  group('collapseContinueWatching', () {
+    WatchProgress ep(String key, DateTime at) => WatchProgress(
+          itemKey: key,
+          playlistId: 'p1',
+          kind: MediaKind.episode,
+          positionSec: 10,
+          durationSec: 100,
+          updatedAt: at,
+        );
+
+    test('keeps only the newest episode per series', () {
+      // Ordered newest-first, as continueWatching() returns.
+      final rows = [
+        ep('episode:p1:series:67:season:3:ep:9', DateTime.utc(2026, 6, 28)),
+        ep('episode:p1:series:67:season:1:ep:1', DateTime.utc(2026, 6, 20)),
+      ];
+
+      final collapsed = collapseContinueWatching(rows);
+
+      expect(collapsed, hasLength(1));
+      expect(collapsed.single.itemKey, 'episode:p1:series:67:season:3:ep:9');
+    });
+
+    test('does not merge episodes from different series', () {
+      final rows = [
+        ep('episode:p1:series:67:season:1:ep:1', DateTime.utc(2026, 6, 28)),
+        ep('episode:p1:series:99:season:1:ep:1', DateTime.utc(2026, 6, 27)),
+      ];
+
+      expect(collapseContinueWatching(rows), hasLength(2));
+    });
+
+    test('never merges movies', () {
+      final rows = [
+        WatchProgress(
+          itemKey: 'movie:m1',
+          playlistId: 'p1',
+          kind: MediaKind.movie,
+          positionSec: 5,
+          durationSec: 100,
+          updatedAt: DateTime.utc(2026, 6, 28),
+        ),
+        WatchProgress(
+          itemKey: 'movie:m2',
+          playlistId: 'p1',
+          kind: MediaKind.movie,
+          positionSec: 5,
+          durationSec: 100,
+          updatedAt: DateTime.utc(2026, 6, 27),
+        ),
+      ];
+
+      expect(collapseContinueWatching(rows), hasLength(2));
+    });
+
+    test('preserves newest-first ordering across mixed entries', () {
+      final rows = [
+        ep('episode:p1:series:67:season:2:ep:5', DateTime.utc(2026, 6, 28)),
+        WatchProgress(
+          itemKey: 'movie:m1',
+          playlistId: 'p1',
+          kind: MediaKind.movie,
+          positionSec: 5,
+          durationSec: 100,
+          updatedAt: DateTime.utc(2026, 6, 27),
+        ),
+        ep('episode:p1:series:67:season:1:ep:1', DateTime.utc(2026, 6, 26)),
+      ];
+
+      final collapsed = collapseContinueWatching(rows);
+
+      expect(collapsed.map((p) => p.itemKey), [
+        'episode:p1:series:67:season:2:ep:5',
+        'movie:m1',
+      ]);
+    });
+  });
+
   group('HomeCubit', () {
     test('continue-watching episodes are enriched with their Episode row',
         () async {
