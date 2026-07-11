@@ -19,12 +19,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ones, updated as soon as you come back from the player.
 
 ### Changed
+- Movies, series, and live TV on Android now play through the **same video
+  engine as desktop**, with a corruption-free picture on TVs with PowerVR
+  graphics.
 - On the player, the seek bar now moves **10 seconds per D-pad press** instead of
   jumping large chunks.
 - The player's volume slider is hidden on TV (volume is controlled by the remote);
   the mute button stays.
 
 ### Fixed
+- Opening a movie or episode from **Continue Watching now resumes at the right
+  position** on Android (it used to restart from the beginning).
+- In Arabic, the app now shows its current name (**مشغل IPTV**) instead of the
+  old one.
 - Continue Watching now remembers where you left off even if you exit from the
   Home button or the app is closed in the background.
 - Continue Watching shows the **series poster, name, and season/episode**

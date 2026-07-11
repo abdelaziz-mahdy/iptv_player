@@ -11,39 +11,35 @@ Backend-agnostic interface. All backends implement:
 
 ---
 
-## Two backends — chosen at route time in `core/router/app_router.dart`
+## One backend: fvp on every platform
 
-```dart
-controller: (Platform.isAndroid && !kFvpCaptureBuild)
-    ? MediaKitPlayerController()
-    : VideoPlayerControllerAdapter(),
-```
-
-### Android: `MediaKitPlayerController` (`media_kit_controller.dart`)
-- Wraps `media_kit` / libmpv with `vo_gpu` renderer.
-- Opens media with `play: false`; `PlayerCubit.start()` does the seek-then-play.
-- Volume is 0–100 (media_kit scale); the adapter divides by 100.
-- `currentBitRate` returns `null` — media_kit does not expose real-time bitrate.
-- Video surface: `Video(controller: c.videoController, controls: NoVideoControls)`.
-
-### Desktop (macOS/Windows/Linux): `VideoPlayerControllerAdapter` (`video_controller.dart`)
+`VideoPlayerControllerAdapter` (`video_controller.dart`) on Android + desktop:
 - Wraps `video_player` with `fvp` (MDK) as the backend; registered once via `fvp.registerWith()`.
 - `currentBitRate` from `_controller.getMediaInfo()?.bitRate` (fvp extension, updated live).
 - `streamBadge` falls back to `VideoPlayerValue.size` when bitrate is 0.
 - Video surface: `VideoPlayer(c.nativeController)` (requires `c.isInitialized` guard).
 
-### WHY two backends
-fvp/MDK's GL texture renderer **corrupts video on PowerVR TV GPUs** (every decoder,
-including software). media_kit's `vo_gpu` renders correctly on the same device.
-Desktop keeps fvp where it works fine. Upstream bug: wang-bin/fvp#374.
+### GOTCHA — PowerVR TV GPUs need an 8-bit EGLConfig (fvp#374)
+MDK defaults to a **10-bit (RGBA_1010102) window surface** even for 8-bit SDR
+content. The PowerVR BXE driver (TCL TVs, RTD2875P) cannot share those buffers
+consistently across GL contexts (`IMGSRV: IsTextureConsistent` errors →
+corrupted video on ALL decoders, hardware and software).
+**Fix:** `MainActivity.onCreate()` sets `Os.setenv("EGL_SDR_DEPTH", "8", true)`
+before the Flutter engine loads libmdk. Do not remove until fvp/mdk handle this
+upstream (wang-bin/fvp#374).
+
+media_kit (libmpv) was the Android backend until 2026-07; it was removed once
+this fix landed — mpv never hits the bug because it takes the driver's first
+≥8-bit EGLConfig (RGBA_8888). If fvp ever regresses, media_kit + 
+media_kit_libs_android_video is the known-good fallback (note: its Android
+natives clash with fvp's bundled FFmpeg — don't ship both).
 
 ---
 
 ## `kFvpCaptureBuild` (`core/debug_flags.dart`)
 
-`--dart-define=FVP_CAPTURE=true` forces fvp on Android + attaches a root logging
-listener so MDK logs reach logcat. **Diagnostic/reproduction builds only.**
-Also suppresses `MediaKit.ensureInitialized()` in `main.dart` on Android.
+`--dart-define=FVP_CAPTURE=true` attaches a root logging listener so MDK's
+`log=all` output reaches logcat. **Diagnostic builds only.**
 
 ---
 

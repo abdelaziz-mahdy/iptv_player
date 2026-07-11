@@ -11,7 +11,7 @@
 ## Entry point
 
 `main.dart` → `configureProductionDependencies()` → `runApp(NoorApp())` → `SyncService.syncActive()` (background).
-`MediaKit.ensureInitialized()` is called **Android-only** (and skipped on the `kFvpCaptureBuild` flag). Desktop video uses fvp.
+Video uses fvp/MDK on all platforms (see `features/player/CLAUDE.md` for the PowerVR 8-bit EGLConfig gotcha).
 
 `app.dart` wraps `MaterialApp.router` in `MultiBlocProvider` for `AccessibilityCubit` and `LocaleCubit`.
 

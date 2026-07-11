@@ -72,11 +72,10 @@ class VideoPlayerControllerAdapter implements PlayerController {
   @override
   Future<void> initialize(String url) async {
     if (!_fvpRegistered) {
-      // fvp (libmpv/MDK) is the DESKTOP player (macOS/Windows/Linux), where its
-      // renderer works well. Android uses media_kit instead
-      // (MediaKitPlayerController) because MDK's GL renderer corrupts video on
-      // some TV GPUs (PowerVR) — see fvp#374. Default options let fvp pick the
-      // right per-platform hardware decoders.
+      // fvp (MDK) is the player on ALL platforms. On Android TV PowerVR GPUs
+      // MDK's default 10-bit EGLConfig corrupts video (fvp#374); MainActivity
+      // sets EGL_SDR_DEPTH=8 before the engine loads to force the 8-bit
+      // config. Default options let fvp pick per-platform hardware decoders.
       fvp.registerWith();
       _fvpRegistered = true;
     }

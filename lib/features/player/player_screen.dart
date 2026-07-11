@@ -3,10 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'package:video_player/video_player.dart';
-
-import 'media_kit_controller.dart';
 
 import '../../core/a11y/accessibility_cubit.dart';
 import '../../core/a11y/accessibility_settings.dart';
@@ -170,15 +167,6 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   Widget _buildVideoSurface() {
     final c = widget.controller;
-    if (c is MediaKitPlayerController) {
-      // media_kit renders via mpv's vo_gpu; NoVideoControls disables its own
-      // overlay since we draw our own controls.
-      return Video(
-        controller: c.videoController,
-        controls: NoVideoControls,
-        fit: BoxFit.contain,
-      );
-    }
     if (c is VideoPlayerControllerAdapter) {
       if (c.isInitialized) {
         return VideoPlayer(c.nativeController);

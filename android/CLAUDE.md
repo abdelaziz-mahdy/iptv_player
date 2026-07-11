@@ -38,4 +38,8 @@ Convention: **install only, do not auto-launch** — let the user open the app o
 
 ## Video player
 
-`media_kit` is used for Android video (not fvp — fvp/MDK corrupts video on PowerVR hardware). That choice lives in app code; see `lib/features/player/CLAUDE.md` for details.
+`fvp` (MDK) is used for video on all platforms. On PowerVR TV GPUs it requires
+an 8-bit EGLConfig: `MainActivity.kt` sets `EGL_SDR_DEPTH=8` in `onCreate()`
+**before** `super.onCreate()` so it lands before libmdk loads (wang-bin/fvp#374
+— MDK's default 10-bit surface corrupts on this driver). Do not remove that
+setenv, and see `lib/features/player/CLAUDE.md` for the full story.

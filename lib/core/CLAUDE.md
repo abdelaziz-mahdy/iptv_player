@@ -22,12 +22,9 @@ Pushed routes (outside the shell): `/player`, `/details/movie`, `/details/series
 `/playlists`, `/import`, `/onboarding`. Arguments are passed via `state.extra` as typed objects
 (e.g. `PlayerArgs`, `VodItem`, `Series`).
 
-Player controller selection in the `/player` route:
-```dart
-controller: (Platform.isAndroid && !kFvpCaptureBuild)
-    ? MediaKitPlayerController()   // media_kit/mpv — correct on PowerVR TV GPUs
-    : VideoPlayerControllerAdapter() // fvp/MDK — desktop only
-```
+Player controller in the `/player` route: `VideoPlayerControllerAdapter()`
+(fvp/MDK on all platforms; PowerVR TVs need the `EGL_SDR_DEPTH=8` setenv in
+`MainActivity` — see `lib/features/player/CLAUDE.md`).
 
 ## result.dart — Result Type
 
@@ -45,9 +42,9 @@ return `Result<T>`.
 const bool kFvpCaptureBuild = bool.fromEnvironment('FVP_CAPTURE'); // default: false
 ```
 
-Enable with `--dart-define=FVP_CAPTURE=true`. Forces Android to use fvp instead of media_kit and
-attaches a root `Logger` listener so MDK logs reach logcat. Off in all shipping/CI builds.
-Exists solely to capture the full MDK log for the upstream wang-bin/fvp#374 bug report.
+Enable with `--dart-define=FVP_CAPTURE=true`. Attaches a root `Logger` listener so MDK (fvp)
+logs reach logcat. Off in all shipping/CI builds. Built for the wang-bin/fvp#374 investigation,
+kept for player diagnostics.
 
 ## widgets/ — TV-Focused Reusable Widgets
 

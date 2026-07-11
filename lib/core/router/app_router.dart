@@ -1,4 +1,3 @@
-import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -13,7 +12,6 @@ import '../../features/home/home_screen.dart';
 import '../../features/import/import_screen.dart';
 import '../../features/live/live_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
-import '../../features/player/media_kit_controller.dart';
 import '../../features/player/player_screen.dart';
 import '../../features/player/video_controller.dart';
 import '../../features/playlists/playlists_screen.dart';
@@ -21,7 +19,6 @@ import '../../features/search/cubit/search_cubit.dart';
 import '../../features/search/search_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../debug_flags.dart';
 import '../di/injection.dart';
 import '../widgets/adaptive_shell.dart';
 
@@ -312,11 +309,9 @@ GoRouter buildRouter() {
             }
           }
           return PlayerScreen(
-            // media_kit (mpv vo_gpu) renders correctly on Android TV GPUs where
-            // fvp/MDK corrupts; fvp stays on desktop where it works well.
-            controller: (Platform.isAndroid && !kFvpCaptureBuild)
-                ? MediaKitPlayerController()
-                : VideoPlayerControllerAdapter(),
+            // fvp/MDK on every platform. On Android TV PowerVR GPUs it needs
+            // the EGL_SDR_DEPTH=8 env set in MainActivity.onCreate (fvp#374).
+            controller: VideoPlayerControllerAdapter(),
             // Key by queue position so `context.replace` to a neighbour tears
             // down the old player State (and its controller) and builds a fresh
             // one, instead of reusing the state with a stale controller.
