@@ -170,6 +170,18 @@ abstract class AppLocalizations {
   /// **'My List'**
   String get myList;
 
+  /// No description provided for @noSynopsis.
+  ///
+  /// In en, this message translates to:
+  /// **'No synopsis available.'**
+  String get noSynopsis;
+
+  /// No description provided for @noEpisodes.
+  ///
+  /// In en, this message translates to:
+  /// **'No episodes available for this series.'**
+  String get noEpisodes;
+
   /// No description provided for @addToMyList.
   ///
   /// In en, this message translates to:

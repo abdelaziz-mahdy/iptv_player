@@ -31,6 +31,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the mute button stays.
 
 ### Fixed
+- The **Play button on series details now continues where you left off** —
+  it picks the episode you're part-way through (or the next unwatched one)
+  instead of always starting from the first episode.
+- Details pages **no longer invent a synopsis** when the provider doesn't
+  have one — they now say so honestly, in English and Arabic.
+- On the player, **D-pad focus no longer gets stuck in the seek bar** —
+  up/down move between controls; left/right still seek 10 seconds.
 - Opening a movie or episode from **Continue Watching now resumes at the right
   position** on Android (it used to restart from the beginning).
 - In Arabic, the app now shows its current name (**مشغل IPTV**) instead of the

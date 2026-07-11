@@ -93,6 +93,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   // excluded from focus), so a D-pad press has no control to activate — the
   // first press only reveals the controls.
   final FocusNode _rootFocus = FocusNode(debugLabel: 'player-root');
+  final FocusNode _sliderFocus = FocusNode(debugLabel: 'player-seek-slider');
   // Focus restored to the play/pause button each time controls are revealed.
   final FocusNode _playPauseFocus = FocusNode(debugLabel: 'player-playpause');
 
@@ -119,6 +120,19 @@ class _PlayerScreenState extends State<PlayerScreen>
   bool _handleHardwareKey(KeyEvent event) {
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
       _cubit?.revealControls();
+      // Slider maps ALL arrow keys (incl. up/down) to seek adjustments, so
+      // focus can never escape it vertically ("down behaves like left").
+      // Intercept vertical arrows here — this handler runs before focus
+      // dispatch — and turn them into focus moves instead.
+      final key = event.logicalKey;
+      if (_sliderFocus.hasPrimaryFocus &&
+          (key == LogicalKeyboardKey.arrowDown ||
+              key == LogicalKeyboardKey.arrowUp)) {
+        _sliderFocus.focusInDirection(key == LogicalKeyboardKey.arrowDown
+            ? TraversalDirection.down
+            : TraversalDirection.up);
+        return true; // consumed: never let the Slider treat it as a seek
+      }
     }
     return false;
   }
@@ -160,6 +174,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     WidgetsBinding.instance.removeObserver(this);
     HardwareKeyboard.instance.removeHandler(_handleHardwareKey);
     _rootFocus.dispose();
+    _sliderFocus.dispose();
     _playPauseFocus.dispose();
     _cubit?.close();
     super.dispose();
@@ -410,6 +425,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                                     inactiveTickMarkColor: Colors.transparent,
                                   ),
                                   child: Slider(
+                                    focusNode: _sliderFocus,
                                     value: state.duration.inMilliseconds > 0
                                         ? state.position.inMilliseconds
                                             .clamp(0, state.duration.inMilliseconds)

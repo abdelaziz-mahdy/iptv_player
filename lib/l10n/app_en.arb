@@ -12,6 +12,8 @@
   "playlists": "Playlists",
   "play": "Play",
   "myList": "My List",
+  "noSynopsis": "No synopsis available.",
+  "noEpisodes": "No episodes available for this series.",
   "addToMyList": "Add to My List",
   "removeFromMyList": "Remove from My List",
   "favoritesEmptyHint": "Items you add to My List will appear here.",

@@ -45,6 +45,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get myList => 'قائمتي';
 
   @override
+  String get noSynopsis => 'لا يوجد ملخص متاح.';
+
+  @override
+  String get noEpisodes => 'لا توجد حلقات متاحة لهذا المسلسل.';
+
+  @override
   String get addToMyList => 'أضف إلى قائمتي';
 
   @override

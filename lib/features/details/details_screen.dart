@@ -524,6 +524,7 @@ class _MovieDetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return _DetailScaffold(
       posterUrl: movie.posterUrl,
       title: movie.title,
@@ -545,8 +546,9 @@ class _MovieDetailBody extends StatelessWidget {
             kind: MediaKind.movie,
           ),
         ],
-        synopsis: 'An extraordinary story unfolds — action, drama, and '
-            'suspense combine in this must-watch feature.',
+        // Providers expose movie plots only via a per-item request that isn't
+        // wired up yet — be honest rather than showing invented text.
+        synopsis: l10n.noSynopsis,
       ),
     );
   }
@@ -592,7 +594,12 @@ class _SeriesDetailBody extends StatelessWidget {
               if (hasEpisodes)
                 _PlayButton(
                   autofocus: true,
-                  onPressed: () => onPlayEpisode(state.episodes, 0),
+                  // Resume-aware: the unfinished episode you played last, or
+                  // the one after the last finished episode — not just S01E01.
+                  onPressed: () {
+                    final t = ctx.read<DetailsCubit>().playTarget();
+                    if (t != null) onPlayEpisode(t.episodes, t.episodeIndex);
+                  },
                 ),
               _MyListButton(
                 itemKey: 'episode:${series.id}',
@@ -602,8 +609,7 @@ class _SeriesDetailBody extends StatelessWidget {
             ],
             synopsis: state.description?.isNotEmpty == true
                 ? state.description!
-                : 'An epic multi-season series that will keep you on the edge '
-                    'of your seat from the very first episode.',
+                : l10n.noSynopsis,
           ),
           sections: [
             const SizedBox(height: 20),
@@ -614,7 +620,7 @@ class _SeriesDetailBody extends StatelessWidget {
               )
             else if (state.seasons.isEmpty)
               Text(
-                'No episodes available for this series.',
+                l10n.noEpisodes,
                 style: tt.bodyMedium?.copyWith(color: context.palette.dim),
               )
             else ...[

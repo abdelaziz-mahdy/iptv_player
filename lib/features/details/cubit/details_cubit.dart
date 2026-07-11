@@ -107,6 +107,50 @@ class DetailsCubit extends Cubit<DetailsState> {
     ));
   }
 
+  /// Where the header Play button should start, based on watch progress:
+  /// the most recently played unfinished episode; else the episode after the
+  /// last finished one (crossing into the next season if needed); else the
+  /// first episode. Returns null when the series has no episodes.
+  ({List<Episode> episodes, int episodeIndex})? playTarget() {
+    if (state.seasons.isEmpty) return null;
+
+    WatchProgress? resume;
+    (int, int)? resumeAt;
+    (int, int)? lastWatchedAt;
+    for (var s = 0; s < state.seasons.length; s++) {
+      final eps = _episodesBySeason[state.seasons[s].id] ?? const [];
+      for (var e = 0; e < eps.length; e++) {
+        final p = state.progressByKey['episode:${eps[e].id}'];
+        if (p == null) continue;
+        if (p.isWatched) {
+          lastWatchedAt = (s, e);
+        } else if (p.positionSec > 0 &&
+            (resume == null || p.updatedAt.isAfter(resume.updatedAt))) {
+          resume = p;
+          resumeAt = (s, e);
+        }
+      }
+    }
+
+    var target = (0, 0);
+    if (resumeAt != null) {
+      target = resumeAt;
+    } else if (lastWatchedAt != null) {
+      final (s, e) = lastWatchedAt;
+      final eps = _episodesBySeason[state.seasons[s].id] ?? const [];
+      if (e + 1 < eps.length) {
+        target = (s, e + 1);
+      } else if (s + 1 < state.seasons.length) {
+        target = (s + 1, 0);
+      }
+      // else: everything watched — start over from the first episode.
+    }
+
+    final eps = _episodesBySeason[state.seasons[target.$1].id] ?? const [];
+    if (eps.isEmpty || target.$2 >= eps.length) return null;
+    return (episodes: eps, episodeIndex: target.$2);
+  }
+
   /// Switches to the season at [index] using the cached episode map.
   void selectSeason(int index) {
     if (index < 0 || index >= state.seasons.length) return;

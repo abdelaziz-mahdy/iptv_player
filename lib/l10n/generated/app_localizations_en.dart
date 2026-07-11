@@ -45,6 +45,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myList => 'My List';
 
   @override
+  String get noSynopsis => 'No synopsis available.';
+
+  @override
+  String get noEpisodes => 'No episodes available for this series.';
+
+  @override
   String get addToMyList => 'Add to My List';
 
   @override

@@ -12,6 +12,8 @@
   "playlists": "قوائم التشغيل",
   "play": "تشغيل",
   "myList": "قائمتي",
+  "noSynopsis": "لا يوجد ملخص متاح.",
+  "noEpisodes": "لا توجد حلقات متاحة لهذا المسلسل.",
   "addToMyList": "أضف إلى قائمتي",
   "removeFromMyList": "إزالة من قائمتي",
   "favoritesEmptyHint": "العناصر التي تضيفها إلى قائمتي ستظهر هنا.",
