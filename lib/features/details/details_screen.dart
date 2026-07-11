@@ -373,8 +373,9 @@ class _MyListButtonState extends State<_MyListButton> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return FocusableButton(
-      semanticLabel: _inList ? 'Remove from My List' : 'Add to My List',
+      semanticLabel: _inList ? l10n.removeFromMyList : l10n.addToMyList,
       onPressed: () => sl<ContentRepository>().toggleFavorite(
         widget.itemKey,
         widget.playlistId,
@@ -399,7 +400,7 @@ class _MyListButtonState extends State<_MyListButton> {
             ),
             const SizedBox(width: 6),
             Text(
-              'My List',
+              l10n.myList,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: _inList ? context.palette.accent : context.palette.fg,
                   ),

@@ -164,6 +164,30 @@ abstract class AppLocalizations {
   /// **'Play'**
   String get play;
 
+  /// No description provided for @myList.
+  ///
+  /// In en, this message translates to:
+  /// **'My List'**
+  String get myList;
+
+  /// No description provided for @addToMyList.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to My List'**
+  String get addToMyList;
+
+  /// No description provided for @removeFromMyList.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from My List'**
+  String get removeFromMyList;
+
+  /// No description provided for @favoritesEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Items you add to My List will appear here.'**
+  String get favoritesEmptyHint;
+
   /// No description provided for @moreInfo.
   ///
   /// In en, this message translates to:

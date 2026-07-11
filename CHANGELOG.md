@@ -31,7 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Opening a movie or episode from **Continue Watching now resumes at the right
   position** on Android (it used to restart from the beginning).
 - In Arabic, the app now shows its current name (**مشغل IPTV**) instead of the
-  old one.
+  old one, and the **My List** button and Favorites hint are translated.
+- In Arabic, the side menu is now **reachable with the D-pad** — focus
+  navigation used to assume a left-to-right layout.
 - Continue Watching now remembers where you left off even if you exit from the
   Home button or the app is closed in the background.
 - Continue Watching shows the **series poster, name, and season/episode**

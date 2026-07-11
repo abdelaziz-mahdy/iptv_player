@@ -42,6 +42,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get play => 'Play';
 
   @override
+  String get myList => 'My List';
+
+  @override
+  String get addToMyList => 'Add to My List';
+
+  @override
+  String get removeFromMyList => 'Remove from My List';
+
+  @override
+  String get favoritesEmptyHint => 'Items you add to My List will appear here.';
+
+  @override
   String get moreInfo => 'More Info';
 
   @override

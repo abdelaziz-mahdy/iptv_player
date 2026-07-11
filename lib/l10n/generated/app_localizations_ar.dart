@@ -9,7 +9,7 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get brand => 'نور';
+  String get brand => 'مشغل IPTV';
 
   @override
   String get home => 'الرئيسية';
@@ -40,6 +40,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get play => 'تشغيل';
+
+  @override
+  String get myList => 'قائمتي';
+
+  @override
+  String get addToMyList => 'أضف إلى قائمتي';
+
+  @override
+  String get removeFromMyList => 'إزالة من قائمتي';
+
+  @override
+  String get favoritesEmptyHint => 'العناصر التي تضيفها إلى قائمتي ستظهر هنا.';
 
   @override
   String get moreInfo => 'المزيد';
@@ -118,7 +130,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get complianceNote =>
-      'نور لا يستضيف أي محتوى. تأتي جميع القنوات والوسائط من قوائم التشغيل التي توفّرها.';
+      'مشغل IPTV لا يستضيف أي محتوى. تأتي جميع القنوات والوسائط من قوائم التشغيل التي توفّرها.';
 
   @override
   String get getStarted => 'ابدأ';

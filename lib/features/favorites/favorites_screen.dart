@@ -92,7 +92,7 @@ class _FavoritesView extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Items you add to My List will appear here.',
+                          l10n.favoritesEmptyHint,
                           style: tt.bodyMedium?.copyWith(color: p.dim),
                           textAlign: TextAlign.center,
                         ),

@@ -91,17 +91,25 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
     if (focused == null) return KeyEventResult.ignored;
     final inRail = focused.ancestors.contains(_railScope);
 
-    // LEFT from the body: move within the body, or escape to the rail at the
-    // left edge.
-    if (isLeft && !inRail) {
-      if (!focused.focusInDirection(TraversalDirection.left)) {
+    // The rail sits at the reading-start edge: visually LEFT in LTR, RIGHT in
+    // RTL (the Row mirrors). Arrow keys and TraversalDirection are visual, so
+    // flip the hop directions under RTL or the rail becomes unreachable.
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final towardRail = rtl ? isRight : isLeft;
+    final railDir = rtl ? TraversalDirection.right : TraversalDirection.left;
+    final bodyDir = rtl ? TraversalDirection.left : TraversalDirection.right;
+
+    // Toward the rail from the body: move within the body, or escape to the
+    // rail at the edge.
+    if (towardRail && !inRail) {
+      if (!focused.focusInDirection(railDir)) {
         _focusFirstIn(_railScope);
       }
       return KeyEventResult.handled;
     }
-    // RIGHT from the rail: move within the rail, or escape back to the body.
-    if (isRight && inRail) {
-      if (!focused.focusInDirection(TraversalDirection.right)) {
+    // Toward the body from the rail: move within the rail, or escape back.
+    if (!towardRail && inRail) {
+      if (!focused.focusInDirection(bodyDir)) {
         _focusFirstIn(_bodyScope);
       }
       return KeyEventResult.handled;
