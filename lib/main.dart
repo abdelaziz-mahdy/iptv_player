@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/widgets.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:logging/logging.dart';
+import 'package:media_kit/media_kit.dart';
 import 'package:path_provider/path_provider.dart';
 import 'app.dart';
 import 'core/debug_flags.dart';
@@ -22,6 +24,9 @@ Future<void> main() async {
       print('[${r.loggerName}] ${r.level.name}: ${r.message}');
     });
   }
+  // media_kit is the Android player on this branch (better frame pacing on
+  // the TV than fvp/MDK); desktop stays on fvp.
+  if (Platform.isAndroid) MediaKit.ensureInitialized();
   HydratedBloc.storage = await HydratedStorage.build(
     storageDirectory: HydratedStorageDirectory(
       (await getApplicationSupportDirectory()).path,

@@ -99,15 +99,12 @@ class VideoPlayerControllerAdapter implements PlayerController {
       _fvpRegistered = true;
     }
 
-    // platformView (SurfaceView) on Android: the video gets its own display
-    // layer instead of passing through Flutter's compositor — measured 2×
-    // the presented fps on the TV (21.5 vs 10.9 at capped 1080p), and it is
-    // the only surface type that can ever show tunneled (true-4K) playback.
+    // A/B TEST BUILD: back on the texture path (old view) to compare frame
+    // pacing against the SurfaceView platform view on the stuttering stream.
+    // Revert to platformView after the comparison.
     _controller = VideoPlayerController.networkUrl(
       Uri.parse(url),
-      viewType: Platform.isAndroid
-          ? VideoViewType.platformView
-          : VideoViewType.textureView,
+      viewType: VideoViewType.textureView,
     );
     await _controller!.initialize();
     _initialized = true;

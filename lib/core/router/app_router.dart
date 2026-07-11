@@ -1,4 +1,6 @@
 
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,6 +14,7 @@ import '../../features/home/home_screen.dart';
 import '../../features/import/import_screen.dart';
 import '../../features/live/live_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
+import '../../features/player/media_kit_controller.dart';
 import '../../features/player/player_screen.dart';
 import '../../features/player/video_controller.dart';
 import '../../features/playlists/playlists_screen.dart';
@@ -309,9 +312,11 @@ GoRouter buildRouter() {
             }
           }
           return PlayerScreen(
-            // fvp/MDK on every platform. On Android TV PowerVR GPUs it needs
-            // the EGL_SDR_DEPTH=8 env set in MainActivity.onCreate (fvp#374).
-            controller: VideoPlayerControllerAdapter(),
+            // media_kit (mpv vo_gpu) on Android: better frame pacing on the
+            // TV than fvp/MDK via either view type. fvp stays on desktop.
+            controller: Platform.isAndroid
+                ? MediaKitPlayerController()
+                : VideoPlayerControllerAdapter(),
             // Key by queue position so `context.replace` to a neighbour tears
             // down the old player State (and its controller) and builds a fresh
             // one, instead of reusing the state with a stale controller.
