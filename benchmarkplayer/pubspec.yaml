@@ -1,0 +1,40 @@
+name: benchmark_player
+description: >-
+  Minimal A/B bench app for the IPTV Player's video backends (media_kit/mpv
+  vs fvp/MDK). Everything is driven by dart-defines so a build boots straight
+  into fullscreen playback of a reference clip — see README.md.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # fvp/MDK backend (via the video_player interface).
+  video_player: ^2.11.1
+  fvp: ^0.37.2
+
+  # media_kit/libmpv backend.
+  media_kit: ^1.1.11
+  media_kit_video: ^1.2.5
+  media_kit_libs_android_video: ^1.3.6
+
+  # fvp forwards MDK's native log through package:logging.
+  logging: ^1.3.0
+
+dependency_overrides:
+  # Upstream fvp master + one addition: registerWith option 'audioBackends'
+  # (Player.setAudioBackends), needed for the audio-clock pacing experiment.
+  fvp:
+    git:
+      url: https://github.com/abdelaziz-mahdy/fvp.git
+      ref: bench/audio-backends-option
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
