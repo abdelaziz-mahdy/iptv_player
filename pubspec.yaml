@@ -141,4 +141,4 @@ dependency_overrides:
   fvp:
     git:
       url: https://github.com/abdelaziz-mahdy/fvp.git
-      ref: e85526f9f9b36c5a4a6e86abd255e7caa4703f94
+      ref: 5a0f4fc3207ef053eaf35f0a96a673a19e69acf2
