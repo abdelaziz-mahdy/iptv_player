@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../../core/debug_flags.dart';
 import 'video_controller.dart';
 
 /// [PlayerController] backed by **media_kit** (real libmpv `vo_gpu` renderer).
@@ -11,7 +13,13 @@ import 'video_controller.dart';
 /// far more battle-tested across GPUs — used to evaluate devices where fvp/MDK
 /// corrupts the video texture (e.g. some PowerVR TV chips).
 class MediaKitPlayerController implements PlayerController {
-  final Player _player = Player();
+  // MPV_LOG_CAPTURE builds raise mpv's log level so its vo/vd lines surface;
+  // stream.log is forwarded to logcat in initialize().
+  final Player _player = Player(
+    configuration: kMpvLogCaptureBuild
+        ? const PlayerConfiguration(logLevel: MPVLogLevel.v)
+        : const PlayerConfiguration(),
+  );
   late final VideoController videoController = VideoController(_player);
 
   final _statusCtrl = StreamController<PlayerStatus>.broadcast();
@@ -35,7 +43,12 @@ class MediaKitPlayerController implements PlayerController {
   }
 
   @override
-  Future<void> initialize(String url) async {
+  Future<void> initialize(String url, {Duration? startAt}) async {
+    if (kMpvLogCaptureBuild) {
+      _subs.add(_player.stream.log.listen(
+        (l) => debugPrint('[mpv] [${l.prefix}] ${l.level}: ${l.text}'),
+      ));
+    }
     _subs.add(_player.stream.playing.listen((_) => _emit()));
     _subs.add(_player.stream.position.listen((_) => _emit()));
     _subs.add(_player.stream.duration.listen((d) {
@@ -47,8 +60,14 @@ class MediaKitPlayerController implements PlayerController {
       _emit();
     }));
     _subs.add(_player.stream.buffering.listen((_) => _emit()));
-    // Open without auto-play; PlayerCubit calls play() after seeking to resume.
-    await _player.open(Media(url), play: false);
+    // Open without auto-play; PlayerCubit calls play() once ready. Resume is
+    // handled by mpv itself via the `start` property (Media.start): a plain
+    // seek command issued right after open is silently dropped by mpv while
+    // the media is still loading (media-kit/media-kit#1215).
+    await _player.open(
+      Media(url, start: startAt == Duration.zero ? null : startAt),
+      play: false,
+    );
     _emit();
   }
 

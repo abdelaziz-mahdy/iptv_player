@@ -20,8 +20,13 @@ class FakePlayerController implements PlayerController {
   bool get initialized => _initialized;
 
   @override
-  Future<void> initialize(String url) async {
+  Future<void> initialize(String url, {Duration? startAt}) async {
     _initialized = true;
+    // Real backends begin playback at startAt (mpv `start` property / a
+    // post-init seek) — mirror that so resume tests observe the position.
+    if (startAt != null) {
+      _position = startAt;
+    }
     _emit();
   }
 

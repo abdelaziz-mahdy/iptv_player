@@ -127,18 +127,21 @@ class PlayerCubit extends Cubit<PlayerUiState> {
     return resolutionBadge; // may be null
   }
 
-  /// Initializes the player, seeks to resume position if available, and starts.
+  /// Initializes the player (resuming from saved progress) and starts.
   Future<void> start() async {
-    await _controller.initialize(url);
-
+    // Resolve the resume position BEFORE initialize: backends apply it at
+    // load (mpv's `start` property), which is reliable where a post-open
+    // seek command is silently dropped (media-kit/media-kit#1215). A watched
+    // item replays from the start instead of resuming at the final seconds.
+    Duration? startAt;
     if (!isLive) {
       final progress = await _playback.progressFor(itemKey);
-      // A watched item replays from the start instead of resuming at the
-      // final seconds.
-      if (progress != null && !progress.isWatched) {
-        await _controller.seek(Duration(seconds: progress.positionSec));
+      if (progress != null && !progress.isWatched && progress.positionSec > 0) {
+        startAt = Duration(seconds: progress.positionSec);
       }
     }
+
+    await _controller.initialize(url, startAt: startAt);
 
     await _controller.play();
 

@@ -38,8 +38,9 @@ Convention: **install only, do not auto-launch** — let the user open the app o
 
 ## Video player
 
-`fvp` (MDK) is used for video on all platforms. On PowerVR TV GPUs it requires
-an 8-bit EGLConfig: `MainActivity.kt` sets `EGL_SDR_DEPTH=8` in `onCreate()`
-**before** `super.onCreate()` so it lands before libmdk loads (wang-bin/fvp#374
-— MDK's default 10-bit surface corrupts on this driver). Do not remove that
-setenv, and see `lib/features/player/CLAUDE.md` for the full story.
+`media_kit` (mpv) is the Android video player (smoother frame pacing than
+fvp/MDK on TV GPUs — fvp#134). fvp remains available on Android under
+`--dart-define=FORCE_FVP=true`; for that path `MainActivity.kt` sets
+`EGL_SDR_DEPTH=8` in `onCreate()` **before** `super.onCreate()` (fvp#374 —
+MDK's 10-bit surface corrupts on PowerVR). Keep the setenv; it is inert for
+media_kit. Full story: `lib/features/player/CLAUDE.md`.

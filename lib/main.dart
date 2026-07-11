@@ -24,9 +24,10 @@ Future<void> main() async {
       print('[${r.loggerName}] ${r.level.name}: ${r.message}');
     });
   }
-  // media_kit is the Android player on this branch (better frame pacing on
-  // the TV than fvp/MDK); desktop stays on fvp.
-  if (Platform.isAndroid) MediaKit.ensureInitialized();
+  // media_kit (mpv) is the Android player — better frame pacing on TV GPUs
+  // than fvp/MDK (fvp#134). Desktop uses fvp; FORCE_FVP=true flips Android
+  // to fvp for A/B testing.
+  if (Platform.isAndroid && !kForceFvpVideo) MediaKit.ensureInitialized();
   HydratedBloc.storage = await HydratedStorage.build(
     storageDirectory: HydratedStorageDirectory(
       (await getApplicationSupportDirectory()).path,

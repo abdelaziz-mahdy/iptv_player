@@ -22,9 +22,9 @@ Pushed routes (outside the shell): `/player`, `/details/movie`, `/details/series
 `/playlists`, `/import`, `/onboarding`. Arguments are passed via `state.extra` as typed objects
 (e.g. `PlayerArgs`, `VodItem`, `Series`).
 
-Player controller in the `/player` route: `VideoPlayerControllerAdapter()`
-(fvp/MDK on all platforms; PowerVR TVs need the `EGL_SDR_DEPTH=8` setenv in
-`MainActivity` — see `lib/features/player/CLAUDE.md`).
+Player controller in the `/player` route: media_kit on Android (mpv, smooth
+TV pacing), `VideoPlayerControllerAdapter` (fvp) on desktop or when
+`FORCE_FVP=true` — see `lib/features/player/CLAUDE.md`.
 
 ## result.dart — Result Type
 

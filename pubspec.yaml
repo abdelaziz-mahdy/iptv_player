@@ -57,9 +57,10 @@ dependencies:
   connectivity_plus: ^7.1.1
   video_player: ^2.11.1
   fvp: ^0.37.2
-  # media_kit (libmpv, mpv vo_gpu) is the ANDROID player on this branch: its
-  # frame pacing on the TV beats fvp/MDK through both the texture path and
-  # the SurfaceView platform view. fvp stays for desktop.
+  # media_kit (libmpv, mpv vo_gpu) is the ANDROID player: its frame pacing
+  # on the TV beats fvp/MDK through both the texture path and the SurfaceView
+  # platform view (fvp#134). fvp is the desktop player and the Android
+  # fallback under --dart-define=FORCE_FVP=true.
   media_kit: ^1.1.11
   media_kit_video: ^1.2.5
   media_kit_libs_android_video: ^1.3.6

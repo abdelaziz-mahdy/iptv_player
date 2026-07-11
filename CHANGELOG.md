@@ -19,9 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ones, updated as soon as you come back from the player.
 
 ### Changed
-- Movies, series, and live TV on Android now play through the **same video
-  engine as desktop**, with a corruption-free picture on TVs with PowerVR
-  graphics.
+- Playback on Android now uses the **mpv engine** (media_kit): noticeably
+  smoother frame pacing on TV hardware, with a corruption-free picture on
+  TVs with PowerVR graphics.
 - **4K videos play much more smoothly on TV** — video now renders on its own
   display layer with a sensible size cap, roughly doubling the delivered
   frame rate on weak TV GPUs.
@@ -39,7 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - On the player, **D-pad focus no longer gets stuck in the seek bar** —
   up/down move between controls; left/right still seek 10 seconds.
 - Opening a movie or episode from **Continue Watching now resumes at the right
-  position** on Android (it used to restart from the beginning).
+  position** on Android (it used to restart from the beginning). Resume is now
+  applied when the stream loads, making it reliable on slow connections too.
 - In Arabic, the app now shows its current name (**مشغل IPTV**) instead of the
   old one, and the **My List** button and Favorites hint are translated.
 - In Arabic, the side menu is now **reachable with the D-pad** — focus

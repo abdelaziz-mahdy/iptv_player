@@ -11,35 +11,51 @@ Backend-agnostic interface. All backends implement:
 
 ---
 
-## One backend: fvp on every platform
+## Backends: media_kit on Android, fvp on desktop
 
-`VideoPlayerControllerAdapter` (`video_controller.dart`) on Android + desktop:
-- Wraps `video_player` with `fvp` (MDK) as the backend; registered once via `fvp.registerWith()`.
-- `currentBitRate` from `_controller.getMediaInfo()?.bitRate` (fvp extension, updated live).
-- `streamBadge` falls back to `VideoPlayerValue.size` when bitrate is 0.
-- Video surface: `VideoPlayer(c.nativeController)` (requires `c.isInitialized` guard).
+Chosen at route time in `core/router/app_router.dart`:
 
-### GOTCHA — PowerVR TV GPUs need an 8-bit EGLConfig (fvp#374)
-MDK defaults to a **10-bit (RGBA_1010102) window surface** even for 8-bit SDR
-content. The PowerVR BXE driver (TCL TVs, RTD2875P) cannot share those buffers
-consistently across GL contexts (`IMGSRV: IsTextureConsistent` errors →
-corrupted video on ALL decoders, hardware and software).
-**Fix:** `MainActivity.onCreate()` sets `Os.setenv("EGL_SDR_DEPTH", "8", true)`
-before the Flutter engine loads libmdk. Do not remove until fvp/mdk handle this
-upstream (wang-bin/fvp#374).
+```dart
+controller: (Platform.isAndroid && !kForceFvpVideo)
+    ? MediaKitPlayerController()   // mpv vo_gpu — smooth pacing on TV GPUs
+    : VideoPlayerControllerAdapter() // fvp/MDK — desktop (+ FORCE_FVP A/B)
+```
 
-media_kit (libmpv) was the Android backend until 2026-07; it was removed once
-this fix landed — mpv never hits the bug because it takes the driver's first
-≥8-bit EGLConfig (RGBA_8888). If fvp ever regresses, media_kit + 
-media_kit_libs_android_video is the known-good fallback (note: its Android
-natives clash with fvp's bundled FFmpeg — don't ship both).
+### Android: `MediaKitPlayerController` (`media_kit_controller.dart`)
+- Wraps media_kit / libmpv (`vo_gpu`). Opens with `play: false`.
+- **Resume** is passed as `initialize(url, startAt:)` → `Media(start:)` — mpv
+  applies it at load. A seek command right after open is silently dropped by
+  mpv (media-kit/media-kit#1215); early scrubber seeks are parked and applied
+  once the duration arrives.
+- Video surface: `Video(controller: c.videoController, controls: NoVideoControls)`.
+
+### Desktop (+ FORCE_FVP): `VideoPlayerControllerAdapter` (`video_controller.dart`)
+- Wraps `video_player` with fvp (MDK); registered once via `fvp.registerWith()`
+  (Android options: `maxWidth/maxHeight` 1920×1088 cap).
+- On Android uses `VideoViewType.platformView` (SurfaceView from the pinned
+  fvp fork — own display layer, prerequisite for tunneled true-4K).
+- `initialize(startAt:)` seeks after init (video_player has no start option).
+
+### WHY media_kit on Android
+fvp/MDK **paces frames badly on this TV** through BOTH the texture path and
+the SurfaceView platform view: frames present in 60 Hz bursts separated by
+80–183 ms droughts while decode/network/CPU are all healthy (measured via
+SurfaceFlinger timestamps; matches upstream fvp#134, where media_kit and
+video_player are smooth through the same Flutter texture). mpv's VO thread
+paces against a smoothed clock with vsync feedback; MDK appears to schedule
+off raw timers. fvp also needed the 8-bit EGLConfig workaround on PowerVR
+(fvp#374, `EGL_SDR_DEPTH=8` in MainActivity — kept for FORCE_FVP builds).
+Upstream fvp work continues: PR #379 (SurfaceView platform view), PR #380
+(10-bit driver probe, draft), tunnel-at-open ordering (needs libmdk).
 
 ---
 
 ## `kFvpCaptureBuild` (`core/debug_flags.dart`)
 
-`--dart-define=FVP_CAPTURE=true` attaches a root logging listener so MDK's
-`log=all` output reaches logcat. **Diagnostic builds only.**
+Debug flags (`core/debug_flags.dart`), all off in shipping builds:
+- `FVP_CAPTURE=true` — root logging listener so MDK's `log=all` reaches logcat.
+- `MPV_LOG_CAPTURE=true` — verbose mpv log → logcat (media_kit backend).
+- `FORCE_FVP=true` — Android uses fvp instead of media_kit (A/B testing).
 
 ---
 

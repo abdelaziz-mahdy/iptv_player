@@ -22,6 +22,7 @@ import '../../features/search/cubit/search_cubit.dart';
 import '../../features/search/search_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../debug_flags.dart';
 import '../di/injection.dart';
 import '../widgets/adaptive_shell.dart';
 
@@ -312,9 +313,11 @@ GoRouter buildRouter() {
             }
           }
           return PlayerScreen(
-            // media_kit (mpv vo_gpu) on Android: better frame pacing on the
-            // TV than fvp/MDK via either view type. fvp stays on desktop.
-            controller: Platform.isAndroid
+            // media_kit (mpv vo_gpu) on Android: better frame pacing on
+            // the TV than fvp/MDK via either view type (fvp#134 — MDK
+            // presents in bursts). fvp stays on desktop, and FORCE_FVP=true
+            // flips Android back to fvp for A/B tests. See debug_flags.dart.
+            controller: (Platform.isAndroid && !kForceFvpVideo)
                 ? MediaKitPlayerController()
                 : VideoPlayerControllerAdapter(),
             // Key by queue position so `context.replace` to a neighbour tears

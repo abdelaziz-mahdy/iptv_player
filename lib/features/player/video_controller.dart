@@ -25,7 +25,11 @@ class PlayerStatus extends Equatable {
 
 /// Abstract interface that all player backends implement.
 abstract class PlayerController {
-  Future<void> initialize(String url);
+  /// Prepares [url] for playback. When [startAt] is given, playback begins
+  /// at that position (resume) — backends apply it in the most reliable way
+  /// they support (mpv: the `start` property at load; video_player: a seek
+  /// after initialization).
+  Future<void> initialize(String url, {Duration? startAt});
   Future<void> play();
   Future<void> pause();
   Future<void> seek(Duration position);
@@ -71,27 +75,13 @@ class VideoPlayerControllerAdapter implements PlayerController {
   }
 
   @override
-  Future<void> initialize(String url) async {
+  Future<void> initialize(String url, {Duration? startAt}) async {
     if (!_fvpRegistered) {
-      // fvp (MDK) is the player on ALL platforms. On Android TV PowerVR GPUs
-      // MDK's default 10-bit EGLConfig corrupts video (fvp#374); MainActivity
-      // sets EGL_SDR_DEPTH=8 before the engine loads to force the 8-bit
-      // config. Default options let fvp pick per-platform hardware decoders.
-      // Android: tunnel = MediaCodec renders directly into the SurfaceView
-      // (platform view), scanned out by the TV's hardware video plane. The
-      // GPU never touches the frames — required for 4K on this device, where
-      // GL-rendered 4K RGBA forces SurfaceFlinger into 4K GPU composition
-      // (~5 fps). Desktop keeps the default GL texture path.
-      // Android: cap the video render size near the display's UI resolution.
-      // This TV's GPU cannot GL-render + composite 4K RGBA (measured ~5 fps);
-      // ≤1080p buffers ride the hardware scaler like the rest of the UI.
-      // True-4K needs decoder→video-plane output (fvp tunnel), pending
-      // upstream work. Desktop stays uncapped.
-      // Android: cap the video render size near the display's UI resolution.
-      // This TV's GPU cannot GL-render + composite 4K RGBA (measured ~5 fps);
-      // ≤1080p buffers ride the hardware scaler like the rest of the UI.
-      // True 4K would need tunneled decoder→video-plane output; MDK doesn't
-      // accept a late tunnel surface yet (tracked upstream, wang-bin/fvp).
+      // fvp/MDK: the desktop player, and the Android backend under
+      // FORCE_FVP=true. On Android TV PowerVR GPUs MDK's 10-bit EGLConfig
+      // corrupts video — MainActivity sets EGL_SDR_DEPTH=8 (fvp#374) — and
+      // the render size is capped near UI resolution: GL-rendering 4K RGBA
+      // forces SurfaceFlinger into 4K GPU composition (~5 fps measured).
       fvp.registerWith(
           options: Platform.isAndroid
               ? {'maxWidth': 1920, 'maxHeight': 1088}
@@ -99,15 +89,20 @@ class VideoPlayerControllerAdapter implements PlayerController {
       _fvpRegistered = true;
     }
 
-    // A/B TEST BUILD: back on the texture path (old view) to compare frame
-    // pacing against the SurfaceView platform view on the stuttering stream.
-    // Revert to platformView after the comparison.
+    // SurfaceView platform view on Android (own display layer, 2x presented
+    // fps vs the texture path at capped 1080p, and the only surface type
+    // that can show tunneled true-4K); texture path on desktop.
     _controller = VideoPlayerController.networkUrl(
       Uri.parse(url),
-      viewType: VideoViewType.textureView,
+      viewType: Platform.isAndroid
+          ? VideoViewType.platformView
+          : VideoViewType.textureView,
     );
     await _controller!.initialize();
     _initialized = true;
+    if (startAt != null && startAt > Duration.zero) {
+      await _controller!.seekTo(startAt);
+    }
 
     _controller!.addListener(_onControllerUpdate);
     _emit();
