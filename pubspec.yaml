@@ -129,3 +129,16 @@ flutter:
         - asset: assets/fonts/AtkinsonHyperlegible-Regular.ttf
         - asset: assets/fonts/AtkinsonHyperlegible-Bold.ttf
           weight: 700
+
+
+# fvp fork with SurfaceView platform view (VideoViewType.platformView):
+# doubles 4K presentation fps on the TV (21.5 vs 10.9 presented fps at
+# capped 1080p - video gets its own display layer instead of passing
+# through Flutter's compositor) and is the prerequisite for tunneled
+# true-4K playback. Drop when upstream fvp ships platform view support
+# (PR open on wang-bin/fvp).
+dependency_overrides:
+  fvp:
+    git:
+      url: https://github.com/abdelaziz-mahdy/fvp.git
+      ref: e85526f9f9b36c5a4a6e86abd255e7caa4703f94

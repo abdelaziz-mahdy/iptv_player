@@ -495,10 +495,11 @@ packages:
   fvp:
     dependency: "direct main"
     description:
-      name: fvp
-      sha256: ac06c5ecdf65abb2ce413c9ca6c73fd74bff7c394879c17a98d6b94056b71c52
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: e85526f9f9b36c5a4a6e86abd255e7caa4703f94
+      resolved-ref: e85526f9f9b36c5a4a6e86abd255e7caa4703f94
+      url: "https://github.com/abdelaziz-mahdy/fvp.git"
+    source: git
     version: "0.37.3"
   get_it:
     dependency: "direct main"

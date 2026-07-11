@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Movies, series, and live TV on Android now play through the **same video
   engine as desktop**, with a corruption-free picture on TVs with PowerVR
   graphics.
+- **4K videos play much more smoothly on TV** — video now renders on its own
+  display layer with a sensible size cap, roughly doubling the delivered
+  frame rate on weak TV GPUs.
 - On the player, the seek bar now moves **10 seconds per D-pad press** instead of
   jumping large chunks.
 - The player's volume slider is hidden on TV (volume is controlled by the remote);

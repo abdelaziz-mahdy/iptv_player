@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:equatable/equatable.dart';
 import 'package:fvp/fvp.dart' as fvp;
@@ -76,11 +77,38 @@ class VideoPlayerControllerAdapter implements PlayerController {
       // MDK's default 10-bit EGLConfig corrupts video (fvp#374); MainActivity
       // sets EGL_SDR_DEPTH=8 before the engine loads to force the 8-bit
       // config. Default options let fvp pick per-platform hardware decoders.
-      fvp.registerWith();
+      // Android: tunnel = MediaCodec renders directly into the SurfaceView
+      // (platform view), scanned out by the TV's hardware video plane. The
+      // GPU never touches the frames — required for 4K on this device, where
+      // GL-rendered 4K RGBA forces SurfaceFlinger into 4K GPU composition
+      // (~5 fps). Desktop keeps the default GL texture path.
+      // Android: cap the video render size near the display's UI resolution.
+      // This TV's GPU cannot GL-render + composite 4K RGBA (measured ~5 fps);
+      // ≤1080p buffers ride the hardware scaler like the rest of the UI.
+      // True-4K needs decoder→video-plane output (fvp tunnel), pending
+      // upstream work. Desktop stays uncapped.
+      // Android: cap the video render size near the display's UI resolution.
+      // This TV's GPU cannot GL-render + composite 4K RGBA (measured ~5 fps);
+      // ≤1080p buffers ride the hardware scaler like the rest of the UI.
+      // True 4K would need tunneled decoder→video-plane output; MDK doesn't
+      // accept a late tunnel surface yet (tracked upstream, wang-bin/fvp).
+      fvp.registerWith(
+          options: Platform.isAndroid
+              ? {'maxWidth': 1920, 'maxHeight': 1088}
+              : null);
       _fvpRegistered = true;
     }
 
-    _controller = VideoPlayerController.networkUrl(Uri.parse(url));
+    // platformView (SurfaceView) on Android: the video gets its own display
+    // layer instead of passing through Flutter's compositor — measured 2×
+    // the presented fps on the TV (21.5 vs 10.9 at capped 1080p), and it is
+    // the only surface type that can ever show tunneled (true-4K) playback.
+    _controller = VideoPlayerController.networkUrl(
+      Uri.parse(url),
+      viewType: Platform.isAndroid
+          ? VideoViewType.platformView
+          : VideoViewType.textureView,
+    );
     await _controller!.initialize();
     _initialized = true;
 
