@@ -204,6 +204,62 @@ void main() {
       expect(list.first.itemKey, 'movie:m1');
     });
 
+    test('continueWatching excludes watched (>= 95%) entries', () async {
+      final db = _makeDb();
+      addTearDown(db.close);
+
+      final repo = DriftPlaybackRepository(db);
+
+      await repo.saveProgress(WatchProgress(
+        itemKey: 'episode:e1',
+        playlistId: _playlistId,
+        kind: MediaKind.episode,
+        positionSec: 100, // partial
+        durationSec: 2700,
+        updatedAt: DateTime.utc(2026, 1, 1),
+      ));
+      await repo.saveProgress(WatchProgress(
+        itemKey: 'episode:e2',
+        playlistId: _playlistId,
+        kind: MediaKind.episode,
+        positionSec: 2650, // ~98% — watched
+        durationSec: 2700,
+        updatedAt: DateTime.utc(2026, 1, 2),
+      ));
+
+      final list = await repo.continueWatching(_playlistId).first;
+      expect(list.map((p) => p.itemKey), ['episode:e1'],
+          reason: 'finished items must leave Continue Watching');
+    });
+
+    test('progressForPlaylist streams every row, watched included', () async {
+      final db = _makeDb();
+      addTearDown(db.close);
+
+      final repo = DriftPlaybackRepository(db);
+
+      await repo.saveProgress(WatchProgress(
+        itemKey: 'episode:e1',
+        playlistId: _playlistId,
+        kind: MediaKind.episode,
+        positionSec: 100,
+        durationSec: 2700,
+        updatedAt: DateTime.utc(2026, 1, 1),
+      ));
+      await repo.saveProgress(WatchProgress(
+        itemKey: 'episode:e2',
+        playlistId: _playlistId,
+        kind: MediaKind.episode,
+        positionSec: 2650, // watched — still needed for indicators
+        durationSec: 2700,
+        updatedAt: DateTime.utc(2026, 1, 2),
+      ));
+
+      final list = await repo.progressForPlaylist(_playlistId).first;
+      expect(list.map((p) => p.itemKey).toSet(),
+          {'episode:e1', 'episode:e2'});
+    });
+
     test('continueWatching excludes channel-kind entries', () async {
       final db = _makeDb();
       addTearDown(db.close);

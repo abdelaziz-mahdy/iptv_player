@@ -56,6 +56,11 @@ abstract class PlaybackRepository {
   Future<void> removeProgress(String itemKey);
   Stream<List<WatchProgress>> continueWatching(String playlistId);
 
+  /// All progress rows for [playlistId], watched ones included — powers the
+  /// per-episode indicators. Unlike [continueWatching] this is unfiltered
+  /// and uncapped.
+  Stream<List<WatchProgress>> progressForPlaylist(String playlistId);
+
   /// Records that [itemKey] (a browsable key — `movie:<id>` / `series:<id>` /
   /// `channel:<id>`) was just opened in the player. Unlike [saveProgress] this
   /// also tracks live channels, and powers the "Recently Viewed" category.

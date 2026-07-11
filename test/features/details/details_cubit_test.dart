@@ -6,10 +6,30 @@ import 'package:iptv_player/features/details/cubit/details_cubit.dart';
 Series _series(String id) =>
     Series(id: id, playlistId: 'p1', title: 'Show $id');
 
+WatchProgress _progress(String episodeId, int pos,
+        {int dur = 2700, DateTime? at}) =>
+    WatchProgress(
+      itemKey: 'episode:$episodeId',
+      playlistId: 'p1',
+      kind: MediaKind.episode,
+      positionSec: pos,
+      durationSec: dur,
+      updatedAt: at ?? DateTime.utc(2026, 1, 1),
+    );
+
 void main() {
   group('DetailsCubit', () {
+    late FakePlaybackRepository playback;
+
+    setUp(() {
+      playback = FakePlaybackRepository();
+    });
+
+    DetailsCubit makeCubit() =>
+        DetailsCubit(FakeContentRepository(), playback);
+
     test('loadSeries populates seasons, episodes and description', () async {
-      final cubit = DetailsCubit(FakeContentRepository());
+      final cubit = makeCubit();
 
       await cubit.loadSeries(_series('s1'));
 
@@ -23,7 +43,7 @@ void main() {
     });
 
     test('loadSeries unknown id yields empty seasons and episodes', () async {
-      final cubit = DetailsCubit(FakeContentRepository());
+      final cubit = makeCubit();
 
       await cubit.loadSeries(_series('unknown'));
 
@@ -33,7 +53,7 @@ void main() {
     });
 
     test('selectSeason switches episodes from the cached map', () async {
-      final cubit = DetailsCubit(FakeContentRepository());
+      final cubit = makeCubit();
 
       // s2 has one season with 1 episode.
       await cubit.loadSeries(_series('s2'));
@@ -43,6 +63,32 @@ void main() {
       cubit.selectSeason(0);
       expect(cubit.state.episodes.length, 1);
       expect(cubit.state.selectedSeasonIndex, 0);
+    });
+
+    test('progressByKey exposes saved episode progress', () async {
+      await playback.saveProgress(_progress('s1-1-e1', 600));
+
+      final cubit = makeCubit();
+      await cubit.loadSeries(_series('s1'));
+      await Future<void>.delayed(Duration.zero); // let stream binding fire
+
+      expect(cubit.state.progressByKey['episode:s1-1-e1']?.positionSec, 600);
+    });
+
+    test('progressByKey updates live when progress changes', () async {
+      final cubit = makeCubit();
+      await cubit.loadSeries(_series('s1'));
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.progressByKey, isEmpty);
+
+      // Simulates returning from the player after finishing an episode.
+      await playback.saveProgress(
+          _progress('s1-1-e2', 2650, at: DateTime.utc(2026, 1, 2)));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.progressByKey.keys, contains('episode:s1-1-e2'));
+      expect(
+          cubit.state.progressByKey['episode:s1-1-e2']!.isWatched, isTrue);
     });
   });
 }

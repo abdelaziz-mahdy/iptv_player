@@ -133,7 +133,9 @@ class PlayerCubit extends Cubit<PlayerUiState> {
 
     if (!isLive) {
       final progress = await _playback.progressFor(itemKey);
-      if (progress != null) {
+      // A watched item replays from the start instead of resuming at the
+      // final seconds.
+      if (progress != null && !progress.isWatched) {
         await _controller.seek(Duration(seconds: progress.positionSec));
       }
     }
@@ -304,12 +306,9 @@ class PlayerCubit extends Cubit<PlayerUiState> {
     await _controller.seek(position);
   }
 
-  /// Periodic checkpoint driven by [_progressTimer]. Skips saving while the
-  /// position is still zero (e.g. buffering, or before the resume seek lands)
-  /// so a fresh tick can't clobber an existing resume point with 0.
+  /// Periodic checkpoint driven by [_progressTimer].
   void _tickSaveProgress() {
     if (isClosed) return;
-    if (_controller.position <= Duration.zero) return;
     unawaited(_saveProgress());
   }
 
@@ -320,6 +319,11 @@ class PlayerCubit extends Cubit<PlayerUiState> {
 
   Future<void> _saveProgress() async {
     if (isLive) return;
+    // A zero position carries no resume information and would clobber an
+    // existing resume point — e.g. backing out while the stream is still
+    // buffering, before the resume seek has landed. Applies to the periodic
+    // tick, the app-background save, and close() alike.
+    if (_controller.position <= Duration.zero) return;
     await _playback.saveProgress(
       WatchProgress(
         itemKey: itemKey,

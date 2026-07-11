@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -15,12 +17,17 @@ class DetailsState extends Equatable {
   final List<Episode> episodes;
   final String? description;
 
+  /// Watch progress keyed by episode item key (`episode:<id>`), watched
+  /// entries included — powers the per-episode progress indicators.
+  final Map<String, WatchProgress> progressByKey;
+
   const DetailsState({
     this.loading = false,
     this.seasons = const [],
     this.selectedSeasonIndex = 0,
     this.episodes = const [],
     this.description,
+    this.progressByKey = const {},
   });
 
   DetailsState copyWith({
@@ -29,6 +36,7 @@ class DetailsState extends Equatable {
     int? selectedSeasonIndex,
     List<Episode>? episodes,
     String? description,
+    Map<String, WatchProgress>? progressByKey,
   }) {
     return DetailsState(
       loading: loading ?? this.loading,
@@ -36,12 +44,19 @@ class DetailsState extends Equatable {
       selectedSeasonIndex: selectedSeasonIndex ?? this.selectedSeasonIndex,
       episodes: episodes ?? this.episodes,
       description: description ?? this.description,
+      progressByKey: progressByKey ?? this.progressByKey,
     );
   }
 
   @override
-  List<Object?> get props =>
-      [loading, seasons, selectedSeasonIndex, episodes, description];
+  List<Object?> get props => [
+        loading,
+        seasons,
+        selectedSeasonIndex,
+        episodes,
+        description,
+        progressByKey,
+      ];
 }
 
 // ---------------------------------------------------------------------------
@@ -50,17 +65,26 @@ class DetailsState extends Equatable {
 
 class DetailsCubit extends Cubit<DetailsState> {
   final ContentRepository _content;
+  final PlaybackRepository _playback;
 
-  DetailsCubit(this._content) : super(const DetailsState());
+  DetailsCubit(this._content, this._playback) : super(const DetailsState());
 
   /// Episodes keyed by season domain id, cached from [loadSeries] so switching
   /// seasons is instant (no extra fetch).
   Map<String, List<Episode>> _episodesBySeason = const {};
 
+  StreamSubscription<List<WatchProgress>>? _progressSub;
+
   /// Fetches the series' seasons + episodes on demand (Xtream series-info),
   /// then shows the first season. For movie detail screens, no load is needed.
   Future<void> loadSeries(Series series) async {
     emit(state.copyWith(loading: true));
+
+    // Live progress so episode indicators refresh when returning from the
+    // player.
+    _progressSub ??= _playback
+        .progressForPlaylist(series.playlistId)
+        .listen(_onProgress);
 
     final result = await _content.loadSeriesDetail(series);
     final detail = result.when(
@@ -88,5 +112,18 @@ class DetailsCubit extends Cubit<DetailsState> {
     if (index < 0 || index >= state.seasons.length) return;
     final episodes = _episodesBySeason[state.seasons[index].id] ?? const [];
     emit(state.copyWith(selectedSeasonIndex: index, episodes: episodes));
+  }
+
+  void _onProgress(List<WatchProgress> rows) {
+    if (isClosed) return;
+    emit(state.copyWith(
+      progressByKey: {for (final p in rows) p.itemKey: p},
+    ));
+  }
+
+  @override
+  Future<void> close() async {
+    await _progressSub?.cancel();
+    return super.close();
   }
 }

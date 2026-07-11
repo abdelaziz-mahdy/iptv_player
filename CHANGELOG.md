@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The player now has **Previous / Next** buttons: skip between channels in the
   same group while watching Live, and between episodes in the same season while
   watching a series.
+- Episode lists now show **how much of each episode you've watched** — a
+  progress bar for partially watched episodes and a checkmark for finished
+  ones, updated as soon as you come back from the player.
 
 ### Changed
 - On the player, the seek bar now moves **10 seconds per D-pad press** instead of
@@ -35,4 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Series details no longer list **empty seasons** — some providers advertise
   related shows as extra seasons with no episodes in them; only seasons that
   actually have episodes are shown now.
+- Backing out of a video while it is still buffering no longer **loses your
+  resume point**.
+- Finishing a movie or episode now marks it **watched**: it leaves Continue
+  Watching and replays from the beginning next time, instead of "resuming"
+  at the last few seconds.
 - The focus highlight no longer covers the edge of the item it's on.

@@ -195,6 +195,7 @@ class FakeEpgRepository implements EpgRepository {
 class FakePlaybackRepository implements PlaybackRepository {
   final _progress = <String, WatchProgress>{};
   final _continue = _Store<List<WatchProgress>>([]);
+  final _all = _Store<List<WatchProgress>>([]);
 
   /// Recently-viewed browsable keys, most-recent first.
   final _recentKeys = <String>[];
@@ -202,7 +203,7 @@ class FakePlaybackRepository implements PlaybackRepository {
 
   List<WatchProgress> _filtered() {
     final all = _progress.values
-        .where((p) => p.kind != MediaKind.channel)
+        .where((p) => p.kind != MediaKind.channel && !p.isWatched)
         .toList()
       ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     return all.take(20).toList();
@@ -215,16 +216,21 @@ class FakePlaybackRepository implements PlaybackRepository {
   Future<void> saveProgress(WatchProgress p) async {
     _progress[p.itemKey] = p;
     _continue.value = _filtered();
+    _all.value = _progress.values.toList();
   }
 
   @override
   Future<void> removeProgress(String itemKey) async {
     _progress.remove(itemKey);
     _continue.value = _filtered();
+    _all.value = _progress.values.toList();
   }
 
   @override
   Stream<List<WatchProgress>> continueWatching(String playlistId) => _continue.stream;
+
+  @override
+  Stream<List<WatchProgress>> progressForPlaylist(String playlistId) => _all.stream;
 
   @override
   Future<void> recordView({

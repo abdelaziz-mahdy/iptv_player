@@ -64,9 +64,13 @@ Saved every 10 s via `_tickSaveProgress()` AND immediately when the app is
 backgrounded via `saveProgressNow()` (called by `player_screen.dart`'s
 `WidgetsBindingObserver` on `paused`/`inactive`/`hidden`). Also saved in `close()`.
 **Do not rely on `close()` alone** — TV apps are killed without a clean dispose.
-Guard: `_tickSaveProgress` skips when `position <= Duration.zero` to avoid clobbering
-an existing resume point during initial buffering.
+Guard: `_saveProgress` skips when `position <= Duration.zero` (covers the periodic
+tick, backgrounding, AND close) to avoid clobbering an existing resume point when
+the user backs out during initial buffering.
 Live channels (`isLive = kind == MediaKind.channel`) are **never** saved.
+Watched rule: at ≥ 95% (`kWatchedFraction`, `WatchProgressX.isWatched`) an item is
+"finished" — `start()` skips the resume seek (replays from zero) and
+`continueWatching` filters it out; the row is kept for episode indicators.
 
 **Stream badge logic (`computeStreamBadge`):**
 Priority: bitrate (Mbps/Kbps) > resolution string > null (badge hidden).

@@ -53,8 +53,10 @@ class DetailsScreen extends StatelessWidget {
     if (series != null) {
       final onPlayEpisode = _onPlayEpisode!;
       return BlocProvider<DetailsCubit>(
-        create: (_) =>
-            DetailsCubit(sl<ContentRepository>())..loadSeries(series),
+        create: (_) => DetailsCubit(
+          sl<ContentRepository>(),
+          sl<PlaybackRepository>(),
+        )..loadSeries(series),
         child: _SeriesDetailBody(
           series: series,
           onBack: onBack,
@@ -631,6 +633,7 @@ class _SeriesDetailBody extends StatelessWidget {
               const SizedBox(height: 12),
               _EpisodeList(
                 episodes: state.episodes,
+                progressByKey: state.progressByKey,
                 onPlayAt: (i) => onPlayEpisode(state.episodes, i),
               ),
             ],
@@ -705,10 +708,17 @@ class _SeasonChips extends StatelessWidget {
 class _EpisodeList extends StatelessWidget {
   final List<Episode> episodes;
 
+  /// Watch progress keyed by `episode:<id>`; drives the per-row indicator.
+  final Map<String, WatchProgress> progressByKey;
+
   /// Called with the tapped episode's index within [episodes].
   final void Function(int index) onPlayAt;
 
-  const _EpisodeList({required this.episodes, required this.onPlayAt});
+  const _EpisodeList({
+    required this.episodes,
+    required this.progressByKey,
+    required this.onPlayAt,
+  });
 
   static String _fmt(int? secs) {
     if (secs == null) return '';
@@ -724,6 +734,7 @@ class _EpisodeList extends StatelessWidget {
         for (var i = 0; i < episodes.length; i++)
           _EpisodeRow(
             episode: episodes[i],
+            progress: progressByKey['episode:${episodes[i].id}'],
             onPlay: () => onPlayAt(i),
             duration: _fmt(episodes[i].durationSec),
           ),
@@ -734,11 +745,13 @@ class _EpisodeList extends StatelessWidget {
 
 class _EpisodeRow extends StatelessWidget {
   final Episode episode;
+  final WatchProgress? progress;
   final VoidCallback onPlay;
   final String duration;
 
   const _EpisodeRow({
     required this.episode,
+    required this.progress,
     required this.onPlay,
     required this.duration,
   });
@@ -746,6 +759,10 @@ class _EpisodeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
+    final itemKey = 'episode:${episode.id}';
+    final watched = progress?.isWatched ?? false;
+    final fraction = progress?.fraction ?? 0.0;
+    final showBar = !watched && fraction > 0;
     return FocusableButton(
       semanticLabel: 'Play episode ${episode.number}: ${episode.title}',
       onPressed: onPlay,
@@ -783,11 +800,33 @@ class _EpisodeRow extends StatelessWidget {
                       style:
                           tt.bodySmall?.copyWith(color: context.palette.dim),
                     ),
+                  if (showBar)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(1.5),
+                        child: LinearProgressIndicator(
+                          key: Key('episode-progress-$itemKey'),
+                          value: fraction,
+                          minHeight: 3,
+                          backgroundColor: context.palette.surface2,
+                          color: context.palette.accent,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
-            Icon(Icons.play_circle_outline,
-                color: context.palette.dim, size: 22),
+            if (watched)
+              Icon(
+                Icons.check_circle,
+                key: Key('episode-watched-$itemKey'),
+                color: context.palette.accent,
+                size: 22,
+              )
+            else
+              Icon(Icons.play_circle_outline,
+                  color: context.palette.dim, size: 22),
           ],
         ),
       ),

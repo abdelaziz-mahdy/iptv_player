@@ -53,7 +53,17 @@ class DriftPlaybackRepository implements PlaybackRepository {
 
   @override
   Stream<List<WatchProgress>> continueWatching(String playlistId) {
+    // Watched rows are kept in the table (they power the episode indicators)
+    // but a finished item has nothing left to continue.
     return _db.watchContinue(playlistId).map(
+          (rows) =>
+              rows.map(_fromRow).where((p) => !p.isWatched).toList(),
+        );
+  }
+
+  @override
+  Stream<List<WatchProgress>> progressForPlaylist(String playlistId) {
+    return _db.watchAllProgress(playlistId).map(
           (rows) => rows.map(_fromRow).toList(),
         );
   }

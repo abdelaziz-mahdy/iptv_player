@@ -5,6 +5,7 @@ import 'package:iptv_player/core/theme/app_palette.dart';
 import 'package:iptv_player/core/theme/app_theme.dart';
 import 'package:iptv_player/core/widgets/focusable_button.dart';
 import 'package:iptv_player/data/models/models.dart';
+import 'package:iptv_player/data/repositories/repositories.dart';
 import 'package:iptv_player/features/details/details_screen.dart';
 import 'package:iptv_player/l10n/generated/app_localizations.dart';
 
@@ -202,6 +203,61 @@ void main() {
     // Should call back with the first episode (Pilot).
     expect(played, isNotNull);
     expect(played!.title, 'Pilot');
+  });
+
+  testWidgets(
+      'episode rows show a progress bar when partially watched and a '
+      'checkmark when watched', (tester) async {
+    const series = Series(id: 's1', playlistId: 'p1', title: 'Deep Field');
+
+    final playback = sl<PlaybackRepository>();
+    // Pilot (s1-1-e1): a third in — expect a progress bar.
+    await playback.saveProgress(WatchProgress(
+      itemKey: 'episode:s1-1-e1',
+      playlistId: 'p1',
+      kind: MediaKind.episode,
+      positionSec: 900,
+      durationSec: 2700,
+      updatedAt: DateTime.utc(2026, 1, 1),
+    ));
+    // Contact (s1-1-e2): ~98% — expect a watched checkmark, no bar.
+    await playback.saveProgress(WatchProgress(
+      itemKey: 'episode:s1-1-e2',
+      playlistId: 'p1',
+      kind: MediaKind.episode,
+      positionSec: 2650,
+      durationSec: 2700,
+      updatedAt: DateTime.utc(2026, 1, 2),
+    ));
+
+    await tester.pumpWidget(
+      _wrap(
+        DetailsScreen.series(
+          series,
+          onBack: () {},
+          onPlayEpisode: (_, _) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+        find.byKey(const Key('episode-progress-episode:s1-1-e1'),
+            skipOffstage: false),
+        findsOneWidget);
+    expect(
+        find.byKey(const Key('episode-watched-episode:s1-1-e2'),
+            skipOffstage: false),
+        findsOneWidget);
+    // The watched row has no bar; the partial row has no checkmark.
+    expect(
+        find.byKey(const Key('episode-progress-episode:s1-1-e2'),
+            skipOffstage: false),
+        findsNothing);
+    expect(
+        find.byKey(const Key('episode-watched-episode:s1-1-e1'),
+            skipOffstage: false),
+        findsNothing);
   });
 
   testWidgets('DetailsScreen.movie Play button has autofocus: true',

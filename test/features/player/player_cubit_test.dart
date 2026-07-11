@@ -91,10 +91,12 @@ void main() {
           playlistId: 'p1',
         );
         await movieCubit.start();
+        await movieController.seek(const Duration(seconds: 60));
         await movieCubit.close();
 
         final saved = await moviePlayback.progressFor('movie:m1');
         expect(saved, isNotNull, reason: 'VOD (movie) must persist watch progress on close');
+        expect(saved!.positionSec, 60);
       });
 
       test('movie kind: saveProgressNow() persists mid-playback (no close)',
@@ -236,6 +238,55 @@ void main() {
             reason: 'Live channels must not seek to a resume position');
 
         await liveCubit.close();
+      });
+    });
+
+    group('resume & watched handling', () {
+      // FakePlayerController reports a 90-minute (5400 s) duration.
+      WatchProgress progressAt(int pos) => WatchProgress(
+            itemKey: 'movie:m1',
+            playlistId: 'p1',
+            kind: MediaKind.movie,
+            positionSec: pos,
+            durationSec: 5400,
+            updatedAt: DateTime.utc(2026),
+          );
+
+      test('partially watched item resumes at the saved position', () async {
+        await playback.saveProgress(progressAt(2400));
+        await cubit.start();
+        expect(controller.position, const Duration(seconds: 2400));
+      });
+
+      test('watched item (>= 95%) restarts from the beginning', () async {
+        await playback.saveProgress(progressAt(5300)); // ~98% watched
+        await cubit.start();
+        expect(controller.position, Duration.zero,
+            reason: 'A finished item must replay from the start, not resume '
+                'at the last seconds');
+      });
+
+      test('closing before playback begins keeps the existing resume point',
+          () async {
+        // User backs out while the stream is still buffering: the controller
+        // position is still zero. That zero must not clobber the real
+        // resume point saved by an earlier session.
+        await playback.saveProgress(progressAt(2400));
+
+        final earlyExitCubit = PlayerCubit(
+          FakePlayerController(),
+          playback,
+          itemKey: 'movie:m1',
+          url: 'http://vod',
+          title: 'Dune',
+          kind: MediaKind.movie,
+          playlistId: 'p1',
+        );
+        await earlyExitCubit.close(); // never started
+
+        final saved = await playback.progressFor('movie:m1');
+        expect(saved!.positionSec, 2400,
+            reason: 'a zero-position save must not overwrite real progress');
       });
     });
 

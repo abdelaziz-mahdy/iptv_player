@@ -116,6 +116,10 @@ class AppDatabase extends _$AppDatabase {
       into(watchProgressRows).insertOnConflictUpdate(p);
   Future<void> deleteProgress(String itemKey) =>
       (delete(watchProgressRows)..where((t) => t.itemKey.equals(itemKey))).go();
+  Stream<List<WatchProgressRow>> watchAllProgress(String playlistId) =>
+      (select(watchProgressRows)
+            ..where((t) => t.playlistId.equals(playlistId)))
+          .watch();
   Stream<List<WatchProgressRow>> watchContinue(String playlistId) =>
       (select(watchProgressRows)
             ..where((t) =>
