@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Frame-pacing benchmark orchestrator: builds one APK per variant, installs
-# it on the TV, captures logcat + SurfaceFlinger present timestamps while you
-# watch the clip, and writes a per-variant results folder ready for
+# Frame-pacing benchmark orchestrator, fully unattended: builds one APK per
+# variant, installs it on the TV, launches it, verifies playback from the
+# app's own stats lines, captures logcat + SurfaceFlinger present timestamps,
+# force-stops, and writes a per-variant results folder ready for
 # comparison / an upstream ticket.
 #
 # Usage:
