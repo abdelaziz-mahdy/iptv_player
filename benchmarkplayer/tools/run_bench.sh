@@ -30,6 +30,9 @@ fi
 
 CLIP="$URLBASE/bench-24fps.mp4"
 CLIP_NOAUDIO="$URLBASE/bench-24fps-noaudio.mp4"
+# Local simulated live stream (tools/make_live.sh); export LIVE_URL to use a
+# real provider channel instead (credentials get baked into that apk — keep it local).
+LIVE="${LIVE_URL:-$URLBASE/live/stream.m3u8}"
 
 # variant -> dart-defines (BENCH_VARIANT and BENCH_URL are filled in below)
 variant_defines() {
@@ -39,14 +42,17 @@ variant_defines() {
     03-fvp-copy)           echo "BENCH_BACKEND=fvp BENCH_URL=$CLIP FVP_DECODER_COPY=true" ;;
     04-fvp-audiotrack)     echo "BENCH_BACKEND=fvp BENCH_URL=$CLIP FVP_AUDIO_BACKEND=AudioTrack" ;;
     05-fvp-noaudio)        echo "BENCH_BACKEND=fvp BENCH_URL=$CLIP_NOAUDIO" ;;
-    06-media_kit-noaudio)  echo "BENCH_BACKEND=media_kit BENCH_URL=$CLIP_NOAUDIO" ;;
-    07-fvp-opensl)         echo "BENCH_BACKEND=fvp BENCH_URL=$CLIP FVP_AUDIO_BACKEND=OpenSL" ;;
+    06-media_kit-live)     echo "BENCH_BACKEND=media_kit BENCH_URL=$LIVE" ;;
+    07-fvp-live)           echo "BENCH_BACKEND=fvp BENCH_URL=$LIVE" ;;
+    08-media_kit-noaudio)  echo "BENCH_BACKEND=media_kit BENCH_URL=$CLIP_NOAUDIO" ;;
+    09-fvp-opensl)         echo "BENCH_BACKEND=fvp BENCH_URL=$CLIP FVP_AUDIO_BACKEND=OpenSL" ;;
     *) return 1 ;;
   esac
 }
 
-ALL_VARIANTS=(01-media_kit-baseline 02-fvp-default 03-fvp-copy 04-fvp-audiotrack 05-fvp-noaudio)
-EXTRA_VARIANTS=(06-media_kit-noaudio 07-fvp-opensl)
+ALL_VARIANTS=(01-media_kit-baseline 02-fvp-default 03-fvp-copy 04-fvp-audiotrack
+              05-fvp-noaudio 06-media_kit-live 07-fvp-live)
+EXTRA_VARIANTS=(08-media_kit-noaudio 09-fvp-opensl)
 
 build_variant() {
   local v="$1" defines flags=()
@@ -68,12 +74,14 @@ build_variant() {
 
 detect_layer() {
   # Prefer a SurfaceView layer for our package; fall back to the app window.
+  # `|| true` everywhere: a no-match grep exits 1 and a bare var=$(pipeline)
+  # would abort the whole script under set -e/pipefail.
   local layer
   layer="$(adb -s "$SERIAL" shell dumpsys SurfaceFlinger --list 2>/dev/null \
-    | tr -d '\r' | grep "$PKG" | grep -i "surfaceview" | head -1)"
+    | tr -d '\r' | grep "$PKG" | grep -i "surfaceview" | head -1 || true)"
   if [[ -z "$layer" ]]; then
     layer="$(adb -s "$SERIAL" shell dumpsys SurfaceFlinger --list 2>/dev/null \
-      | tr -d '\r' | grep "$PKG" | grep "(BLAST)" | head -1)"
+      | tr -d '\r' | grep "$PKG" | grep "(BLAST)" | head -1 || true)"
   fi
   echo "$layer"
 }
@@ -85,17 +93,35 @@ run_variant() {
 
   echo "== $v: installing on $SERIAL"
   adb -s "$SERIAL" install -r "$APKDIR/$v.apk" >/dev/null
-  echo
-  echo ">>> On the TV: open 'FVP Bench'. It autoplays the clip."
-  read -r -p ">>> Press Enter here once the video is PLAYING... "
 
   adb -s "$SERIAL" logcat -c || true
   adb -s "$SERIAL" logcat -v time > "$vdir/logcat.txt" &
   local logcat_pid=$!
 
-  # Let startup + the on-screen badge (hides at 15s) pass before measuring.
-  echo "== $v: waiting 20s (startup + badge)"
-  sleep 20
+  echo "== $v: launching"
+  adb -s "$SERIAL" shell am start -n "$PKG/.MainActivity" >/dev/null
+
+  # Startup + badge (hides at 15s), then verify playback is actually
+  # advancing via the app's own [BENCH_STATS] pos= lines before measuring.
+  echo "== $v: waiting 25s (startup + badge)"
+  sleep 25
+  local pos_lines
+  # Match this variant's label so leftovers from a previous run (if logcat -c
+  # failed) can't fake a "playing" signal.
+  pos_lines="$(grep -o "BENCH_STATS. variant=$v .*pos=[0-9]*" "$vdir/logcat.txt" \
+    | grep -o 'pos=[0-9]*' | tail -2 | tr '\n' ' ' || true)"
+  if [[ -z "$pos_lines" ]]; then
+    echo "!! $v: no BENCH_STATS in logcat — app not running or crashed" >&2
+    tail -5 "$vdir/logcat.txt" >&2 || true
+    kill "$logcat_pid" 2>/dev/null || true
+    exit 1
+  fi
+  set -- $pos_lines
+  if [[ $# -ge 2 && "${1:-}" == "${2:-x}" ]]; then
+    echo "!! $v: position not advancing ($pos_lines) — playback stalled?" >&2
+    echo "   continuing anyway; check $vdir/stats.txt afterwards" >&2
+  fi
+  echo "== $v: playing ($pos_lines)"
 
   local layer
   layer="$(detect_layer)"
@@ -115,12 +141,14 @@ run_variant() {
     sleep 1
   done
 
+  adb -s "$SERIAL" shell am force-stop "$PKG" || true
   kill "$logcat_pid" 2>/dev/null || true
   wait "$logcat_pid" 2>/dev/null || true
 
   # Split the capture into focused files.
   grep -E "\[mpv\]|\[mdk\]" "$vdir/logcat.txt" > "$vdir/player.log" || true
   grep -E "BENCH_META|BENCH_STATS|BENCH_ERROR" "$vdir/logcat.txt" > "$vdir/stats.txt" || true
+  grep "EGL_PROBE" "$vdir/logcat.txt" > "$vdir/egl_probe.txt" || true
 
   {
     echo "variant   : $v"
@@ -132,11 +160,14 @@ run_variant() {
     echo "layer     : $layer"
   } > "$vdir/meta.txt"
 
-  python3 "$ROOT/tools/analyze_pacing.py" "$vdir/pacing_raw.txt" \
-    | tee "$vdir/histogram.txt"
+  # A variant with unusable pacing data shouldn't end the whole batch — the
+  # failure is recorded in histogram.txt and visible in comparison.md.
+  if ! python3 "$ROOT/tools/analyze_pacing.py" "$vdir/pacing_raw.txt" \
+    | tee "$vdir/histogram.txt"; then
+    echo "!! $v: pacing analysis failed (see $vdir)" >&2
+  fi
   echo
   echo "== $v: done -> $vdir"
-  echo ">>> You can stop/close the app on the TV now."
   echo
 }
 
@@ -155,7 +186,7 @@ case "$cmd" in
     [[ ${#variants[@]} -eq 0 ]] && variants=("${ALL_VARIANTS[@]}")
     echo "device: $SERIAL   clips: $URLBASE   sample: ${DURATION}s/variant"
     echo "variants: ${variants[*]}"
-    echo "(make sure tools/serve.sh is running)"
+    echo "(tools/serve.sh must be running; tools/make_live.sh too for *-live variants)"
     echo
     for v in "${variants[@]}"; do run_variant "$v"; done
     python3 "$ROOT/tools/summarize.py" "$OUTDIR" > "$OUTDIR/comparison.md"

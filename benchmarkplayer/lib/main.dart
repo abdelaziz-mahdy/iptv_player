@@ -154,10 +154,15 @@ class _BenchScreenState extends State<BenchScreen> {
         final v = c.value;
         final video = info?.video?.firstOrNull;
         final audio = info?.audio?.firstOrNull;
+        // Buffered media ahead of the playhead — the live-stream starvation
+        // signal (fvp "network speed dies" symptom).
+        final bufEnd = v.buffered.isEmpty ? v.position : v.buffered.last.end;
+        final ahead = (bufEnd - v.position).inMilliseconds;
         // ignore: avoid_print
         print('[BENCH_STATS] variant=$kVariant backend=fvp '
             'pos=${v.position.inMilliseconds}ms '
             'size=${v.size.width.toInt()}x${v.size.height.toInt()} '
+            'buffered-ahead=${ahead}ms buffering=${v.isBuffering} '
             'bitrate=${info?.bitRate} video=${video?.codec.codec} '
             'fps=${video?.codec.frameRate} audio=${audio?.codec.codec}');
       } else {
@@ -165,18 +170,32 @@ class _BenchScreenState extends State<BenchScreen> {
         if (p == null) return;
         final native = p.platform;
         String drops = '?', voDelayed = '?', hwdec = '?', vfFps = '?';
+        String cacheDur = '?', cacheSpeed = '?';
         if (native is NativePlayer) {
-          drops = await native.getProperty('frame-drop-count');
-          voDelayed = await native.getProperty('vo-delayed-frame-count');
-          hwdec = await native.getProperty('hwdec-current');
-          vfFps = await native.getProperty('estimated-vf-fps');
+          Future<String> prop(String name) async {
+            try {
+              return await native.getProperty(name);
+            } catch (_) {
+              return '?';
+            }
+          }
+
+          drops = await prop('frame-drop-count');
+          voDelayed = await prop('vo-delayed-frame-count');
+          hwdec = await prop('hwdec-current');
+          vfFps = await prop('estimated-vf-fps');
+          // Live-stream starvation signals: seconds buffered in the demuxer
+          // and current network read speed (bytes/s).
+          cacheDur = await prop('demuxer-cache-duration');
+          cacheSpeed = await prop('cache-speed');
         }
         final s = p.state;
         // ignore: avoid_print
         print('[BENCH_STATS] variant=$kVariant backend=media_kit '
             'pos=${s.position.inMilliseconds}ms size=${s.width}x${s.height} '
-            'framedrops=$drops vo-delayed=$voDelayed hwdec=$hwdec '
-            'est-vf-fps=$vfFps');
+            'buffering=${s.buffering} framedrops=$drops vo-delayed=$voDelayed '
+            'hwdec=$hwdec est-vf-fps=$vfFps cache-dur=${cacheDur}s '
+            'cache-speed=$cacheSpeed');
       }
     } catch (e) {
       // ignore: avoid_print
