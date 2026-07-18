@@ -26,6 +26,7 @@ encode() { # $1=fps $2=outfile $3=extra-input-args(audio or empty)
       -b:v 6M -maxrate 6M -bufsize 12M -pix_fmt yuv420p \
       -g "$((fps * 2))" \
       -c:a aac -b:a 128k -ar 48000 \
+      -movflags +faststart \
       "$DIR/$out"
   else
     ffmpeg -y -v error \
@@ -34,6 +35,7 @@ encode() { # $1=fps $2=outfile $3=extra-input-args(audio or empty)
       -c:v libx264 -preset veryfast -profile:v high -level 4.1 \
       -b:v 6M -maxrate 6M -bufsize 12M -pix_fmt yuv420p \
       -g "$((fps * 2))" -an \
+      -movflags +faststart \
       "$DIR/$out"
   fi
 }

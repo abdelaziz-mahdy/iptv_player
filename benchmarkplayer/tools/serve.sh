@@ -19,5 +19,6 @@ for f in "$DIR"/*.mp4; do
   echo "  http://$IP:$PORT/$(basename "$f")"
 done
 echo
-cd "$DIR"
-exec python3 -m http.server "$PORT"
+# Not python3 -m http.server: it lacks HTTP Range support, which breaks MP4
+# streaming (demuxer can't reach the moov atom) — see tools/range_server.py.
+exec python3 "$(dirname "$0")/range_server.py" "$PORT" "$DIR"

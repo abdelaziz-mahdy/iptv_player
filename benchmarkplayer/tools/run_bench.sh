@@ -78,8 +78,11 @@ detect_layer() {
   # `|| true` everywhere: a no-match grep exits 1 and a bare var=$(pipeline)
   # would abort the whole script under set -e/pipefail.
   local layer
+  # "Background for SurfaceView[...]" is a solid-color layer that never gets
+  # video frames — exclude it or pacing reads as empty.
   layer="$(adb -s "$SERIAL" shell dumpsys SurfaceFlinger --list 2>/dev/null \
-    | tr -d '\r' | grep "$PKG" | grep -i "surfaceview" | head -1 || true)"
+    | tr -d '\r' | grep "$PKG" | grep -i "surfaceview" \
+    | grep -v "^Background for" | head -1 || true)"
   if [[ -z "$layer" ]]; then
     layer="$(adb -s "$SERIAL" shell dumpsys SurfaceFlinger --list 2>/dev/null \
       | tr -d '\r' | grep "$PKG" | grep "(BLAST)" | head -1 || true)"
