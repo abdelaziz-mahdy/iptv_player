@@ -5,6 +5,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../../core/debug_flags.dart';
+import '../../core/logging/app_logger.dart';
 import 'video_controller.dart';
 
 /// [PlayerController] backed by **media_kit** (real libmpv `vo_gpu` renderer).
@@ -49,6 +50,9 @@ class MediaKitPlayerController implements PlayerController {
         (l) => debugPrint('[mpv] [${l.prefix}] ${l.level}: ${l.text}'),
       ));
     }
+    _subs.add(_player.stream.error.listen(
+      (e) => appLog.error('mpv error: $e (url=${scrubUrl(url)})'),
+    ));
     _subs.add(_player.stream.playing.listen((_) => _emit()));
     _subs.add(_player.stream.position.listen((_) => _emit()));
     _subs.add(_player.stream.duration.listen((d) {

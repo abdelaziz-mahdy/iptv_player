@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../../../data/models/models.dart';
 import '../../../data/repositories/repositories.dart';
 import '../../grid/cubit/grid_cubit.dart' show GridEntry;
@@ -109,11 +110,20 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     });
   }
 
+  /// Unresolvable favorites already logged this session (avoid re-logging on
+  /// every stream emission).
+  final Set<String> _loggedMissing = {};
+
   void _rebuild() {
     final entries = <GridEntry>[];
     for (final fav in _favorites) {
       final entry = _resolve(fav);
-      if (entry != null) entries.add(entry);
+      if (entry != null) {
+        entries.add(entry);
+      } else if (_loggedMissing.add(fav.itemKey)) {
+        appLog.warning(
+            'favorites: ${fav.itemKey} title="${fav.title}" unresolvable — hidden');
+      }
     }
     emit(state.copyWith(loading: false, entries: entries));
   }
@@ -169,6 +179,8 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 
   void _repair(Favorite fav, String newItemKey, String title) {
     if (newItemKey == fav.itemKey && title == fav.title) return;
+    appLog.info(
+        'favorites: heal ${fav.itemKey} -> $newItemKey title="$title"');
     unawaited(_content.repairFavorite(
       oldItemKey: fav.itemKey,
       newItemKey: newItemKey,

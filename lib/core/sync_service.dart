@@ -1,4 +1,5 @@
 import '../data/repositories/repositories.dart';
+import 'logging/app_logger.dart';
 
 /// Refreshes the active playlist's content from its source.
 ///
@@ -16,9 +17,12 @@ class SyncService {
     try {
       final active = await _playlists.active().first;
       if (active == null) return;
+      appLog.info('sync: importing playlist ${active.id} (${active.type.name})');
       await _content.importPlaylist(active);
-    } catch (_) {
+      appLog.info('sync: playlist ${active.id} import finished');
+    } catch (e, st) {
       // Background refresh failure is non-fatal; existing cached content stays.
+      appLog.handle(e, st, 'sync: background import failed');
     }
   }
 }

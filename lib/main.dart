@@ -8,11 +8,19 @@ import 'package:media_kit/media_kit.dart';
 import 'package:path_provider/path_provider.dart';
 import 'app.dart';
 import 'core/debug_flags.dart';
+import 'core/logging/app_logger.dart';
 import 'core/di/injection.dart';
 import 'core/sync_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Persistent file logging (adb-pullable via scripts/pull_logs.sh) — set up
+  // first so early startup problems are captured too.
+  await initAppLogging();
+  FlutterError.onError = (details) {
+    appLog.handle(details.exception, details.stack, 'FlutterError');
+    FlutterError.presentError(details);
+  };
   if (kFvpCaptureBuild) {
     // fvp routes MDK's `log=all` output through package:logging; with no root
     // listener those lines are dropped before reaching logcat. Surface them so

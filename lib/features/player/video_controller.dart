@@ -5,6 +5,8 @@ import 'package:equatable/equatable.dart';
 import 'package:fvp/fvp.dart' as fvp;
 import 'package:video_player/video_player.dart';
 
+import '../../core/logging/app_logger.dart';
+
 /// Immutable snapshot of the player state.
 class PlayerStatus extends Equatable {
   final bool isPlaying;
@@ -117,8 +119,15 @@ class VideoPlayerControllerAdapter implements PlayerController {
   }
 
   void _onControllerUpdate() {
+    final v = _controller?.value;
+    if (v != null && v.hasError && v.errorDescription != _lastLoggedError) {
+      _lastLoggedError = v.errorDescription;
+      appLog.error('fvp error: ${v.errorDescription}');
+    }
     _emit();
   }
+
+  String? _lastLoggedError;
 
   void _emit() {
     if (_statusCtrl.isClosed) return;

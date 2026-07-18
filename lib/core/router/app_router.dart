@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
+import '../logging/app_logger.dart';
 import '../../features/details/details_screen.dart';
 import '../../features/favorites/favorites_screen.dart';
 import '../../features/grid/cubit/grid_cubit.dart';
@@ -373,6 +374,8 @@ GoRouter buildRouter() {
 /// Channels are marked with `badge == 'LIVE'` and carry their stream URL.
 void _openFavorite(BuildContext c, GridEntry e) {
   if (e.badge == 'LIVE') {
+    appLog.info('open origin=favorites channel:${e.id} title="${e.title}" '
+        'url=${scrubUrl(e.streamUrl ?? '')}');
     c.push(
       '/player',
       extra: PlayerArgs(
@@ -385,10 +388,15 @@ void _openFavorite(BuildContext c, GridEntry e) {
     );
     return;
   }
-  _openGridEntry(c, e);
+  _openGridEntry(c, e, origin: 'favorites');
 }
 
-void _openGridEntry(BuildContext c, GridEntry e) {
+void _openGridEntry(BuildContext c, GridEntry e, {String origin = 'grid'}) {
+  // Which id a screen resolved for a title is the key forensic fact when an
+  // item plays from one surface but not another (duplicate provider copies /
+  // renumbered ids).
+  appLog.info('open origin=$origin ${e.isSeries ? 'series' : 'movie'}:${e.id} '
+      'title="${e.title}"');
   if (e.isSeries) {
     c.push(
       '/details/series',

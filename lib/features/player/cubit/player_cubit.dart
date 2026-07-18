@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../../../data/models/models.dart';
 import '../../../data/repositories/repositories.dart';
 import '../video_controller.dart';
@@ -141,9 +142,18 @@ class PlayerCubit extends Cubit<PlayerUiState> {
       }
     }
 
-    await _controller.initialize(url, startAt: startAt);
+    // The play-attempt log is the forensic record for "this item won't play"
+    // reports: origin is logged by the router, this line has the exact URL.
+    appLog.info('play ${kind.name} $itemKey resume=${startAt?.inSeconds ?? 0}s '
+        'controller=${_controller.runtimeType} url=${scrubUrl(url)}');
 
-    await _controller.play();
+    try {
+      await _controller.initialize(url, startAt: startAt);
+      await _controller.play();
+    } catch (e, st) {
+      appLog.handle(e, st, 'player start failed for $itemKey');
+      rethrow;
+    }
 
     // Record in "recently viewed" for ALL kinds (incl. live, which isn't saved
     // as resumable progress). Fire-and-forget — never block playback start.

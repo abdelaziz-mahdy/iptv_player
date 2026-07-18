@@ -71,6 +71,7 @@ dependencies:
   logging: ^1.3.0
   flutter_android_tv_text_field:
     path: packages/flutter_android_tv_text_field
+  talker_flutter: ^5.1.19
 
 dev_dependencies:
   flutter_test:
