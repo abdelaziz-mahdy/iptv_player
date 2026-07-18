@@ -339,11 +339,13 @@ class _MyListButton extends StatefulWidget {
   final String itemKey;
   final String playlistId;
   final MediaKind kind;
+  final String title;
 
   const _MyListButton({
     required this.itemKey,
     required this.playlistId,
     required this.kind,
+    required this.title,
   });
 
   @override
@@ -380,6 +382,7 @@ class _MyListButtonState extends State<_MyListButton> {
         widget.itemKey,
         widget.playlistId,
         widget.kind,
+        title: widget.title,
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -544,6 +547,7 @@ class _MovieDetailBody extends StatelessWidget {
             itemKey: 'movie:${movie.id}',
             playlistId: movie.playlistId,
             kind: MediaKind.movie,
+            title: movie.title,
           ),
         ],
         // Providers expose movie plots only via a per-item request that isn't
@@ -605,6 +609,7 @@ class _SeriesDetailBody extends StatelessWidget {
                 itemKey: 'episode:${series.id}',
                 playlistId: series.playlistId,
                 kind: MediaKind.episode,
+                title: series.title,
               ),
             ],
             synopsis: state.description?.isNotEmpty == true

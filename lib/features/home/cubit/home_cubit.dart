@@ -129,7 +129,8 @@ class HomeCubit extends Cubit<HomeState> {
   /// Keyed as `movie:<id>` with [MediaKind.movie].
   Future<void> toggleFavoriteMovie(VodItem movie) async {
     final pid = _playlistId ?? 'p1';
-    await _content.toggleFavorite('movie:${movie.id}', pid, MediaKind.movie);
+    await _content.toggleFavorite('movie:${movie.id}', pid, MediaKind.movie,
+        title: movie.title);
   }
 
   /// Toggles favorite for a series item.
@@ -137,7 +138,8 @@ class HomeCubit extends Cubit<HomeState> {
   /// used in the details screen.
   Future<void> toggleFavoriteSeries(Series series) async {
     final pid = _playlistId ?? 'p1';
-    await _content.toggleFavorite('episode:${series.id}', pid, MediaKind.episode);
+    await _content.toggleFavorite('episode:${series.id}', pid, MediaKind.episode,
+        title: series.title);
   }
 
   @override

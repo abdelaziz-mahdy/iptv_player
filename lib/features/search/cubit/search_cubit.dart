@@ -105,7 +105,7 @@ class SearchCubit extends Cubit<SearchState> {
     final isSeries = entry.kind == SearchEntryKind.series;
     final itemKey = isSeries ? 'episode:${entry.id}' : 'movie:${entry.id}';
     final mediaKind = isSeries ? MediaKind.episode : MediaKind.movie;
-    await _content.toggleFavorite(itemKey, pid, mediaKind);
+    await _content.toggleFavorite(itemKey, pid, mediaKind, title: entry.title);
   }
 
   @override

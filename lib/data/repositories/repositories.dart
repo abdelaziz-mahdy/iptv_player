@@ -31,7 +31,20 @@ abstract class ContentRepository {
   /// or when credentials are unavailable, returns an empty [SeriesDetail].
   Future<Result<SeriesDetail>> loadSeriesDetail(Series series);
   Stream<List<Favorite>> favorites(String playlistId);
-  Future<void> toggleFavorite(String itemKey, String playlistId, MediaKind kind);
+
+  /// [title] is the display name at add-time — stored with the favorite so it
+  /// can survive provider stream-id renumbering (see [repairFavorite]).
+  Future<void> toggleFavorite(String itemKey, String playlistId, MediaKind kind,
+      {String title = ''});
+
+  /// Self-heal for a favorite whose provider id changed: moves the row at
+  /// [oldItemKey] to [newItemKey] (keeping playlist/kind/addedAt) and updates
+  /// the stored [title]. With [oldItemKey] == [newItemKey] it only backfills
+  /// the title. No-op when the old row no longer exists.
+  Future<void> repairFavorite(
+      {required String oldItemKey,
+      required String newItemKey,
+      required String title});
 
   /// Returns the provider's category list for [playlistId] and [kind].
   ///

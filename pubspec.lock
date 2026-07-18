@@ -496,8 +496,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "5a0f4fc3207ef053eaf35f0a96a673a19e69acf2"
-      resolved-ref: "5a0f4fc3207ef053eaf35f0a96a673a19e69acf2"
+      ref: "11f00d2ea5601fe1ff96f849bc7b9639c4271f30"
+      resolved-ref: "11f00d2ea5601fe1ff96f849bc7b9639c4271f30"
       url: "https://github.com/abdelaziz-mahdy/fvp.git"
     source: git
     version: "0.37.3"

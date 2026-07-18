@@ -114,6 +114,14 @@ class Favorites extends Table {
   TextColumn get kind => text()();
   DateTimeColumn get addedAt => dateTime()();
 
+  /// Display-title snapshot taken when the favorite was added. Xtream stream
+  /// ids embedded in [itemKey] are NOT stable across provider re-imports
+  /// (providers renumber/reuse them), so resolution validates the id match
+  /// against this title and falls back to a title lookup (self-healing the
+  /// key) when they disagree. Empty on legacy rows; backfilled on first
+  /// successful resolve.
+  TextColumn get title => text().withDefault(const Constant(''))();
+
   @override
   Set<Column> get primaryKey => {itemKey};
 }

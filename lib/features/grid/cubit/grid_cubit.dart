@@ -209,7 +209,7 @@ class GridCubit extends Cubit<GridState> {
     final pid = _playlistId ?? 'p1';
     final itemKey = entry.isSeries ? 'episode:${entry.id}' : 'movie:${entry.id}';
     final mediaKind = entry.isSeries ? MediaKind.episode : MediaKind.movie;
-    await _content.toggleFavorite(itemKey, pid, mediaKind);
+    await _content.toggleFavorite(itemKey, pid, mediaKind, title: entry.title);
   }
 
   void _onMovies(List<VodItem> movies) {

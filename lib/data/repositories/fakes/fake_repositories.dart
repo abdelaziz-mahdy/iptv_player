@@ -142,16 +142,38 @@ class FakeContentRepository implements ContentRepository {
   Stream<List<Favorite>> favorites(String playlistId) => _favorites.stream;
 
   @override
-  Future<void> toggleFavorite(String itemKey, String playlistId, MediaKind kind) async {
+  Future<void> toggleFavorite(String itemKey, String playlistId, MediaKind kind,
+      {String title = ''}) async {
     final existing = _favorites.value.where((f) => f.itemKey == itemKey).toList();
     if (existing.isEmpty) {
       _favorites.value = [
         ..._favorites.value,
-        Favorite(itemKey: itemKey, playlistId: playlistId, kind: kind, addedAt: DateTime.utc(2026)),
+        Favorite(
+            itemKey: itemKey,
+            playlistId: playlistId,
+            kind: kind,
+            addedAt: DateTime.utc(2026),
+            title: title),
       ];
     } else {
       _favorites.value = _favorites.value.where((f) => f.itemKey != itemKey).toList();
     }
+  }
+
+  @override
+  Future<void> repairFavorite(
+      {required String oldItemKey,
+      required String newItemKey,
+      required String title}) async {
+    final old = _favorites.value
+        .cast<Favorite?>()
+        .firstWhere((f) => f?.itemKey == oldItemKey, orElse: () => null);
+    if (old == null) return;
+    _favorites.value = [
+      for (final f in _favorites.value)
+        if (f.itemKey != oldItemKey && f.itemKey != newItemKey) f,
+      old.copyWith(itemKey: newItemKey, title: title),
+    ];
   }
 
   @override

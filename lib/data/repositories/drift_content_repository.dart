@@ -96,6 +96,7 @@ class DriftContentRepository implements ContentRepository {
         playlistId: r.playlistId,
         kind: MediaKind.values.byName(r.kind),
         addedAt: r.addedAt,
+        title: r.title,
       );
 
   // ---------------------------------------------------------------------------
@@ -280,8 +281,8 @@ class DriftContentRepository implements ContentRepository {
       _db.watchFavorites(playlistId).map((rows) => rows.map(_favoriteFromRow).toList());
 
   @override
-  Future<void> toggleFavorite(
-      String itemKey, String playlistId, MediaKind kind) async {
+  Future<void> toggleFavorite(String itemKey, String playlistId, MediaKind kind,
+      {String title = ''}) async {
     final exists = await _db.isFavorite(itemKey);
     if (exists) {
       await _db.removeFavorite(itemKey);
@@ -292,8 +293,30 @@ class DriftContentRepository implements ContentRepository {
           playlistId: playlistId,
           kind: kind.name,
           addedAt: DateTime.now(),
+          title: Value(title),
         ),
       );
+    }
+  }
+
+  @override
+  Future<void> repairFavorite(
+      {required String oldItemKey,
+      required String newItemKey,
+      required String title}) async {
+    final row = await _db.getFavorite(oldItemKey);
+    if (row == null) return;
+    await _db.addFavorite(
+      FavoritesCompanion.insert(
+        itemKey: newItemKey,
+        playlistId: row.playlistId,
+        kind: row.kind,
+        addedAt: row.addedAt,
+        title: Value(title),
+      ),
+    );
+    if (newItemKey != oldItemKey) {
+      await _db.removeFavorite(oldItemKey);
     }
   }
 

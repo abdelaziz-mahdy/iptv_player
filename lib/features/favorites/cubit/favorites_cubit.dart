@@ -118,6 +118,64 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     emit(state.copyWith(loading: false, entries: entries));
   }
 
+  /// Finds the favorited item among [items].
+  ///
+  /// Provider stream ids (embedded in the favorite's key) are NOT stable
+  /// across re-imports — providers renumber and reuse them — so a bare id
+  /// match can silently point at the wrong content. The stored title snapshot
+  /// disambiguates:
+  ///  - id matches and title agrees (or legacy row without one) → trust it;
+  ///  - id matches but the title now belongs to a different item → the id was
+  ///    reassigned; follow the title and rewrite the favorite's key;
+  ///  - id gone → find by title and rewrite the key;
+  ///  - id matches, title differs, and no item carries the stored title → the
+  ///    provider renamed it; keep the id and adopt the new title.
+  /// Rewrites are fire-and-forget: the favorites stream re-emits the healed
+  /// row, which then resolves cleanly with no further writes.
+  T? _pick<T>(
+    Favorite fav,
+    String id,
+    String keyPrefix,
+    List<T> items,
+    String Function(T) idOf,
+    String Function(T) titleOf,
+  ) {
+    T? firstWhere(bool Function(T) test) =>
+        items.cast<T?>().firstWhere((i) => i != null && test(i), orElse: () => null);
+
+    final byId = firstWhere((i) => idOf(i) == id);
+    if (byId != null) {
+      if (fav.title.isEmpty) {
+        _repair(fav, '$keyPrefix:${idOf(byId)}', titleOf(byId));
+        return byId;
+      }
+      if (titleOf(byId) == fav.title) return byId;
+      final byTitle = firstWhere((i) => titleOf(i) == fav.title);
+      if (byTitle != null) {
+        _repair(fav, '$keyPrefix:${idOf(byTitle)}', fav.title);
+        return byTitle;
+      }
+      _repair(fav, '$keyPrefix:${idOf(byId)}', titleOf(byId));
+      return byId;
+    }
+    if (fav.title.isEmpty) return null;
+    final byTitle = firstWhere((i) => titleOf(i) == fav.title);
+    if (byTitle != null) {
+      _repair(fav, '$keyPrefix:${idOf(byTitle)}', fav.title);
+      return byTitle;
+    }
+    return null;
+  }
+
+  void _repair(Favorite fav, String newItemKey, String title) {
+    if (newItemKey == fav.itemKey && title == fav.title) return;
+    unawaited(_content.repairFavorite(
+      oldItemKey: fav.itemKey,
+      newItemKey: newItemKey,
+      title: title,
+    ));
+  }
+
   GridEntry? _resolve(Favorite fav) {
     final parts = fav.itemKey.split(':');
     if (parts.length < 2) return null;
@@ -127,7 +185,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     switch (kindStr) {
       case 'movie':
         final movie =
-            _movies.cast<VodItem?>().firstWhere((m) => m?.id == id, orElse: () => null);
+            _pick(fav, id, kindStr, _movies, (m) => m.id, (m) => m.title);
         if (movie == null) return null;
         return GridEntry(
           id: movie.id,
@@ -142,7 +200,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
       case 'series':
       case 'episode':
         final show =
-            _series.cast<Series?>().firstWhere((s) => s?.id == id, orElse: () => null);
+            _pick(fav, id, kindStr, _series, (s) => s.id, (s) => s.title);
         if (show == null) return null;
         return GridEntry(
           id: show.id,
@@ -154,9 +212,8 @@ class FavoritesCubit extends Cubit<FavoritesState> {
         );
 
       case 'channel':
-        final ch = _channels
-            .cast<Channel?>()
-            .firstWhere((c) => c?.id == id, orElse: () => null);
+        final ch =
+            _pick(fav, id, kindStr, _channels, (c) => c.id, (c) => c.name);
         if (ch == null) return null;
         return GridEntry(
           id: ch.id,

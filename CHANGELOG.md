@@ -31,6 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the mute button stays.
 
 ### Fixed
+- **Favorites now survive provider catalog updates** — when your provider
+  re-numbers its content, a favorite no longer plays the wrong item or breaks;
+  it finds the same title again and quietly fixes itself. Favorites for
+  content the provider removed are hidden (and come back if the content does).
 - The **Play button on series details now continues where you left off** —
   it picks the episode you're part-way through (or the next unwatched one)
   instead of always starting from the first episode.
