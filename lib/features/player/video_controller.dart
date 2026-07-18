@@ -82,9 +82,17 @@ class VideoPlayerControllerAdapter implements PlayerController {
       // corrupts video — MainActivity sets EGL_SDR_DEPTH=8 (fvp#374) — and
       // the render size is capped near UI resolution: GL-rendering 4K RGBA
       // forces SurfaceFlinger into 4K GPU composition (~5 fps measured).
+      // OpenSL audio: MDK slaves video pacing to the audio backend's position
+      // clock, and this TV's AAudio reports positions too coarsely — frames
+      // burst at ~10 presented fps. OpenSL paces frame-perfectly (24.2 fps,
+      // zero droughts, benchmarked; fvp#384).
       fvp.registerWith(
           options: Platform.isAndroid
-              ? {'maxWidth': 1920, 'maxHeight': 1088}
+              ? {
+                  'maxWidth': 1920,
+                  'maxHeight': 1088,
+                  'audioBackends': ['OpenSL'],
+                }
               : null);
       _fvpRegistered = true;
     }

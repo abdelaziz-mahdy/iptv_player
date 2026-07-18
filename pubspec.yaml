@@ -138,14 +138,15 @@ flutter:
           weight: 700
 
 
-# fvp fork with SurfaceView platform view (VideoViewType.platformView):
-# doubles 4K presentation fps on the TV (21.5 vs 10.9 presented fps at
-# capped 1080p - video gets its own display layer instead of passing
-# through Flutter's compositor) and is the prerequisite for tunneled
-# true-4K playback. Drop when upstream fvp ships platform view support
-# (PR open on wang-bin/fvp).
+# fvp fork branch app/fvp-fixes = SurfaceView platform view (upstream PR
+# wang-bin/fvp#379: own display layer, prerequisite for tunneled true-4K)
+# + registerWith 'audioBackends' option (PR #383: MDK's default AAudio clock
+# on this TV is too coarse and avsync bursts frames — OpenSL is frame-perfect,
+# see issue #384) + 8-bit EGLConfig fallback on drivers whose rgb10a2 configs
+# are non-conformant (PR #385, fixes #374 without the env var). Drop pieces
+# as upstream merges them.
 dependency_overrides:
   fvp:
     git:
       url: https://github.com/abdelaziz-mahdy/fvp.git
-      ref: 5a0f4fc3207ef053eaf35f0a96a673a19e69acf2
+      ref: 11f00d2ea5601fe1ff96f849bc7b9639c4271f30
