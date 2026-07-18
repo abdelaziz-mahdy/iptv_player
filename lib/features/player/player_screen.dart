@@ -96,6 +96,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   // first press only reveals the controls.
   final FocusNode _rootFocus = FocusNode(debugLabel: 'player-root');
   final FocusNode _sliderFocus = FocusNode(debugLabel: 'player-seek-slider');
+  bool _sliderFocused = false;
   // Focus restored to the play/pause button each time controls are revealed.
   final FocusNode _playPauseFocus = FocusNode(debugLabel: 'player-playpause');
 
@@ -122,21 +123,42 @@ class _PlayerScreenState extends State<PlayerScreen>
   bool _handleHardwareKey(KeyEvent event) {
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
       _cubit?.revealControls();
-      // Slider maps ALL arrow keys (incl. up/down) to seek adjustments, so
-      // focus can never escape it vertically ("down behaves like left").
-      // Intercept vertical arrows here — this handler runs before focus
-      // dispatch — and turn them into focus moves instead.
-      final key = event.logicalKey;
-      if (_sliderFocus.hasPrimaryFocus &&
-          (key == LogicalKeyboardKey.arrowDown ||
-              key == LogicalKeyboardKey.arrowUp)) {
-        _sliderFocus.focusInDirection(key == LogicalKeyboardKey.arrowDown
-            ? TraversalDirection.down
-            : TraversalDirection.up);
-        return true; // consumed: never let the Slider treat it as a seek
-      }
     }
     return false;
+  }
+
+  /// D-pad handling for the seek bar. The Material [Slider] maps ALL arrow
+  /// keys (incl. up/down) to value adjustments via its own internal
+  /// Shortcuts, which always win over any outer handler — a "consumed"
+  /// vertical arrow still nudged the value 10s before focus moved. So the
+  /// slider itself is excluded from focus and this wrapper node owns the
+  /// keys: left/right skip ±10s (RTL-aware, like the slider was), up/down
+  /// are pure focus moves.
+  KeyEventResult _onSliderKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
+    final cubit = _cubit;
+    if (cubit == null) return KeyEventResult.ignored;
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.arrowLeft) {
+      rtl ? cubit.skipForward() : cubit.skipBackward();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowRight) {
+      rtl ? cubit.skipBackward() : cubit.skipForward();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowDown) {
+      node.focusInDirection(TraversalDirection.down);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowUp) {
+      node.focusInDirection(TraversalDirection.up);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   /// Wraps an overlay so it fades out and becomes non-interactive /
@@ -427,35 +449,56 @@ class _PlayerScreenState extends State<PlayerScreen>
                                 style: const TextStyle(color: Colors.white, fontSize: 12),
                               ),
                               Expanded(
-                                // Divisions make each D-pad step exactly 10s
-                                // (instead of a large fraction of the whole
-                                // video); the tick marks they'd draw are hidden.
-                                child: SliderTheme(
-                                  data: SliderTheme.of(context).copyWith(
-                                    activeTickMarkColor: Colors.transparent,
-                                    inactiveTickMarkColor: Colors.transparent,
-                                  ),
-                                  child: Slider(
-                                    focusNode: _sliderFocus,
-                                    value: state.duration.inMilliseconds > 0
-                                        ? state.position.inMilliseconds
-                                            .clamp(0, state.duration.inMilliseconds)
-                                            .toDouble()
-                                        : 0.0,
-                                    min: 0,
-                                    max: state.duration.inMilliseconds > 0
-                                        ? state.duration.inMilliseconds.toDouble()
-                                        : 1.0,
-                                    divisions: state.duration.inSeconds >= 10
-                                        ? state.duration.inSeconds ~/ 10
-                                        : null,
-                                    onChanged: (value) {
-                                      context.read<PlayerCubit>().seekTo(
-                                            Duration(milliseconds: value.toInt()),
-                                          );
-                                    },
-                                    activeColor: context.palette.accent,
-                                    inactiveColor: Colors.white.withValues(alpha: 0.3),
+                                // The D-pad focus stop is this wrapper, not
+                                // the Slider: see _onSliderKey. Touch/mouse
+                                // still drag the slider directly; divisions
+                                // snap drags to 10s (tick marks hidden).
+                                child: Focus(
+                                  focusNode: _sliderFocus,
+                                  onKeyEvent: _onSliderKey,
+                                  onFocusChange: (f) =>
+                                      setState(() => _sliderFocused = f),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 120),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: _sliderFocused
+                                            ? context.palette.fg
+                                            : Colors.transparent,
+                                        width: 3,
+                                      ),
+                                    ),
+                                    child: ExcludeFocus(
+                                      child: SliderTheme(
+                                        data: SliderTheme.of(context).copyWith(
+                                          activeTickMarkColor: Colors.transparent,
+                                          inactiveTickMarkColor: Colors.transparent,
+                                        ),
+                                        child: Slider(
+                                          value: state.duration.inMilliseconds > 0
+                                              ? state.position.inMilliseconds
+                                                  .clamp(0, state.duration.inMilliseconds)
+                                                  .toDouble()
+                                              : 0.0,
+                                          min: 0,
+                                          max: state.duration.inMilliseconds > 0
+                                              ? state.duration.inMilliseconds.toDouble()
+                                              : 1.0,
+                                          divisions: state.duration.inSeconds >= 10
+                                              ? state.duration.inSeconds ~/ 10
+                                              : null,
+                                          onChanged: (value) {
+                                            context.read<PlayerCubit>().seekTo(
+                                                  Duration(milliseconds: value.toInt()),
+                                                );
+                                          },
+                                          activeColor: context.palette.accent,
+                                          inactiveColor:
+                                              Colors.white.withValues(alpha: 0.3),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),

@@ -132,4 +132,64 @@ void main() {
       expect(find.byType(Slider), findsAtLeast(1));
     });
   });
+
+  group('seek bar D-pad keys', () {
+    // The Material Slider's internal shortcuts treat EVERY arrow key as a
+    // value adjustment (down nudged the position -10s before focus moved).
+    // The seek bar's focus stop is now a wrapper node that owns the keys:
+    // left/right skip ±10s, up/down are pure focus moves.
+    testWidgets('down leaves the position untouched and moves focus away',
+        (tester) async {
+      final controller = FakePlayerController();
+      await tester.pumpWidget(MaterialApp(
+        theme: buildTheme(
+            palette: AppPalette.standard, hyperlegible: false, rtl: false),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: BlocProvider(
+          create: (_) => AccessibilityCubit(),
+          child: PlayerScreen(
+            controller: controller,
+            itemKey: 'movie:m1',
+            url: 'http://x',
+            title: 'Dune',
+            onBack: () {},
+            playbackRepository: FakePlaybackRepository(),
+            kind: MediaKind.movie,
+            playlistId: 'p1',
+          ),
+        ),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final sliderFocus = tester
+          .widget<Focus>(find.byWidgetPredicate((w) =>
+              w is Focus && w.focusNode?.debugLabel == 'player-seek-slider'))
+          .focusNode!;
+      sliderFocus.requestFocus();
+      await tester.pump();
+      expect(sliderFocus.hasPrimaryFocus, isTrue);
+
+      // Right skips forward 10s (so a regression to -10s is observable).
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      expect(controller.position, const Duration(seconds: 10));
+
+      // Down must ONLY move focus — the position must not change.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(controller.position, const Duration(seconds: 10),
+          reason: 'Down on the seek bar must not seek');
+      expect(sliderFocus.hasPrimaryFocus, isFalse,
+          reason: 'Down on the seek bar must move focus away');
+
+      // And left on the (re-focused) bar seeks back 10s.
+      sliderFocus.requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      expect(controller.position, Duration.zero);
+    });
+  });
 }

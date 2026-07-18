@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   have one — they now say so honestly, in English and Arabic.
 - On the player, **D-pad focus no longer gets stuck in the seek bar** —
   up/down move between controls; left/right still seek 10 seconds.
+- Pressing **down on the seek bar no longer jumps the video back 10 seconds**
+  on its way out — it now only moves to the controls below.
 - Opening a movie or episode from **Continue Watching now resumes at the right
   position** on Android (it used to restart from the beginning). Resume is now
   applied when the stream loads, making it reliable on slow connections too.
