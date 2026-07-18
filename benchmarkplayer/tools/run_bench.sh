@@ -47,13 +47,14 @@ variant_defines() {
     07-fvp-live)           echo "BENCH_BACKEND=fvp BENCH_URL=$LIVE" ;;
     08-media_kit-noaudio)  echo "BENCH_BACKEND=media_kit BENCH_URL=$CLIP_NOAUDIO" ;;
     09-fvp-opensl)         echo "BENCH_BACKEND=fvp BENCH_URL=$CLIP FVP_AUDIO_BACKEND=OpenSL" ;;
+    10-fvp-live-opensl)    echo "BENCH_BACKEND=fvp BENCH_URL=$LIVE FVP_AUDIO_BACKEND=OpenSL" ;;
     *) return 1 ;;
   esac
 }
 
 ALL_VARIANTS=(01-media_kit-baseline 02-fvp-default 03-fvp-copy 04-fvp-audiotrack
               05-fvp-noaudio 06-media_kit-live 07-fvp-live)
-EXTRA_VARIANTS=(08-media_kit-noaudio 09-fvp-opensl)
+EXTRA_VARIANTS=(08-media_kit-noaudio 09-fvp-opensl 10-fvp-live-opensl)
 
 build_variant() {
   local v="$1" defines flags=()
@@ -77,15 +78,20 @@ detect_layer() {
   # Prefer a SurfaceView layer for our package; fall back to the app window.
   # `|| true` everywhere: a no-match grep exits 1 and a bare var=$(pipeline)
   # would abort the whole script under set -e/pipefail.
-  local layer
-  # "Background for SurfaceView[...]" is a solid-color layer that never gets
-  # video frames — exclude it or pacing reads as empty.
-  layer="$(adb -s "$SERIAL" shell dumpsys SurfaceFlinger --list 2>/dev/null \
-    | tr -d '\r' | grep "$PKG" | grep -i "surfaceview" \
+  local layers layer
+  layers="$(adb -s "$SERIAL" shell dumpsys SurfaceFlinger --list 2>/dev/null \
+    | tr -d '\r' | grep "$PKG" || true)"
+  # Frames land on the SurfaceView's (BLAST) child; the bare
+  # "SurfaceView[...]#0" container and "Background for SurfaceView[...]"
+  # layers never receive buffers and dump empty latency data.
+  layer="$(printf '%s\n' "$layers" | grep -i "surfaceview" | grep "(BLAST)" \
     | grep -v "^Background for" | head -1 || true)"
   if [[ -z "$layer" ]]; then
-    layer="$(adb -s "$SERIAL" shell dumpsys SurfaceFlinger --list 2>/dev/null \
-      | tr -d '\r' | grep "$PKG" | grep "(BLAST)" | head -1 || true)"
+    layer="$(printf '%s\n' "$layers" | grep -i "surfaceview" \
+      | grep -v "^Background for" | head -1 || true)"
+  fi
+  if [[ -z "$layer" ]]; then
+    layer="$(printf '%s\n' "$layers" | grep "(BLAST)" | head -1 || true)"
   fi
   echo "$layer"
 }
