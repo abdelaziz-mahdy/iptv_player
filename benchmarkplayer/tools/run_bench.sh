@@ -13,13 +13,13 @@
 # Env overrides:
 #   SERIAL   adb device            (default 192.168.2.17:5555)
 #   URLBASE  clip server base URL  (default http://<mac-ip>:8000)
-#   DURATION sampling seconds      (default 300)
+#   DURATION sampling seconds      (default 60)
 #   OUTDIR   results dir           (default bench-results/<yyyy-mm-dd>)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SERIAL="${SERIAL:-192.168.2.17:5555}"
-DURATION="${DURATION:-300}"
+DURATION="${DURATION:-60}"
 OUTDIR="${OUTDIR:-$ROOT/bench-results/$(date +%F)}"
 APKDIR="$ROOT/bench-results/apks"
 PKG=com.iptvplayer.benchmark_player
@@ -105,9 +105,9 @@ run_variant() {
   echo "== $v: launching"
   adb -s "$SERIAL" shell am start -n "$PKG/.MainActivity" >/dev/null
 
-  # Startup + badge (hides at 15s), then verify playback is actually
-  # advancing via the app's own [BENCH_STATS] pos= lines before measuring.
-  echo "== $v: waiting 25s (startup + badge)"
+  # Let startup settle, then verify playback is actually advancing via the
+  # app's own [BENCH_STATS] pos= lines before measuring.
+  echo "== $v: waiting 25s (startup)"
   sleep 25
   local pos_lines
   # Match this variant's label so leftovers from a previous run (if logcat -c

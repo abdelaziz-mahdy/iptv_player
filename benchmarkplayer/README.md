@@ -5,13 +5,15 @@ frames badly on the TCL TV (bursts + 80–183 ms droughts) while
 media_kit/mpv is smooth**, and **why does fvp starve on live streams** —
 same hardware, same decoder.
 
-The app has no UI: dart-defines pick the backend, the clip URL, and the knob
-under test, and it boots straight into fullscreen autoplay. A variant badge
-shows for 15 s, then the UI never repaints again so SurfaceFlinger presents
-track only the video. Logs are always on (mpv -v / full MDK), and a
-`[BENCH_STATS]` line every 5 s reports position, codec, hwdec, drop
-counters, and buffer state (`buffered-ahead` / `cache-dur` / `cache-speed`
-— the live-starvation signals).
+The app has no controls: dart-defines pick the backend, the clip URL, and
+the knob under test, and it boots straight into fullscreen autoplay. A
+persistent color-coded HUD (green PLAYING / orange loading-buffering / red
+stalled-error, with position and buffer state) shows the run is alive; it
+refreshes at most once per 5 s stats tick, so the pacing measurement stays
+clean. Logs are always on (mpv -v / full MDK), and a `[BENCH_STATS]` line
+every 5 s reports position, codec, hwdec, drop counters, and buffer state
+(`buffered-ahead` / `cache-dur` / `cache-speed` — the live-starvation
+signals).
 
 ## One-time setup
 
@@ -30,7 +32,7 @@ tools/run_bench.sh run       # terminal 3: the whole matrix
 Per variant, `run_bench.sh` builds the APK (cached in `bench-results/apks/`,
 auto-invalidated if the server URL changes), installs it, **launches the app
 itself** (`am start`), confirms playback is advancing from the app's own
-stats lines, captures 5 minutes of logcat + SurfaceFlinger present
+stats lines, captures DURATION (default 60s) of logcat + SurfaceFlinger present
 timestamps, force-stops the app, and writes
 `bench-results/<date>/<variant>/`: `histogram.txt`, `pacing_raw.txt` + `.csv`,
 `player.log`, `stats.txt`, `egl_probe.txt`, `meta.txt`, `logcat.txt`.
@@ -90,7 +92,6 @@ corrupts), caveat filtering is not the discriminator. Every variant's
 | `BENCH_VARIANT` | text | label in badge + `[BENCH_STATS]` lines |
 | `FVP_DECODER_COPY` | `true` | MediaCodec copy-back mode |
 | `FVP_AUDIO_BACKEND` | `AudioTrack` / `OpenSL` | force mdk audio renderer |
-| `BENCH_BADGE_SECONDS` | int (15) | badge auto-hide; 0 = keep |
 
 Notes: `EGL_SDR_DEPTH=8` is set in MainActivity (fvp#374 corruption
 workaround, inert for media_kit). Impeller is disabled (Skia), matching the
