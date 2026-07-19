@@ -127,8 +127,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "bench/audio-backends-option"
-      resolved-ref: "25565f6f75a7454d00a100fad0ab58ad3b0b9bba"
+      ref: "9fe4b9a573b7c0ff426d1e88d2c2b06e04e00469"
+      resolved-ref: "9fe4b9a573b7c0ff426d1e88d2c2b06e04e00469"
       url: "https://github.com/abdelaziz-mahdy/fvp.git"
     source: git
     version: "0.37.3"

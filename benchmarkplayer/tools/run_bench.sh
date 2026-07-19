@@ -31,6 +31,10 @@ fi
 
 CLIP="$URLBASE/bench-24fps.mp4"
 CLIP_NOAUDIO="$URLBASE/bench-24fps-noaudio.mp4"
+CLIP_1080P60="$URLBASE/bench-1080p60.mp4"
+CLIP_4K24="$URLBASE/bench-4k24-hevc.mp4"
+CLIP_4K24_H264="$URLBASE/bench-4k24-h264.mp4"
+CLIP_4K60="$URLBASE/bench-4k60-hevc.mp4"
 # Local simulated live stream (tools/make_live.sh); export LIVE_URL to use a
 # real provider channel instead (credentials get baked into that apk — keep it local).
 LIVE="${LIVE_URL:-$URLBASE/live/stream.m3u8}"
@@ -48,13 +52,49 @@ variant_defines() {
     08-media_kit-noaudio)  echo "BENCH_BACKEND=media_kit BENCH_URL=$CLIP_NOAUDIO" ;;
     09-fvp-opensl)         echo "BENCH_BACKEND=fvp BENCH_URL=$CLIP FVP_AUDIO_BACKEND=OpenSL" ;;
     10-fvp-live-opensl)    echo "BENCH_BACKEND=fvp BENCH_URL=$LIVE FVP_AUDIO_BACKEND=OpenSL" ;;
+    # -- render-path matrix (fvp PR #379 discussion): texture (old view) vs
+    # platform view + GL (new view) vs platform view + MediaCodec-to-surface
+    # (wang-bin's suggestion). All fvp runs pin OpenSL so the audio clock is
+    # never the variable. pvd-* additionally launches with the direct_surface
+    # extra (see variant_extras) — the dart-defines are the pv ones.
+    [23][0-9]-fvp-tex-*)   echo "BENCH_BACKEND=fvp BENCH_URL=$(clip_for "$1") FVP_AUDIO_BACKEND=OpenSL" ;;
+    [23][0-9]-fvp-pvd-*|[23][0-9]-fvp-pv-*)
+                           echo "BENCH_BACKEND=fvp BENCH_URL=$(clip_for "$1") BENCH_VIEW=platform FVP_AUDIO_BACKEND=OpenSL" ;;
+    3[0-9]-media_kit-*)    echo "BENCH_BACKEND=media_kit BENCH_URL=$(clip_for "$1")" ;;
     *) return 1 ;;
+  esac
+}
+
+# Clip for a matrix variant, from its trailing -<clip> token.
+clip_for() {
+  case "${1##*-}" in
+    1080p24) echo "$CLIP" ;;
+    1080p60) echo "$CLIP_1080P60" ;;
+    4k24)    echo "$CLIP_4K24" ;;
+    4k24h264) echo "$CLIP_4K24_H264" ;;
+    4k60)    echo "$CLIP_4K60" ;;
+    *) echo "$CLIP" ;;
+  esac
+}
+
+# Extra `am start` args per variant (runtime switches that don't need a rebuild).
+variant_extras() {
+  case "$1" in
+    *-pvd-*) echo "--ez direct_surface true" ;;
+    *) echo "" ;;
   esac
 }
 
 ALL_VARIANTS=(01-media_kit-baseline 02-fvp-default 03-fvp-copy 04-fvp-audiotrack
               05-fvp-noaudio 06-media_kit-live 07-fvp-live)
 EXTRA_VARIANTS=(08-media_kit-noaudio 09-fvp-opensl 10-fvp-live-opensl)
+# The render-path × load matrix. mpv references show the device ceiling per
+# clip (mpv 1080p24 = variant 01).
+MATRIX_VARIANTS=(20-fvp-tex-1080p24 21-fvp-pv-1080p24 22-fvp-pvd-1080p24
+                 23-fvp-tex-1080p60 24-fvp-pv-1080p60 25-fvp-pvd-1080p60
+                 26-fvp-tex-4k24    27-fvp-pv-4k24    28-fvp-pvd-4k24
+                 29-fvp-tex-4k60    30-fvp-pv-4k60    31-fvp-pvd-4k60
+                 32-media_kit-1080p60 33-media_kit-4k24 34-media_kit-4k60)
 
 build_variant() {
   local v="$1" defines flags=()
@@ -78,26 +118,51 @@ detect_layer() {
   # Prefer a SurfaceView layer for our package; fall back to the app window.
   # `|| true` everywhere: a no-match grep exits 1 and a bare var=$(pipeline)
   # would abort the whole script under set -e/pipefail.
-  local layers layer
+  local layers candidates
   layers="$(adb -s "$SERIAL" shell dumpsys SurfaceFlinger --list 2>/dev/null \
-    | tr -d '\r' | grep "$PKG" || true)"
+    | tr -d '\r' | grep "$PKG" | grep -v "^Background for" || true)"
   # Frames land on the SurfaceView's (BLAST) child; the bare
   # "SurfaceView[...]#0" container and "Background for SurfaceView[...]"
   # layers never receive buffers and dump empty latency data.
-  layer="$(printf '%s\n' "$layers" | grep -i "surfaceview" | grep "(BLAST)" \
-    | grep -v "^Background for" | head -1 || true)"
-  if [[ -z "$layer" ]]; then
-    layer="$(printf '%s\n' "$layers" | grep -i "surfaceview" \
-      | grep -v "^Background for" | head -1 || true)"
+  candidates="$(printf '%s\n' "$layers" | grep -i "surfaceview" | grep "(BLAST)" || true)"
+  if [[ -z "$candidates" ]]; then
+    candidates="$(printf '%s\n' "$layers" | grep -i "surfaceview" || true)"
   fi
-  if [[ -z "$layer" ]]; then
-    layer="$(printf '%s\n' "$layers" | grep "(BLAST)" | head -1 || true)"
+  if [[ -z "$candidates" ]]; then
+    candidates="$(printf '%s\n' "$layers" | grep "(BLAST)" || true)"
   fi
-  echo "$layer"
+  local n
+  n="$(printf '%s\n' "$candidates" | grep -c . || true)"
+  if (( n <= 1 )); then
+    printf '%s\n' "$candidates" | head -1
+    return
+  fi
+  # Platform-view runs have TWO SurfaceViews for the package (Flutter's own
+  # output + FvpVideoView) with indistinguishable names. Pick the one whose
+  # present timestamps advance: sample each twice, 2s apart, and keep the
+  # layer with the most new frames (video pushes ~24-60/s; a static UI ~0).
+  local best="" best_count=-1 layer a count
+  while IFS= read -r layer; do
+    [[ -z "$layer" ]] && continue
+    a="$(adb -s "$SERIAL" shell dumpsys SurfaceFlinger --latency "\"$layer\"" \
+      | tr -d '\r' | awk 'NF==3 && $2!=0 && $2!~/922337203685477/ {t=$2} END{print t+0}' || true)"
+    sleep 2
+    count="$(adb -s "$SERIAL" shell dumpsys SurfaceFlinger --latency "\"$layer\"" \
+      | tr -d '\r' \
+      | awk -v last="${a:-0}" 'NF==3 && $2!=0 && $2!~/922337203685477/ && $2+0 > last+0 {c++} END{print c+0}' \
+      || true)"
+    echo "   layer probe: ${count:-0} new frames on: $layer" >&2
+    if (( ${count:-0} > best_count )); then
+      best_count="${count:-0}"
+      best="$layer"
+    fi
+  done <<< "$candidates"
+  printf '%s\n' "$best"
 }
 
 run_variant() {
-  local v="$1" vdir="$OUTDIR/$v"
+  local v="$1" vdir="$OUTDIR/$v" extras
+  extras="$(variant_extras "$v")"
   build_variant "$v"
   mkdir -p "$vdir"
 
@@ -108,8 +173,9 @@ run_variant() {
   adb -s "$SERIAL" logcat -v time > "$vdir/logcat.txt" &
   local logcat_pid=$!
 
-  echo "== $v: launching"
-  adb -s "$SERIAL" shell am start -n "$PKG/.MainActivity" >/dev/null
+  echo "== $v: launching${extras:+ ($extras)}"
+  # shellcheck disable=SC2086  # extras is a word list of am-start args
+  adb -s "$SERIAL" shell am start -n "$PKG/.MainActivity" $extras >/dev/null
 
   # Let startup settle, then verify playback is actually advancing via the
   # app's own [BENCH_STATS] pos= lines before measuring.
@@ -143,11 +209,22 @@ run_variant() {
   echo "== $v: sampling layer for ${DURATION}s:"
   echo "     $layer"
   : > "$vdir/pacing_raw.txt"
-  local end=$((SECONDS + DURATION))
+  : > "$vdir/cpu.txt"
+  local end=$((SECONDS + DURATION)) tick=0
   while (( SECONDS < end )); do
     echo "=== $(date +%s)" >> "$vdir/pacing_raw.txt"
     adb -s "$SERIAL" shell dumpsys SurfaceFlinger --latency "\"$layer\"" \
       | tr -d '\r' >> "$vdir/pacing_raw.txt" || true
+    # CPU load snapshot every ~5s: our process + total, for the render-path
+    # comparison (GL composition vs direct decoder output).
+    if (( tick % 5 == 0 )); then
+      {
+        echo "=== $(date +%s)"
+        adb -s "$SERIAL" shell top -b -n 1 2>/dev/null | LC_ALL=C tr -d '\r' \
+          | grep -E "benchmark_player|surfaceflinger|^ *[0-9]+%|[0-9]+%cpu" | head -8
+      } >> "$vdir/cpu.txt" || true
+    fi
+    tick=$((tick + 1))
     sleep 1
   done
 
@@ -163,6 +240,7 @@ run_variant() {
   {
     echo "variant   : $v"
     echo "defines   : $(variant_defines "$v") BENCH_VARIANT=$v"
+    echo "extras    : ${extras:-none}"
     echo "date      : $(date -u +%FT%TZ)"
     echo "duration  : ${DURATION}s"
     echo "device    : $(adb -s "$SERIAL" shell getprop ro.product.model | tr -d '\r')"
@@ -186,10 +264,13 @@ shift || true
 
 case "$cmd" in
   list)
-    printf '%s\n' "${ALL_VARIANTS[@]}" && printf '(extra) %s\n' "${EXTRA_VARIANTS[@]}"
+    printf '%s\n' "${ALL_VARIANTS[@]}" && printf '(extra) %s\n' "${EXTRA_VARIANTS[@]}" \
+      && printf '(matrix) %s\n' "${MATRIX_VARIANTS[@]}"
     ;;
   build)
-    for v in "${ALL_VARIANTS[@]}"; do build_variant "$v"; done
+    variants=("$@")
+    [[ ${#variants[@]} -eq 0 ]] && variants=("${ALL_VARIANTS[@]}")
+    for v in "${variants[@]}"; do build_variant "$v"; done
     ;;
   run)
     variants=("$@")

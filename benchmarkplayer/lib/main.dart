@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:fvp/fvp.dart' as fvp;
@@ -26,10 +27,29 @@ const kFvpDecoderCopy = bool.fromEnvironment('FVP_DECODER_COPY');
 /// fvp: force an audio renderer ('AudioTrack' or 'OpenSL'); empty = mdk default.
 const kFvpAudioBackend = String.fromEnvironment('FVP_AUDIO_BACKEND');
 
+/// fvp: 'texture' (Flutter texture, the old view) or 'platform' (SurfaceView
+/// platform view, fvp PR #379). With the FVP_DIRECT_SURFACE=1 env var (set by
+/// MainActivity from the `direct_surface` launch intent extra) the platform
+/// view additionally bypasses MDK's GL renderer: MediaCodec outputs straight
+/// to the SurfaceView (wang-bin's suggestion on #379).
+const kBenchView =
+    String.fromEnvironment('BENCH_VIEW', defaultValue: 'texture');
+
+/// True when MainActivity exported FVP_DIRECT_SURFACE=1 for this run (display
+/// only — the switch itself lives in the fvp fork's native code).
+final bool kDirectSurface = () {
+  try {
+    return Platform.environment['FVP_DIRECT_SURFACE'] == '1';
+  } catch (_) {
+    return false;
+  }
+}();
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // ignore: avoid_print
   print('[BENCH_META] variant=$kVariant backend=$kBackend url=$kUrl '
+      'view=$kBenchView direct=$kDirectSurface '
       'fvpCopy=$kFvpDecoderCopy fvpAudio=${kFvpAudioBackend.isEmpty ? '-' : kFvpAudioBackend}');
   if (kBackend == 'fvp') {
     // MDK logs arrive via package:logging; print() to avoid debugPrint throttling.
@@ -41,7 +61,10 @@ void main() {
     fvp.registerWith(options: {
       'global': {'logLevel': 'all'},
       if (kFvpDecoderCopy) 'video.decoders': ['AMediaCodec:copy=1', 'FFmpeg'],
-      if (kFvpAudioBackend.isNotEmpty) 'audioBackends': [kFvpAudioBackend],
+      // MDK "audio.renderer" player property == setAudioBackends; stock fvp
+      // forwards every options['player'] entry via setProperty before prepare.
+      if (kFvpAudioBackend.isNotEmpty)
+        'player': {'audio.renderer': kFvpAudioBackend},
     });
   } else {
     MediaKit.ensureInitialized();
@@ -125,7 +148,12 @@ class _BenchScreenState extends State<BenchScreen> {
   }
 
   Future<void> _initFvp() async {
-    final c = VideoPlayerController.networkUrl(Uri.parse(kUrl));
+    final c = VideoPlayerController.networkUrl(
+      Uri.parse(kUrl),
+      viewType: kBenchView == 'platform'
+          ? VideoViewType.platformView
+          : VideoViewType.textureView,
+    );
     _fvpController = c;
     try {
       await c.initialize();
@@ -300,6 +328,7 @@ class _BenchScreenState extends State<BenchScreen> {
               ),
               child: Text(
                 '$kVariant · $kBackend'
+                '${kBackend == 'fvp' ? ' · $kBenchView${kDirectSurface ? '+direct' : ''}' : ''}'
                 '${kFvpDecoderCopy ? ' · copy=1' : ''}'
                 '${kFvpAudioBackend.isNotEmpty ? ' · $kFvpAudioBackend' : ''}\n'
                 '$_hudState  $_hudDetail',
