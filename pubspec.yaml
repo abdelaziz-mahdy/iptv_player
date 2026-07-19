@@ -139,15 +139,15 @@ flutter:
           weight: 700
 
 
-# fvp fork branch app/fvp-fixes = SurfaceView platform view (upstream PR
+# fvp fork branch app/fvp-fixes-v2 = SurfaceView platform view (upstream PR
 # wang-bin/fvp#379: own display layer, prerequisite for tunneled true-4K)
-# + registerWith 'audioBackends' option (PR #383: MDK's default AAudio clock
-# on this TV is too coarse and avsync bursts frames — OpenSL is frame-perfect,
-# see issue #384) + 8-bit EGLConfig fallback on drivers whose rgb10a2 configs
-# are non-conformant (PR #385, fixes #374 without the env var). Drop pieces
-# as upstream merges them.
+# + 8-bit EGLConfig fallback on drivers whose rgb10a2 configs are
+# non-conformant (PR #385, fixes #374 without the env var). Drop pieces as
+# upstream merges them. The audio backend no longer needs a fork: stock fvp
+# forwards options['player'] via setProperty, and MDK's "audio.renderer"
+# property == setAudioBackends (see video_controller.dart).
 dependency_overrides:
   fvp:
     git:
       url: https://github.com/abdelaziz-mahdy/fvp.git
-      ref: 11f00d2ea5601fe1ff96f849bc7b9639c4271f30
+      ref: 307eaa28f48b4a544ba72b5a4e133ec2116212a2

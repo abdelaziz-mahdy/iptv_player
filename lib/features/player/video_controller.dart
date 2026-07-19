@@ -87,13 +87,15 @@ class VideoPlayerControllerAdapter implements PlayerController {
       // OpenSL audio: MDK slaves video pacing to the audio backend's position
       // clock, and this TV's AAudio reports positions too coarsely — frames
       // burst at ~10 presented fps. OpenSL paces frame-perfectly (24.2 fps,
-      // zero droughts, benchmarked; fvp#384).
+      // zero droughts, benchmarked; fvp#384). Set via MDK's "audio.renderer"
+      // player property (== setAudioBackends), which stock fvp forwards from
+      // options['player'] before prepare — no fork API needed.
       fvp.registerWith(
           options: Platform.isAndroid
               ? {
                   'maxWidth': 1920,
                   'maxHeight': 1088,
-                  'audioBackends': ['OpenSL'],
+                  'player': {'audio.renderer': 'OpenSL'},
                 }
               : null);
       _fvpRegistered = true;
