@@ -21,6 +21,11 @@ class MainActivity : FlutterActivity() {
         }
         eglConfigProbe()
         super.onCreate(savedInstanceState)
+        // Unattended runs: without this the Google TV ambient screensaver
+        // takes over mid-measurement (the activity loses its surface, the
+        // platform view dies, and pacing data silently measures the
+        // screensaver). The IPTV app holds a wakelock; the bench must too.
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     /**

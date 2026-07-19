@@ -173,6 +173,14 @@ run_variant() {
   adb -s "$SERIAL" logcat -v time > "$vdir/logcat.txt" &
   local logcat_pid=$!
 
+  # The Google TV ambient screensaver reclaims the screen after idle periods
+  # with no remote input — the activity then loses its surface and the run
+  # silently measures the screensaver. Wake the panel and dismiss any active
+  # ambient session before launching (FLAG_KEEP_SCREEN_ON in the app keeps it
+  # away once the bench is in front).
+  adb -s "$SERIAL" shell input keyevent KEYCODE_WAKEUP || true
+  sleep 2
+
   echo "== $v: launching${extras:+ ($extras)}"
   # shellcheck disable=SC2086  # extras is a word list of am-start args
   adb -s "$SERIAL" shell am start -n "$PKG/.MainActivity" $extras >/dev/null
