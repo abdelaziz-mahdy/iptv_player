@@ -187,10 +187,17 @@ run_variant() {
   # shellcheck disable=SC2086  # extras is a word list of am-start args
   adb -s "$SERIAL" shell am start -n "$PKG/.MainActivity" $extras >/dev/null
 
-  # Let startup settle, then verify playback is actually advancing via the
-  # app's own [BENCH_STATS] pos= lines before measuring.
-  echo "== $v: waiting 25s (startup)"
-  sleep 25
+  # Wait for playback instead of a blind sleep: two stats lines (5s apart)
+  # are enough to judge position advance. Cap at 30s for crashed launches.
+  echo "== $v: waiting for playback (max 30s)"
+  local waited=0
+  while (( waited < 30 )); do
+    if (( $(grep -c "BENCH_STATS. variant=$v .*pos=" "$vdir/logcat.txt" 2>/dev/null || echo 0) >= 2 )); then
+      break
+    fi
+    sleep 2
+    waited=$((waited + 2))
+  done
   local pos_lines
   # Match this variant's label so leftovers from a previous run (if logcat -c
   # failed) can't fake a "playing" signal.
