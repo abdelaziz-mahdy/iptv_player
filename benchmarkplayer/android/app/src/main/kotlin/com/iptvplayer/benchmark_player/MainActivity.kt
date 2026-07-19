@@ -12,12 +12,16 @@ class MainActivity : FlutterActivity() {
         // PowerVR driver on this TV corrupts 10-bit buffers shared across EGL
         // contexts. Must be set before libmdk loads. Inert for media_kit.
         Os.setenv("EGL_SDR_DEPTH", "8", true)
-        // fvp PR #379 experiment: `am start --ez direct_surface true` makes
+        // fvp PR #379 experiments: `am start --ez direct_surface true` makes
         // the fvp fork attach the platform-view surface to MediaCodec itself
-        // (decoder -> SurfaceFlinger, no GL). Env var read in fvp_plugin.cpp.
-        if (intent?.getBooleanExtra("direct_surface", false) == true) {
-            Os.setenv("FVP_DIRECT_SURFACE", "1", true)
-            Log.i("BENCH", "FVP_DIRECT_SURFACE=1 (MediaCodec renders to surface)")
+        // (decoder -> SurfaceFlinger, no GL); `--es direct_mode tunnel` tries
+        // true tunneled playback (tunnel=1 + ANativeWindow). Env var read in
+        // fvp_plugin.cpp.
+        val directMode = intent?.getStringExtra("direct_mode")
+            ?: if (intent?.getBooleanExtra("direct_surface", false) == true) "1" else null
+        if (directMode != null) {
+            Os.setenv("FVP_DIRECT_SURFACE", directMode, true)
+            Log.i("BENCH", "FVP_DIRECT_SURFACE=$directMode (MediaCodec renders to surface)")
         }
         eglConfigProbe()
         super.onCreate(savedInstanceState)
