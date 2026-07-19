@@ -141,13 +141,15 @@ detect_layer() {
   # output + FvpVideoView) with indistinguishable names. Pick the one whose
   # present timestamps advance: sample each twice, 2s apart, and keep the
   # layer with the most new frames (video pushes ~24-60/s; a static UI ~0).
+  # `</dev/null` on the adb calls: adb otherwise slurps the loop's stdin
+  # (the remaining candidate lines), so only the first layer ever got probed.
   local best="" best_count=-1 layer a count
   while IFS= read -r layer; do
     [[ -z "$layer" ]] && continue
-    a="$(adb -s "$SERIAL" shell dumpsys SurfaceFlinger --latency "\"$layer\"" \
+    a="$(adb -s "$SERIAL" shell dumpsys SurfaceFlinger --latency "\"$layer\"" </dev/null \
       | tr -d '\r' | awk 'NF==3 && $2!=0 && $2!~/922337203685477/ {t=$2} END{print t+0}' || true)"
     sleep 2
-    count="$(adb -s "$SERIAL" shell dumpsys SurfaceFlinger --latency "\"$layer\"" \
+    count="$(adb -s "$SERIAL" shell dumpsys SurfaceFlinger --latency "\"$layer\"" </dev/null \
       | tr -d '\r' \
       | awk -v last="${a:-0}" 'NF==3 && $2!=0 && $2!~/922337203685477/ && $2+0 > last+0 {c++} END{print c+0}' \
       || true)"
