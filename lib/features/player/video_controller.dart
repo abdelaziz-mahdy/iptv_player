@@ -83,10 +83,12 @@ class VideoPlayerControllerAdapter implements PlayerController {
       // FORCE_FVP=true. On Android TV PowerVR GPUs MDK's 10-bit EGLConfig
       // corrupts video — MainActivity sets EGL_SDR_DEPTH=8 (fvp#374).
       // Android renders via FVP_DIRECT_SURFACE (MainActivity): MediaCodec
-      // outputs straight into the platform view's SurfaceView, no GL — so no
-      // maxWidth/maxHeight clamp: 4K scans out at native resolution (24fps at
-      // 4K24, 56fps at 4K60 benchmarked; the old clamp protected the GL
-      // compositor, which this path bypasses entirely).
+      // outputs straight into the platform view's SurfaceView, no GL — 4K
+      // scans out at native resolution (24fps at 4K24, 56fps at 4K60
+      // benchmarked). The pinned fork routes HDR/10-bit videos back to the
+      // GL path per video (non-tunneled HDR wedges the Realtek decoder);
+      // maxWidth/maxHeight only apply to that GL fallback — the fork skips
+      // the clamp in direct mode.
       // OpenSL audio: MDK slaves video pacing to the audio backend's position
       // clock, and this TV's AAudio reports positions too coarsely — frames
       // burst at ~10 presented fps. OpenSL paces frame-perfectly (24.2 fps,
@@ -96,6 +98,8 @@ class VideoPlayerControllerAdapter implements PlayerController {
       fvp.registerWith(
           options: Platform.isAndroid
               ? {
+                  'maxWidth': 1920,
+                  'maxHeight': 1088,
                   'player': {'audio.renderer': 'OpenSL'},
                 }
               : null);
