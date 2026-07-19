@@ -13,6 +13,12 @@ class MainActivity : FlutterActivity() {
         // Must run before the Flutter engine loads libfvp/libmdk, hence before
         // super.onCreate(). Remove once fvp/mdk handle this upstream.
         Os.setenv("EGL_SDR_DEPTH", "8", true)
+        // fvp platform view: MediaCodec renders decoded frames straight into
+        // the SurfaceView (no GL renderer, no EGL) — the only path that plays
+        // 4K on this TV (24.01fps at 4K24, 56fps at 4K60 vs ~22fps through
+        // GL; benchmarked 2026-07-19, fvp#379). Read by the pinned fvp fork's
+        // fvp_plugin.cpp. Inert for media_kit and for the texture path.
+        Os.setenv("FVP_DIRECT_SURFACE", "1", true)
         super.onCreate(savedInstanceState)
     }
 }

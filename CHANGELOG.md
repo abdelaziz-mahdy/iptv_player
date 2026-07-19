@@ -22,9 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Playback on Android now uses the **mpv engine** (media_kit): noticeably
   smoother frame pacing on TV hardware, with a corruption-free picture on
   TVs with PowerVR graphics.
-- **4K videos play much more smoothly on TV** — video now renders on its own
-  display layer with a sensible size cap, roughly doubling the delivered
-  frame rate on weak TV GPUs.
+- **4K videos now play at full quality and full smoothness on TV** — decoded
+  frames go straight from the hardware decoder to the screen, so 4K content
+  plays at its native resolution and frame rate (previously it was downscaled
+  and still stuttered). Returning to a video after switching apps shows the
+  picture again reliably.
 - On the player, the seek bar now moves **10 seconds per D-pad press** instead of
   jumping large chunks.
 - The player's volume slider is hidden on TV (volume is controlled by the remote);

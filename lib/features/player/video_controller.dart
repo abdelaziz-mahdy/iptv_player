@@ -81,9 +81,12 @@ class VideoPlayerControllerAdapter implements PlayerController {
     if (!_fvpRegistered) {
       // fvp/MDK: the desktop player, and the Android backend under
       // FORCE_FVP=true. On Android TV PowerVR GPUs MDK's 10-bit EGLConfig
-      // corrupts video — MainActivity sets EGL_SDR_DEPTH=8 (fvp#374) — and
-      // the render size is capped near UI resolution: GL-rendering 4K RGBA
-      // forces SurfaceFlinger into 4K GPU composition (~5 fps measured).
+      // corrupts video — MainActivity sets EGL_SDR_DEPTH=8 (fvp#374).
+      // Android renders via FVP_DIRECT_SURFACE (MainActivity): MediaCodec
+      // outputs straight into the platform view's SurfaceView, no GL — so no
+      // maxWidth/maxHeight clamp: 4K scans out at native resolution (24fps at
+      // 4K24, 56fps at 4K60 benchmarked; the old clamp protected the GL
+      // compositor, which this path bypasses entirely).
       // OpenSL audio: MDK slaves video pacing to the audio backend's position
       // clock, and this TV's AAudio reports positions too coarsely — frames
       // burst at ~10 presented fps. OpenSL paces frame-perfectly (24.2 fps,
@@ -93,17 +96,15 @@ class VideoPlayerControllerAdapter implements PlayerController {
       fvp.registerWith(
           options: Platform.isAndroid
               ? {
-                  'maxWidth': 1920,
-                  'maxHeight': 1088,
                   'player': {'audio.renderer': 'OpenSL'},
                 }
               : null);
       _fvpRegistered = true;
     }
 
-    // SurfaceView platform view on Android (own display layer, 2x presented
-    // fps vs the texture path at capped 1080p, and the only surface type
-    // that can show tunneled true-4K); texture path on desktop.
+    // SurfaceView platform view on Android: own display layer, and with
+    // FVP_DIRECT_SURFACE the decoder fills it directly — the only path that
+    // sustains 4K on this TV. Texture path on desktop.
     _controller = VideoPlayerController.networkUrl(
       Uri.parse(url),
       viewType: Platform.isAndroid
