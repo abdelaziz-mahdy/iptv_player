@@ -5,6 +5,7 @@ import 'package:equatable/equatable.dart';
 import 'package:fvp/fvp.dart' as fvp;
 import 'package:video_player/video_player.dart';
 
+import '../../core/debug_flags.dart';
 import '../../core/logging/app_logger.dart';
 
 /// Immutable snapshot of the player state.
@@ -101,6 +102,9 @@ class VideoPlayerControllerAdapter implements PlayerController {
                   'maxWidth': 1920,
                   'maxHeight': 1088,
                   'player': {'audio.renderer': 'OpenSL'},
+                  // FVP_CAPTURE builds: full MDK log for upstream reports
+                  // (main.dart surfaces package:logging to logcat).
+                  if (kFvpCaptureBuild) 'global': {'logLevel': 'all'},
                 }
               : null);
       _fvpRegistered = true;
