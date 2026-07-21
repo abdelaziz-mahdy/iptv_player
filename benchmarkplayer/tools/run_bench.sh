@@ -82,6 +82,9 @@ clip_for() {
 # Extra `am start` args per variant (runtime switches that don't need a rebuild).
 variant_extras() {
   case "$1" in
+    # HDR repro variants must FORCE direct mode — the fork otherwise routes
+    # HDR content back to the GL path (mdk-sdk#361 escape hatch).
+    4[01]-fvp-pvd-*) echo "--es direct_mode force" ;;
     *-pvd-*) echo "--ez direct_surface true" ;;
     *) echo "" ;;
   esac

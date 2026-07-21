@@ -35,7 +35,7 @@ dependency_overrides:
   fvp:
     git:
       url: https://github.com/abdelaziz-mahdy/fvp.git
-      ref: ad6f59ed77d0eca72ba18adde72aaf206ac86596
+      ref: 163149c9ea11d75a3d36eeeb484f2c52baf0524c
 
 dev_dependencies:
   flutter_lints: ^5.0.0
