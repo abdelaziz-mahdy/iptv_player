@@ -101,7 +101,15 @@ class VideoPlayerControllerAdapter implements PlayerController {
               ? {
                   'maxWidth': 1920,
                   'maxHeight': 1088,
-                  'player': {'audio.renderer': 'OpenSL'},
+                  'player': {
+                    'audio.renderer': 'OpenSL',
+                    // MDK defaults to 1s min / 4s max buffered ahead — too
+                    // shallow for jittery IPTV providers (mpv rides the same
+                    // links with 10-13s cached; fvp starved at ~5fps input
+                    // while the provider burst-served 10MB/s). Docs: "Large
+                    // value is recommended. Latency is not affected."
+                    'buffer': '2000+30000',
+                  },
                   // FVP_CAPTURE builds: full MDK log for upstream reports
                   // (main.dart surfaces package:logging to logcat).
                   if (kFvpCaptureBuild) 'global': {'logLevel': 'all'},
