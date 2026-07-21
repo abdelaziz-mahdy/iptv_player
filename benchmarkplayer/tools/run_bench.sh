@@ -57,8 +57,8 @@ variant_defines() {
     # (wang-bin's suggestion). All fvp runs pin OpenSL so the audio clock is
     # never the variable. pvd-* additionally launches with the direct_surface
     # extra (see variant_extras) — the dart-defines are the pv ones.
-    [23][0-9]-fvp-tex-*)   echo "BENCH_BACKEND=fvp BENCH_URL=$(clip_for "$1") FVP_AUDIO_BACKEND=OpenSL" ;;
-    [23][0-9]-fvp-pvd-*|[23][0-9]-fvp-pv-*)
+    [234][0-9]-fvp-tex-*)   echo "BENCH_BACKEND=fvp BENCH_URL=$(clip_for "$1") FVP_AUDIO_BACKEND=OpenSL" ;;
+    [234][0-9]-fvp-pvd-*|[234][0-9]-fvp-pv-*)
                            echo "BENCH_BACKEND=fvp BENCH_URL=$(clip_for "$1") BENCH_VIEW=platform FVP_AUDIO_BACKEND=OpenSL" ;;
     3[0-9]-media_kit-*)    echo "BENCH_BACKEND=media_kit BENCH_URL=$(clip_for "$1")" ;;
     *) return 1 ;;
@@ -71,6 +71,8 @@ clip_for() {
     1080p24) echo "$CLIP" ;;
     1080p60) echo "$CLIP_1080P60" ;;
     4k24)    echo "$CLIP_4K24" ;;
+    4k24hdr) echo "$URLBASE/bench-4k24-hdr10.mp4" ;;
+    h264hdr) echo "$URLBASE/bench-4k24-h264hdr.mp4" ;;
     4k24h264) echo "$CLIP_4K24_H264" ;;
     4k60)    echo "$CLIP_4K60" ;;
     *) echo "$CLIP" ;;
