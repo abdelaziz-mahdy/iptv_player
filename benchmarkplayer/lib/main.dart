@@ -24,6 +24,11 @@ const kVariant =
 /// mediacodec-copy) instead of the default zero-copy AImageReader path.
 const kFvpDecoderCopy = bool.fromEnvironment('FVP_DECODER_COPY');
 
+/// media_kit: force an mpv audio output ('aaudio', 'audiotrack', 'opensles');
+/// empty = mpv default (audiotrack on android). Cross-checks whether a broken
+/// device audio clock hits mpv too (fvp#384).
+const kMpvAo = String.fromEnvironment('BENCH_MPV_AO');
+
 /// fvp: force an audio renderer ('AudioTrack' or 'OpenSL'); empty = mdk default.
 const kFvpAudioBackend = String.fromEnvironment('FVP_AUDIO_BACKEND');
 
@@ -143,6 +148,12 @@ class _BenchScreenState extends State<BenchScreen> {
     _mkPlayer = player;
     _mkController = VideoController(player);
     setState(() {});
+    final native = player.platform;
+    if (kMpvAo.isNotEmpty && native is NativePlayer) {
+      await native.setProperty('ao', kMpvAo);
+      // ignore: avoid_print
+      print('[BENCH_META] mpv ao=$kMpvAo');
+    }
     await player.open(Media(kUrl), play: true);
     await player.setPlaylistMode(PlaylistMode.loop);
   }

@@ -52,6 +52,7 @@ variant_defines() {
     08-media_kit-noaudio)  echo "BENCH_BACKEND=media_kit BENCH_URL=$CLIP_NOAUDIO" ;;
     09-fvp-opensl)         echo "BENCH_BACKEND=fvp BENCH_URL=$CLIP FVP_AUDIO_BACKEND=OpenSL" ;;
     10-fvp-live-opensl)    echo "BENCH_BACKEND=fvp BENCH_URL=$LIVE FVP_AUDIO_BACKEND=OpenSL" ;;
+    11-media_kit-aaudio)   echo "BENCH_BACKEND=media_kit BENCH_URL=$CLIP BENCH_MPV_AO=aaudio" ;;
     # -- render-path matrix (fvp PR #379 discussion): texture (old view) vs
     # platform view + GL (new view) vs platform view + MediaCodec-to-surface
     # (wang-bin's suggestion). All fvp runs pin OpenSL so the audio clock is
