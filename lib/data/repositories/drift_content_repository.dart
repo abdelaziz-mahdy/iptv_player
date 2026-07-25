@@ -254,6 +254,35 @@ class DriftContentRepository implements ContentRepository {
     }
   }
 
+  @override
+  Future<Result<MediaDetail>> loadMovieDetail(VodItem movie) async {
+    try {
+      // Same shape as loadSeriesDetail: only Xtream exposes a VOD-info API,
+      // and without a server URL or credentials (M3U) there is nothing to ask.
+      final playlists = await _db.getPlaylists();
+      final p = playlists.where((r) => r.id == movie.playlistId).firstOrNull;
+      final serverUrl = p?.serverUrl;
+      final creds = await _credentials.read(movie.playlistId);
+      if (serverUrl == null || serverUrl.isEmpty || creds == null) {
+        return const Ok(MediaDetail.empty);
+      }
+
+      // Raw numeric id is the last segment of '<playlistId>:vod:<streamId>'.
+      final rawId = movie.id.split(':vod:').last;
+      final detail = await _xtream.vodDetail(
+        serverUrl: serverUrl,
+        username: creds.username,
+        password: creds.password,
+        vodStreamId: rawId,
+      );
+      return Ok(detail);
+    } catch (e) {
+      debugPrint('[movie-detail] ERROR: $e');
+      // Metadata is decoration — a failure must not block playing the movie.
+      return const Ok(MediaDetail.empty);
+    }
+  }
+
   /// Builds a [SeriesDetail] from locally cached season/episode rows.
   ///
   /// Seasons with no cached episodes are omitted — older caches may still

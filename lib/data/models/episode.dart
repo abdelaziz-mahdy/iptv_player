@@ -12,6 +12,12 @@ abstract class Episode with _$Episode {
     required int number,
     int? durationSec,
     required String streamUrl,
+
+    /// Episode synopsis, when the provider supplies one.
+    String? plot,
+
+    /// Episode still/thumbnail URL.
+    String? stillUrl,
   }) = _Episode;
 
   factory Episode.fromJson(Map<String, dynamic> json) => _$EpisodeFromJson(json);

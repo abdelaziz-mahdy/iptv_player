@@ -197,4 +197,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get playbackFailedUnknown => 'This stream could not be played.';
+
+  @override
+  String get cast => 'Cast';
+
+  @override
+  String get director => 'Director';
+
+  @override
+  String get genre => 'Genre';
+
+  @override
+  String get country => 'Country';
+
+  @override
+  String get loading => 'Loading…';
 }

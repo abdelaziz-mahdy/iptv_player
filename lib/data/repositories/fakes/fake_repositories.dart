@@ -145,11 +145,29 @@ class FakeContentRepository implements ContentRepository {
       for (final s in seasons) s.id: _episodes[s.id] ?? const <Episode>[],
     };
     return Ok(SeriesDetail(
-      description: 'A gripping ${series.title} story.',
+      info: MediaDetail(
+        description: 'A gripping ${series.title} story.',
+        cast: 'Ada Lovelace, Alan Turing',
+        genre: 'Drama',
+        rating: 8.4,
+      ),
       seasons: seasons,
       episodesBySeason: bySeason,
     ));
   }
+
+  @override
+  Future<Result<MediaDetail>> loadMovieDetail(VodItem movie) async => Ok(
+        MediaDetail(
+          description: 'A gripping ${movie.title} story.',
+          cast: 'Ada Lovelace, Alan Turing',
+          director: 'Grace Hopper',
+          genre: 'Drama',
+          country: 'US',
+          rating: 7.9,
+          durationSec: 5400,
+        ),
+      );
 
   @override
   Stream<List<Favorite>> favorites(String playlistId) => _favorites.stream;

@@ -176,6 +176,10 @@ noor.Episode episodeFromXtreamEpisode(
     number: xcEp.episodeNum ?? 0,
     durationSec: xcEp.info.durationSecs,
     streamUrl: streamUrl,
+    plot: xcEp.info.plot?.isNotEmpty == true ? xcEp.info.plot : null,
+    stillUrl: xcEp.info.movieImage?.isNotEmpty == true
+        ? xcEp.info.movieImage
+        : null,
   );
 }
 
@@ -193,7 +197,7 @@ noor.Episode episodeFromXtreamEpisode(
 noor.SeriesDetail seriesDetailFromXtreamInfo({
   required List<xc.Season> xcSeasons,
   required Map<String, List<xc.Episode>> xcEpisodeMap,
-  String? description,
+  noor.MediaDetail info = noor.MediaDetail.empty,
   required String seriesId,
   required String playlistId,
   required String serverUrl,
@@ -230,7 +234,7 @@ noor.SeriesDetail seriesDetailFromXtreamInfo({
   }
 
   return noor.SeriesDetail(
-    description: description?.isNotEmpty == true ? description : null,
+    info: info,
     seasons: domainSeasons,
     episodesBySeason: episodesBySeason,
   );
@@ -277,6 +281,16 @@ String _buildSeriesUrl({
 }) {
   final base = _normalizeServerUrl(serverUrl);
   return '$base/series/$username/$password/$episodeId.$ext';
+}
+
+/// First entry that is non-null and not blank, else null — providers spell the
+/// same field several ways and leave the others empty.
+String? _firstNonEmpty(List<String?> values) {
+  for (final v in values) {
+    final t = v?.trim();
+    if (t != null && t.isNotEmpty) return t;
+  }
+  return null;
 }
 
 /// Safely converts a [dynamic] rating value to [double?].
@@ -389,13 +403,16 @@ class XtreamSource {
     }
   }
 
-  /// Fetches the plot/description for a single VOD item.
+  /// Fetches the provider's extended metadata for a single VOD item:
+  /// plot, cast, director, genre, country, release date, rating, runtime,
+  /// backdrops and trailer.
   ///
   /// [vodStreamId] is the numeric stream id extracted from the domain movie id
   /// (i.e. the last segment of `'<playlistId>:vod:<streamId>'`).
   ///
-  /// Returns `null` when the server returns no plot and no description.
-  Future<String?> vodPlot({
+  /// Fields are filled in very unevenly by providers, so anything missing is
+  /// left null rather than defaulted.
+  Future<noor.MediaDetail> vodDetail({
     required String serverUrl,
     required String username,
     required String password,
@@ -408,12 +425,23 @@ class XtreamSource {
           password: password,
         );
     try {
-      final info = await client.vodInfoData(
+      final data = await client.vodInfoData(
         xc.VodItem(streamId: int.parse(vodStreamId)),
       );
-      return info.info.plot?.isNotEmpty == true
-          ? info.info.plot
-          : info.info.description;
+      final info = data.info;
+      return noor.MediaDetail(
+        description: _firstNonEmpty([info.plot, info.description]),
+        // Providers use "cast" or "actors" for the same list.
+        cast: _firstNonEmpty([info.cast, info.actors]),
+        director: _firstNonEmpty([info.director]),
+        genre: _firstNonEmpty([info.genre]),
+        country: _firstNonEmpty([info.country]),
+        releaseDate: info.releaseDate,
+        rating: info.rating,
+        durationSec: info.durationSecs,
+        youtubeTrailer: _firstNonEmpty([info.youtubeTrailer]),
+        backdrops: info.backdropPath ?? const [],
+      );
     } finally {
       if (_overrideClient == null) client.close();
     }
@@ -445,7 +473,20 @@ class XtreamSource {
       return seriesDetailFromXtreamInfo(
         xcSeasons: info.seasons ?? const [],
         xcEpisodeMap: info.episodes ?? const {},
-        description: info.info.plot,
+        info: noor.MediaDetail(
+          description: _firstNonEmpty([info.info.plot]),
+          cast: _firstNonEmpty([info.info.cast]),
+          director: _firstNonEmpty([info.info.director]),
+          genre: _firstNonEmpty([info.info.genre]),
+          releaseDate: info.info.releaseDate,
+          rating: info.info.rating,
+          // Series-level runtime is the typical episode length.
+          durationSec: info.info.episodeRunTime != null
+              ? info.info.episodeRunTime! * 60
+              : null,
+          youtubeTrailer: _firstNonEmpty([info.info.youtubeTrailer]),
+          backdrops: info.info.backdropPath ?? const [],
+        ),
         seriesId: seriesId,
         playlistId: playlistId,
         serverUrl: serverUrl,

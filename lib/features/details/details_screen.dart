@@ -64,10 +64,17 @@ class DetailsScreen extends StatelessWidget {
         ),
       );
     }
-    return _MovieDetailBody(
-      movie: _movie!,
-      onBack: onBack,
-      onPlay: _onPlay!,
+    final movie = _movie!;
+    return BlocProvider<DetailsCubit>(
+      create: (_) => DetailsCubit(
+        sl<ContentRepository>(),
+        sl<PlaybackRepository>(),
+      )..loadMovie(movie),
+      child: _MovieDetailBody(
+        movie: movie,
+        onBack: onBack,
+        onPlay: _onPlay!,
+      ),
     );
   }
 }
@@ -467,11 +474,16 @@ class _DetailHeader extends StatelessWidget {
   final List<Widget> actions;
   final String synopsis;
 
+  /// Cast / director / genre / country, rendered under the synopsis. Absent
+  /// entries are skipped — providers fill these in very unevenly.
+  final MediaDetail? info;
+
   const _DetailHeader({
     required this.title,
     required this.chips,
     required this.actions,
     required this.synopsis,
+    this.info,
   });
 
   @override
@@ -505,9 +517,77 @@ class _DetailHeader extends StatelessWidget {
           synopsis,
           style: tt.bodyMedium?.copyWith(color: context.palette.dim),
         ),
+        if (info?.hasCredits ?? false) ...[
+          const SizedBox(height: 16),
+          _CreditsBlock(info: info!),
+        ],
       ],
     );
   }
+}
+
+/// Cast / director / genre / country lines. Each row is skipped when the
+/// provider did not supply that field.
+class _CreditsBlock extends StatelessWidget {
+  final MediaDetail info;
+
+  const _CreditsBlock({required this.info});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final tt = Theme.of(context).textTheme;
+    final p = context.palette;
+
+    Widget row(String label, String value) => Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: RichText(
+            text: TextSpan(
+              style: tt.bodyMedium?.copyWith(color: p.dim),
+              children: [
+                TextSpan(
+                  text: '$label: ',
+                  style: TextStyle(color: p.fg, fontWeight: FontWeight.w600),
+                ),
+                TextSpan(text: value),
+              ],
+            ),
+          ),
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (info.cast?.isNotEmpty ?? false) row(l10n.cast, info.cast!),
+        if (info.director?.isNotEmpty ?? false)
+          row(l10n.director, info.director!),
+        if (info.genre?.isNotEmpty ?? false) row(l10n.genre, info.genre!),
+        if (info.country?.isNotEmpty ?? false) row(l10n.country, info.country!),
+      ],
+    );
+  }
+}
+
+/// Chips built from provider metadata, in a fixed order: year, rating,
+/// runtime, first genre. Falls back to the catalog values when the detail
+/// request supplied nothing.
+List<Widget> _metaChips({
+  required MediaDetail info,
+  String? fallbackYear,
+  double? fallbackRating,
+}) {
+  final year = info.releaseDate?.year.toString() ?? fallbackYear;
+  final rating = info.rating ?? fallbackRating;
+  final runtimeMin = info.durationSec != null && info.durationSec! > 0
+      ? (info.durationSec! / 60).round()
+      : null;
+  final firstGenre = info.genre?.split(',').first.trim();
+  return [
+    if (year != null && year.isNotEmpty) _MetaChip(year),
+    if (rating != null && rating > 0) _MetaChip('${rating.toStringAsFixed(1)}★'),
+    if (runtimeMin != null) _MetaChip('$runtimeMin min'),
+    if (firstGenre != null && firstGenre.isNotEmpty) _MetaChip(firstGenre),
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -528,32 +608,41 @@ class _MovieDetailBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return _DetailScaffold(
-      posterUrl: movie.posterUrl,
-      title: movie.title,
-      onBack: onBack,
-      header: _DetailHeader(
-        title: movie.title,
-        chips: [
-          if (movie.year != null) _MetaChip(movie.year!),
-          if (movie.rating != null)
-            _MetaChip('${movie.rating!.toStringAsFixed(1)}★'),
-          const _MetaChip('CC'),
-          const _MetaChip('AD'),
-        ],
-        actions: [
-          _PlayButton(autofocus: true, onPressed: () => onPlay(movie)),
-          _MyListButton(
-            itemKey: 'movie:${movie.id}',
-            playlistId: movie.playlistId,
-            kind: MediaKind.movie,
+    return BlocBuilder<DetailsCubit, DetailsState>(
+      builder: (ctx, state) {
+        final info = state.info;
+        return _DetailScaffold(
+          posterUrl: movie.posterUrl,
+          title: movie.title,
+          onBack: onBack,
+          header: _DetailHeader(
             title: movie.title,
+            chips: _metaChips(
+              info: info,
+              fallbackYear: movie.year,
+              fallbackRating: movie.rating,
+            ),
+            actions: [
+              _PlayButton(autofocus: true, onPressed: () => onPlay(movie)),
+              _MyListButton(
+                itemKey: 'movie:${movie.id}',
+                playlistId: movie.playlistId,
+                kind: MediaKind.movie,
+                title: movie.title,
+              ),
+            ],
+            // Plot comes from the provider's per-item info request, which the
+            // cubit fires when this screen opens; providers leave it empty
+            // often enough that the fallback text still earns its place.
+            synopsis: state.loading && info.description == null
+                ? l10n.loading
+                : (info.description?.isNotEmpty ?? false)
+                    ? info.description!
+                    : l10n.noSynopsis,
+            info: info,
           ),
-        ],
-        // Providers expose movie plots only via a per-item request that isn't
-        // wired up yet — be honest rather than showing invented text.
-        synopsis: l10n.noSynopsis,
-      ),
+        );
+      },
     );
   }
 }
@@ -587,13 +676,11 @@ class _SeriesDetailBody extends StatelessWidget {
           onBack: onBack,
           header: _DetailHeader(
             title: series.title,
-            chips: [
-              if (series.year != null) _MetaChip(series.year!),
-              if (series.rating != null)
-                _MetaChip('${series.rating!.toStringAsFixed(1)}★'),
-              const _MetaChip('CC'),
-              const _MetaChip('AD'),
-            ],
+            chips: _metaChips(
+              info: state.info,
+              fallbackYear: series.year,
+              fallbackRating: series.rating,
+            ),
             actions: [
               if (hasEpisodes)
                 _PlayButton(
@@ -612,9 +699,10 @@ class _SeriesDetailBody extends StatelessWidget {
                 title: series.title,
               ),
             ],
-            synopsis: state.description?.isNotEmpty == true
-                ? state.description!
+            synopsis: (state.info.description?.isNotEmpty ?? false)
+                ? state.info.description!
                 : l10n.noSynopsis,
+            info: state.info,
           ),
           sections: [
             const SizedBox(height: 20),
@@ -818,6 +906,19 @@ class _EpisodeRow extends StatelessWidget {
                       duration,
                       style:
                           tt.bodySmall?.copyWith(color: context.palette.dim),
+                    ),
+                  // Episode synopsis, when the provider ships one. Clamped:
+                  // these run long and the row is a list item, not a page.
+                  if (episode.plot?.isNotEmpty ?? false)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        episode.plot!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            tt.bodySmall?.copyWith(color: context.palette.dim),
+                      ),
                     ),
                   if (showBar)
                     Padding(

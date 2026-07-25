@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Movie and series pages now show the **full details the provider has**: plot,
+  cast, director, genre, country, rating, release year and runtime. Movies
+  previously showed no description at all.
+- Episode lists now show each **episode's own description**.
 - The player now shows a **loading spinner** while a stream is opening or
   re-buffering, so a slow provider no longer looks like a frozen screen.
 - When a stream cannot be played, the player now **explains why** — server

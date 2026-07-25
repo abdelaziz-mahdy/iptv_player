@@ -30,6 +30,13 @@ abstract class ContentRepository {
   /// series detail screen opens. For sources without a series-info API (M3U)
   /// or when credentials are unavailable, returns an empty [SeriesDetail].
   Future<Result<SeriesDetail>> loadSeriesDetail(Series series);
+
+  /// Fetches a movie's extended metadata (plot, cast, director, genre,
+  /// rating, runtime, backdrops) from the provider on demand — the catalog
+  /// listing carries only what a poster tile needs. Returns
+  /// [MediaDetail.empty] for sources without a VOD-info API (M3U) or when
+  /// credentials are unavailable.
+  Future<Result<MediaDetail>> loadMovieDetail(VodItem movie);
   Stream<List<Favorite>> favorites(String playlistId);
 
   /// [title] is the display name at add-time — stored with the favorite so it

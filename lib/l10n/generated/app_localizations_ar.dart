@@ -196,4 +196,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get playbackFailedUnknown => 'تعذّر تشغيل هذا البث.';
+
+  @override
+  String get cast => 'طاقم التمثيل';
+
+  @override
+  String get director => 'المخرج';
+
+  @override
+  String get genre => 'النوع';
+
+  @override
+  String get country => 'البلد';
+
+  @override
+  String get loading => 'جارٍ التحميل…';
 }

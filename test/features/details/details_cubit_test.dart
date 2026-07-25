@@ -39,7 +39,7 @@ void main() {
       expect(state.episodes.length, 2);
       expect(state.episodes.map((e) => e.title),
           containsAll(['Pilot', 'Contact']));
-      expect(state.description, isNotNull);
+      expect(state.info.description, isNotNull);
     });
 
     test('loadSeries unknown id yields empty seasons and episodes', () async {
@@ -117,6 +117,44 @@ void main() {
         expect(target!.episodes.length, 4, reason: 'queue spans both seasons');
         expect(target.episodeIndex, 2);
         expect(target.episodes[target.episodeIndex].title, 'S2E1');
+      });
+    });
+    group('movie metadata', () {
+      test('loadMovie fills in the provider metadata', () async {
+        final cubit = makeCubit();
+        await cubit.loadMovie(const VodItem(
+          id: 'p1:vod:42',
+          playlistId: 'p1',
+          title: 'Dune',
+          streamUrl: 'http://x/42',
+        ));
+
+        final info = cubit.state.info;
+        expect(cubit.state.loading, isFalse);
+        expect(info.description, contains('Dune'));
+        expect(info.cast, isNotEmpty);
+        expect(info.director, 'Grace Hopper');
+        expect(info.durationSec, 5400);
+        expect(info.hasCredits, isTrue);
+        expect(info.isEmpty, isFalse);
+      });
+    });
+
+    group('MediaDetail', () {
+      test('empty detail reports itself empty', () {
+        expect(MediaDetail.empty.isEmpty, isTrue);
+        expect(MediaDetail.empty.hasCredits, isFalse);
+        expect(MediaDetail.empty.trailerUrl, isNull);
+      });
+
+      test('a bare youtube id becomes a watch URL, a link is kept', () {
+        expect(const MediaDetail(youtubeTrailer: 'abc123').trailerUrl,
+            'https://www.youtube.com/watch?v=abc123');
+        expect(
+          const MediaDetail(youtubeTrailer: 'https://youtu.be/abc123')
+              .trailerUrl,
+          'https://youtu.be/abc123',
+        );
       });
     });
   });

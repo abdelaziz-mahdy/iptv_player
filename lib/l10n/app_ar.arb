@@ -61,5 +61,10 @@
   "playbackFailedUnavailable": "لم يعد هذا البث متاحًا لدى المزوّد.",
   "playbackFailedRefused": "رفض المزوّد هذا البث. قد لا يشمله اشتراكك، أو أن عدد الأجهزة المتصلة كبير.",
   "playbackFailedTimeout": "لم يستجب البث في الوقت المحدد.",
-  "playbackFailedUnknown": "تعذّر تشغيل هذا البث."
+  "playbackFailedUnknown": "تعذّر تشغيل هذا البث.",
+  "cast": "طاقم التمثيل",
+  "director": "المخرج",
+  "genre": "النوع",
+  "country": "البلد",
+  "loading": "جارٍ التحميل…"
 }

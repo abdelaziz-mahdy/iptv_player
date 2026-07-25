@@ -16,7 +16,9 @@ class DetailsState extends Equatable {
   final List<Season> seasons;
   final int selectedSeasonIndex;
   final List<Episode> episodes;
-  final String? description;
+
+  /// Provider metadata for the movie or series on screen.
+  final MediaDetail info;
 
   /// Watch progress keyed by episode item key (`episode:<id>`), watched
   /// entries included — powers the per-episode progress indicators.
@@ -27,7 +29,7 @@ class DetailsState extends Equatable {
     this.seasons = const [],
     this.selectedSeasonIndex = 0,
     this.episodes = const [],
-    this.description,
+    this.info = MediaDetail.empty,
     this.progressByKey = const {},
   });
 
@@ -36,7 +38,7 @@ class DetailsState extends Equatable {
     List<Season>? seasons,
     int? selectedSeasonIndex,
     List<Episode>? episodes,
-    String? description,
+    MediaDetail? info,
     Map<String, WatchProgress>? progressByKey,
   }) {
     return DetailsState(
@@ -44,7 +46,7 @@ class DetailsState extends Equatable {
       seasons: seasons ?? this.seasons,
       selectedSeasonIndex: selectedSeasonIndex ?? this.selectedSeasonIndex,
       episodes: episodes ?? this.episodes,
-      description: description ?? this.description,
+      info: info ?? this.info,
       progressByKey: progressByKey ?? this.progressByKey,
     );
   }
@@ -55,7 +57,7 @@ class DetailsState extends Equatable {
         seasons,
         selectedSeasonIndex,
         episodes,
-        description,
+        info,
         progressByKey,
       ];
 }
@@ -104,7 +106,20 @@ class DetailsCubit extends Cubit<DetailsState> {
       seasons: seasons,
       selectedSeasonIndex: 0,
       episodes: firstEpisodes,
-      description: detail.description,
+      info: detail.info,
+    ));
+  }
+
+  /// Fetches a movie's extended metadata (plot, cast, genre, runtime...).
+  /// Failures are already absorbed by the repository — an empty result just
+  /// means the provider supplied nothing.
+  Future<void> loadMovie(VodItem movie) async {
+    emit(state.copyWith(loading: true));
+    final result = await _content.loadMovieDetail(movie);
+    if (isClosed) return;
+    emit(state.copyWith(
+      loading: false,
+      info: result.when(ok: (d) => d, err: (_) => MediaDetail.empty),
     ));
   }
 
