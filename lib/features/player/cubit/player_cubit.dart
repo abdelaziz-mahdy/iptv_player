@@ -225,6 +225,15 @@ class PlayerCubit extends Cubit<PlayerUiState> {
 
   /// Initializes the player (resuming from saved progress) and starts.
   Future<void> start() async {
+    // An empty URL means a screen built the route without one (favorites did
+    // this for movies). The backend answers with "invalid or unsupported
+    // media", which reads like a dead stream — name it for what it is.
+    if (url.isEmpty) {
+      appLog.error('play $itemKey aborted: no stream url');
+      emit(state.copyWith(loading: false, error: PlaybackFailure.unavailable));
+      return;
+    }
+
     // Resolve the resume position BEFORE initialize: backends apply it at
     // load (mpv's `start` property), which is reliable where a post-open
     // seek command is silently dropped (media-kit/media-kit#1215). A watched

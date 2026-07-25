@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   progress bar for partially watched episodes and a checkmark for finished
   ones, updated as soon as you come back from the player.
 
+### Fixed
+- **Movies opened from Favorites now play.** They were handed to the player
+  without a stream address, so playback failed with "invalid or unsupported
+  media" while the same movie played fine from the Movies tab.
+
 ### Changed
 - Left / right on the remote now **skips 10 seconds straight away** while the
   controls are hidden, instead of only waking them up first.

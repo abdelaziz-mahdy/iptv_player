@@ -205,6 +205,10 @@ class FavoritesCubit extends Cubit<FavoritesState> {
           title: movie.title,
           subtitle: movie.year,
           posterUrl: movie.posterUrl,
+          // Without this the detail screen receives an empty URL and playback
+          // fails with "invalid or unsupported media" — the same movie opened
+          // from Movies plays, because the grid does carry it.
+          streamUrl: movie.streamUrl,
         );
 
       // Series are favorited as `episode:<seriesId>` app-wide (grid, search and

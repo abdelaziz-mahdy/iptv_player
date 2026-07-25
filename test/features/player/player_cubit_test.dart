@@ -485,6 +485,24 @@ void main() {
         expect(cubit.state.loading, isFalse);
       });
 
+      test('an empty url fails fast, without asking the backend', () async {
+        final empty = PlayerCubit(
+          controller,
+          playback,
+          itemKey: 'movie:m1',
+          url: '',
+          title: 'Dune',
+          kind: MediaKind.movie,
+          playlistId: 'p1',
+        );
+        addTearDown(empty.close);
+
+        await empty.start();
+        expect(empty.state.error, PlaybackFailure.unavailable);
+        expect(empty.state.loading, isFalse);
+        expect(controller.initializeCount, 0);
+      });
+
       test('start() surfaces a failure instead of throwing', () async {
         controller.failNextInitializeWith =
             Exception('SocketException: Failed host lookup');

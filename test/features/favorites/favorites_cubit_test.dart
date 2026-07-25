@@ -47,6 +47,10 @@ void main() {
       expect(cubit.state.entries, hasLength(1));
       expect(cubit.state.entries.first.title, equals('The Signal'));
       expect(cubit.state.isEmpty, isFalse);
+      // The stream URL has to travel with the entry: the detail screen builds
+      // its VodItem from it, and an empty one reaches the player as
+      // "invalid or unsupported media".
+      expect(cubit.state.entries.first.streamUrl, equals('http://x/m1'));
 
       await cubit.close();
     });
