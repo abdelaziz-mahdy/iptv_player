@@ -217,7 +217,29 @@ class _PlayerScreenState extends State<PlayerScreen>
     }
     if (c is VideoPlayerControllerAdapter) {
       if (c.isInitialized) {
-        return VideoPlayer(c.nativeController);
+        // `VideoPlayer` has no fit of its own — it fills whatever constraints
+        // it gets, and the parent Stack is StackFit.expand, so without an
+        // AspectRatio the picture is stretched to the panel shape. Rebuild on
+        // controller value changes: live streams can switch resolution
+        // mid-play, and on Android the surface is a platform view that must be
+        // re-laid-out when they do.
+        final native = c.nativeController;
+        return ValueListenableBuilder<VideoPlayerValue>(
+          valueListenable: native,
+          builder: (context, value, child) {
+            final size = value.size;
+            if (!value.isInitialized || size.width <= 0 || size.height <= 0) {
+              return const ColoredBox(color: Colors.black);
+            }
+            return Center(
+              child: AspectRatio(
+                aspectRatio: size.width / size.height,
+                child: child,
+              ),
+            );
+          },
+          child: VideoPlayer(native),
+        );
       }
     }
     return const ColoredBox(color: Colors.black);
