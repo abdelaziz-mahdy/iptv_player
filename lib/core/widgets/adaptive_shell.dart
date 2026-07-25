@@ -48,6 +48,10 @@ class AdaptiveShell extends StatefulWidget {
 
 class _AdaptiveShellState extends State<AdaptiveShell> {
   final FocusScopeNode _railScope = FocusScopeNode(debugLabel: 'nav-rail');
+
+  /// Body element focused when the rail was last entered, restored on the way
+  /// back so the position in a long page is not lost.
+  FocusNode? _lastBodyFocus;
   final FocusScopeNode _bodyScope = FocusScopeNode(debugLabel: 'shell-body');
 
   @override
@@ -131,6 +135,34 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
     );
   }
 
+  /// Returns focus to the body from the rail.
+  ///
+  /// Plain "focus the first focusable" lands on the top row even when the body
+  /// is scrolled far down, so the highlight vanishes off-screen. Prefer the
+  /// element the user left, then the first one actually on screen, and scroll
+  /// whatever is chosen into view.
+  void _enterBody() {
+    final last = _lastBodyFocus;
+    if (last != null &&
+        last.context != null &&
+        last.canRequestFocus &&
+        !last.skipTraversal) {
+      _focusAndReveal(last);
+      return;
+    }
+    final screen = Offset.zero & MediaQuery.sizeOf(context);
+    FocusNode? first;
+    for (final n in _bodyScope.traversalDescendants) {
+      if (!n.canRequestFocus || n.skipTraversal) continue;
+      first ??= n;
+      if (n.rect.overlaps(screen)) {
+        _focusAndReveal(n);
+        return;
+      }
+    }
+    if (first != null) _focusAndReveal(first);
+  }
+
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
@@ -163,9 +195,12 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
         _focusAndReveal(neighbour);
       } else if (inRow) {
         // Edge of the row — the rail, without asking traversal, which would
-        // wander into another row's scrolled-off items.
+        // wander into another row's scrolled-off items. Remember where we
+        // left so RIGHT comes back here.
+        _lastBodyFocus = focused;
         _focusFirstIn(_railScope);
       } else if (!focused.focusInDirection(railDir)) {
+        _lastBodyFocus = focused;
         _focusFirstIn(_railScope);
       }
       return KeyEventResult.handled;
@@ -173,7 +208,7 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
     // Toward the body from the rail: move within the rail, or escape back.
     if (!towardRail && inRail) {
       if (!focused.focusInDirection(bodyDir)) {
-        _focusFirstIn(_bodyScope);
+        _enterBody();
       }
       return KeyEventResult.handled;
     }
