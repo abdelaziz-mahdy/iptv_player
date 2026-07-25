@@ -14,14 +14,18 @@ import 'package:iptv_player/l10n/generated/app_localizations.dart';
 import '../../support/fake_hydrated_storage.dart';
 import 'fake_player_controller.dart';
 
-Widget _buildPlayer({VoidCallback? onBack, MediaKind kind = MediaKind.movie}) => MaterialApp(
+Widget _buildPlayer({
+  VoidCallback? onBack,
+  MediaKind kind = MediaKind.movie,
+  FakePlayerController? controller,
+}) => MaterialApp(
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: BlocProvider(
         create: (_) => AccessibilityCubit(),
         child: PlayerScreen(
-          controller: FakePlayerController(),
+          controller: controller ?? FakePlayerController(),
           itemKey: kind == MediaKind.channel ? 'channel:c1' : 'movie:m1',
           url: 'http://x',
           title: 'Dune',
@@ -191,5 +195,71 @@ void main() {
       await tester.pump();
       expect(controller.position, Duration.zero);
     });
+  });
+
+  testWidgets('spinner appears while re-buffering', (tester) async {
+    final controller = FakePlayerController();
+    await tester.pumpWidget(_buildPlayer(controller: controller));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    controller.buffering = true;
+    controller.emitStatusForTesting();
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    controller.buffering = false;
+    controller.emitStatusForTesting();
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('failed playback shows the reason and a retry, not black',
+      (tester) async {
+    final controller = FakePlayerController();
+    controller.failNextInitializeWith =
+        Exception('SocketException: Failed host lookup');
+    await tester.pumpWidget(_buildPlayer(controller: controller));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(
+      find.text('Could not reach the stream. Check your connection and try again.'),
+      findsOneWidget,
+    );
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    // Retry re-initializes; the second attempt succeeds and the panel goes.
+    await tester.tap(find.text('Retry'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(controller.initializeCount, 2);
+    expect(find.text('Retry'), findsNothing);
+  });
+
+  testWidgets('left/right seek immediately while controls are hidden',
+      (tester) async {
+    final controller = FakePlayerController();
+    await tester.pumpWidget(_buildPlayer(controller: controller));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final cubit = BlocProvider.of<PlayerCubit>(
+      tester.element(find.byType(BlocConsumer<PlayerCubit, PlayerUiState>)),
+    );
+    cubit.hideControlsForTesting();
+    await tester.pump();
+
+    final before = cubit.state.position;
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    expect(cubit.state.position, before + const Duration(seconds: 10));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pump();
+    expect(cubit.state.position, before);
   });
 }

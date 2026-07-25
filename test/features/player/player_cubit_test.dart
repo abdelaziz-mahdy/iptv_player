@@ -451,5 +451,81 @@ void main() {
       // Calling the poll after close must not throw even though isClosed==true
       expect(() => cubit.pollBitrateBadgeForTesting(), returnsNormally);
     });
+    group('loading and failures', () {
+      test('start() clears loading once playback produces motion', () async {
+        expect(cubit.state.loading, isTrue, reason: 'spinner before start');
+        await cubit.start();
+        await Future<void>.delayed(Duration.zero);
+        expect(cubit.state.loading, isFalse);
+        expect(cubit.state.error, isNull);
+      });
+
+      test('re-buffering mid-playback shows the spinner again', () async {
+        await cubit.start();
+        await Future<void>.delayed(Duration.zero);
+        expect(cubit.state.loading, isFalse);
+
+        controller.buffering = true;
+        controller.emitStatusForTesting();
+        await Future<void>.delayed(Duration.zero);
+        expect(cubit.state.loading, isTrue);
+
+        controller.buffering = false;
+        controller.emitStatusForTesting();
+        await Future<void>.delayed(Duration.zero);
+        expect(cubit.state.loading, isFalse);
+      });
+
+      test('a deliberate pause does NOT bring the spinner back', () async {
+        await cubit.start();
+        await Future<void>.delayed(Duration.zero);
+        await cubit.togglePlayPause();
+        await Future<void>.delayed(Duration.zero);
+        expect(cubit.state.isPlaying, isFalse);
+        expect(cubit.state.loading, isFalse);
+      });
+
+      test('start() surfaces a failure instead of throwing', () async {
+        controller.failNextInitializeWith =
+            Exception('SocketException: Failed host lookup');
+        await expectLater(cubit.start(), completes);
+        expect(cubit.state.error, PlaybackFailure.network);
+        expect(cubit.state.loading, isFalse);
+      });
+
+      test('retry() clears the error and starts again', () async {
+        controller.failNextInitializeWith = Exception('HTTP 404 not found');
+        await cubit.start();
+        expect(cubit.state.error, PlaybackFailure.unavailable);
+
+        await cubit.retry();
+        await Future<void>.delayed(Duration.zero);
+        expect(cubit.state.error, isNull);
+        expect(cubit.state.isPlaying, isTrue);
+        expect(controller.initializeCount, 2);
+      });
+
+      test('retry() without an error is a no-op', () async {
+        await cubit.start();
+        expect(controller.initializeCount, 1);
+        await cubit.retry();
+        expect(controller.initializeCount, 1);
+      });
+
+      test('classifyStartFailure maps provider responses', () {
+        expect(PlayerCubit.classifyStartFailure(Exception('HTTP 403 Forbidden')),
+            PlaybackFailure.refused);
+        expect(PlayerCubit.classifyStartFailure(Exception('401 Unauthorized')),
+            PlaybackFailure.refused);
+        expect(PlayerCubit.classifyStartFailure(Exception('404 Not Found')),
+            PlaybackFailure.unavailable);
+        expect(PlayerCubit.classifyStartFailure(Exception('Connection timed out')),
+            PlaybackFailure.timeout);
+        expect(PlayerCubit.classifyStartFailure(Exception('SocketException')),
+            PlaybackFailure.network);
+        expect(PlayerCubit.classifyStartFailure(Exception('weird backend text')),
+            PlaybackFailure.unknown);
+      });
+    });
   });
 }

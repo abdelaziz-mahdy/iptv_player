@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:iptv_player/core/logging/app_logger.dart';
 import 'package:iptv_player/data/models/models.dart';
 import 'package:iptv_player/data/repositories/repositories.dart';
 
@@ -107,10 +108,25 @@ class DetailsCubit extends Cubit<DetailsState> {
     ));
   }
 
+  /// Every episode of the series in playback order, seasons concatenated.
+  ///
+  /// This is the queue handed to the player: Previous/Next then continue past
+  /// a season boundary instead of dead-ending on the last episode of the
+  /// season that happened to be on screen.
+  List<Episode> get allEpisodes => [
+        for (final s in state.seasons) ...(_episodesBySeason[s.id] ?? const []),
+      ];
+
+  /// Position of [episode] within [allEpisodes]; -1 when it is not found.
+  int indexInSeries(Episode episode) =>
+      allEpisodes.indexWhere((e) => e.id == episode.id);
+
   /// Where the header Play button should start, based on watch progress:
   /// the most recently played unfinished episode; else the episode after the
   /// last finished one (crossing into the next season if needed); else the
-  /// first episode. Returns null when the series has no episodes.
+  /// first episode. [episodes] is the whole series in order (see
+  /// [allEpisodes]), so Next keeps working across seasons. Returns null when
+  /// the series has no episodes.
   ({List<Episode> episodes, int episodeIndex})? playTarget() {
     if (state.seasons.isEmpty) return null;
 
@@ -146,9 +162,27 @@ class DetailsCubit extends Cubit<DetailsState> {
       // else: everything watched — start over from the first episode.
     }
 
-    final eps = _episodesBySeason[state.seasons[target.$1].id] ?? const [];
-    if (eps.isEmpty || target.$2 >= eps.length) return null;
-    return (episodes: eps, episodeIndex: target.$2);
+    final seasonEpisodes =
+        _episodesBySeason[state.seasons[target.$1].id] ?? const [];
+    // Forensics for "Play did not continue where I left off": the decision
+    // depends on progress rows keyed by episode id, and providers renumber
+    // those ids across catalog refreshes (see the favorites fix, cb5aa89) —
+    // stale keys silently degrade this to "start from the beginning".
+    final known = state.seasons
+        .expand((s) => _episodesBySeason[s.id] ?? const <Episode>[])
+        .where((e) => state.progressByKey.containsKey('episode:${e.id}'))
+        .length;
+    appLog.info('playTarget seasons=${state.seasons.length} '
+        'progressRows=${state.progressByKey.length} matchedEpisodes=$known '
+        'resumeAt=$resumeAt lastWatchedAt=$lastWatchedAt -> '
+        'season=${target.$1} episode=${target.$2}');
+    if (seasonEpisodes.isEmpty || target.$2 >= seasonEpisodes.length) {
+      return null;
+    }
+    final all = allEpisodes;
+    final index = all.indexWhere((e) => e.id == seasonEpisodes[target.$2].id);
+    if (index < 0) return null;
+    return (episodes: all, episodeIndex: index);
   }
 
   /// Switches to the season at [index] using the cached episode map.

@@ -176,4 +176,24 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get channels => 'قناة';
+
+  @override
+  String get retry => 'إعادة المحاولة';
+
+  @override
+  String get playbackFailedNetwork =>
+      'تعذّر الوصول إلى البث. تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get playbackFailedUnavailable => 'لم يعد هذا البث متاحًا لدى المزوّد.';
+
+  @override
+  String get playbackFailedRefused =>
+      'رفض المزوّد هذا البث. قد لا يشمله اشتراكك، أو أن عدد الأجهزة المتصلة كبير.';
+
+  @override
+  String get playbackFailedTimeout => 'لم يستجب البث في الوقت المحدد.';
+
+  @override
+  String get playbackFailedUnknown => 'تعذّر تشغيل هذا البث.';
 }

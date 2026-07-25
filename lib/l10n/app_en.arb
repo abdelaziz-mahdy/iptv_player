@@ -55,5 +55,11 @@
   "tabUpload": "Upload",
   "noResults": "No results",
   "resultsLabel": "results",
-  "channels": "channels"
+  "channels": "channels",
+  "retry": "Retry",
+  "playbackFailedNetwork": "Could not reach the stream. Check your connection and try again.",
+  "playbackFailedUnavailable": "This stream is no longer available from the provider.",
+  "playbackFailedRefused": "The provider refused this stream. Your subscription may not cover it, or too many devices are connected.",
+  "playbackFailedTimeout": "The stream did not respond in time.",
+  "playbackFailedUnknown": "This stream could not be played."
 }

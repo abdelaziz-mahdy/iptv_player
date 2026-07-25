@@ -433,6 +433,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'channels'**
   String get channels;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @playbackFailedNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach the stream. Check your connection and try again.'**
+  String get playbackFailedNetwork;
+
+  /// No description provided for @playbackFailedUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This stream is no longer available from the provider.'**
+  String get playbackFailedUnavailable;
+
+  /// No description provided for @playbackFailedRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The provider refused this stream. Your subscription may not cover it, or too many devices are connected.'**
+  String get playbackFailedRefused;
+
+  /// No description provided for @playbackFailedTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The stream did not respond in time.'**
+  String get playbackFailedTimeout;
+
+  /// No description provided for @playbackFailedUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'This stream could not be played.'**
+  String get playbackFailedUnknown;
 }
 
 class _AppLocalizationsDelegate

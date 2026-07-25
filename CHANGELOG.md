@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- The player now shows a **loading spinner** while a stream is opening or
+  re-buffering, so a slow provider no longer looks like a frozen screen.
+- When a stream cannot be played, the player now **explains why** — server
+  unreachable, no longer available, refused by the provider — with a Retry
+  button, instead of showing a black screen.
 - A **Recently Viewed** category now appears first in Movies, Series, and Live,
   so what you just watched is one click away.
 - Each category and channel group shows its **item count** on the right.
@@ -19,6 +24,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ones, updated as soon as you come back from the player.
 
 ### Changed
+- Left / right on the remote now **skips 10 seconds straight away** while the
+  controls are hidden, instead of only waking them up first.
+- **Next** in a series now continues into the **following season** when you
+  finish the last episode of one, rather than stopping there.
+- Videos now keep their **correct shape** on TV — widescreen films are no
+  longer stretched to fill the screen.
+- Moving **left to the side menu** now works from the first item of any row.
+  Previously the menu could only be reached when every row happened to be
+  scrolled fully to the left.
 - Playback on Android now uses the **mpv engine** (media_kit): noticeably
   smoother frame pacing on TV hardware, with a corruption-free picture on
   TVs with PowerVR graphics.

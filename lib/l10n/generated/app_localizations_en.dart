@@ -176,4 +176,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get channels => 'channels';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get playbackFailedNetwork =>
+      'Could not reach the stream. Check your connection and try again.';
+
+  @override
+  String get playbackFailedUnavailable =>
+      'This stream is no longer available from the provider.';
+
+  @override
+  String get playbackFailedRefused =>
+      'The provider refused this stream. Your subscription may not cover it, or too many devices are connected.';
+
+  @override
+  String get playbackFailedTimeout => 'The stream did not respond in time.';
+
+  @override
+  String get playbackFailedUnknown => 'This stream could not be played.';
 }

@@ -646,7 +646,14 @@ class _SeriesDetailBody extends StatelessWidget {
               _EpisodeList(
                 episodes: state.episodes,
                 progressByKey: state.progressByKey,
-                onPlayAt: (i) => onPlayEpisode(state.episodes, i),
+                // Hand the player the whole series, not just this season, so
+                // Next continues into the following season at a boundary.
+                onPlayAt: (i) {
+                  final cubit = ctx.read<DetailsCubit>();
+                  final index = cubit.indexInSeries(state.episodes[i]);
+                  if (index < 0) return;
+                  onPlayEpisode(cubit.allEpisodes, index);
+                },
               ),
             ],
           ],

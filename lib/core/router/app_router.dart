@@ -270,7 +270,9 @@ GoRouter buildRouter() {
                 playlistId: series.playlistId,
                 // Record the parent series (not the episode) as recently viewed.
                 recentKey: 'series:${series.id}',
-                // Next/Previous walk the episodes of the shown season.
+                // Next/Previous walk the whole series in order (the details
+                // screen passes every season's episodes), so Next carries on
+                // into the next season instead of stopping at its end.
                 queue: [
                   for (final ep in episodes)
                     PlayerQueueItem(

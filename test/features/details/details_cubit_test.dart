@@ -90,5 +90,34 @@ void main() {
       expect(
           cubit.state.progressByKey['episode:s1-1-e2']!.isWatched, isTrue);
     });
+
+    group('series-wide episode queue', () {
+      test('allEpisodes concatenates the seasons in order', () async {
+        final cubit = makeCubit();
+        await cubit.loadSeries(_series('s3'));
+
+        expect(cubit.allEpisodes.map((e) => e.title),
+            ['S1E1', 'S1E2', 'S2E1', 'S2E2']);
+        expect(cubit.indexInSeries(cubit.allEpisodes[2]), 2);
+      });
+
+      test('playTarget indexes into the whole series, not the season',
+          () async {
+        // Season 1 finished → next up is the first episode of season 2, which
+        // is index 2 of the series-wide list.
+        await playback.saveProgress(_progress('s3-1-e1', 2700));
+        await playback.saveProgress(_progress('s3-1-e2', 2700));
+
+        final cubit = makeCubit();
+        await cubit.loadSeries(_series('s3'));
+        await Future<void>.delayed(Duration.zero);
+
+        final target = cubit.playTarget();
+        expect(target, isNotNull);
+        expect(target!.episodes.length, 4, reason: 'queue spans both seasons');
+        expect(target.episodeIndex, 2);
+        expect(target.episodes[target.episodeIndex].title, 'S2E1');
+      });
+    });
   });
 }

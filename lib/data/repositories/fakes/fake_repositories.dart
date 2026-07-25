@@ -87,6 +87,11 @@ class FakeContentRepository implements ContentRepository {
   static const _seasons = {
     's1': [Season(id: 's1-1', seriesId: 's1', number: 1)],
     's2': [Season(id: 's2-1', seriesId: 's2', number: 1)],
+    // Two seasons: exercises play/queue behaviour across a season boundary.
+    's3': [
+      Season(id: 's3-1', seriesId: 's3', number: 1),
+      Season(id: 's3-2', seriesId: 's3', number: 2),
+    ],
   };
   static const _episodes = {
     's1-1': [
@@ -95,6 +100,14 @@ class FakeContentRepository implements ContentRepository {
     ],
     's2-1': [
       Episode(id: 's2-1-e1', seasonId: 's2-1', title: 'Dawn', number: 1, durationSec: 2700, streamUrl: 'http://x/e3'),
+    ],
+    's3-1': [
+      Episode(id: 's3-1-e1', seasonId: 's3-1', title: 'S1E1', number: 1, durationSec: 2700, streamUrl: 'http://x/s3e1'),
+      Episode(id: 's3-1-e2', seasonId: 's3-1', title: 'S1E2', number: 2, durationSec: 2700, streamUrl: 'http://x/s3e2'),
+    ],
+    's3-2': [
+      Episode(id: 's3-2-e1', seasonId: 's3-2', title: 'S2E1', number: 1, durationSec: 2700, streamUrl: 'http://x/s3e3'),
+      Episode(id: 's3-2-e2', seasonId: 's3-2', title: 'S2E2', number: 2, durationSec: 2700, streamUrl: 'http://x/s3e4'),
     ],
   };
 

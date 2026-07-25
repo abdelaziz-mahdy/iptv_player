@@ -77,6 +77,60 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
     return false;
   }
 
+  /// Nearest focusable neighbour of [focused] on the given side, **within the
+  /// same scrollable row**.
+  ///
+  /// Plain directional traversal cannot be used to decide "am I at the edge?".
+  /// A horizontal list keeps its scrolled-off items in the tree with real
+  /// negative-x rects, so LEFT from the first poster of one row happily lands
+  /// on an off-screen item of a *different* row. The rail was then only
+  /// reachable once every row happened to be scrolled fully left. Restricting
+  /// candidates to the focused item's own Scrollable, in the same vertical
+  /// band, makes "no neighbour" mean what it should: this really is the edge.
+  FocusNode? _rowNeighbour(FocusNode focused, {required bool toLeft}) {
+    final ctx = focused.context;
+    if (ctx == null) return null;
+    final row = Scrollable.maybeOf(ctx);
+    if (row == null) return null;
+    final rect = focused.rect;
+    FocusNode? best;
+    for (final node in _bodyScope.traversalDescendants) {
+      if (node == focused || !node.canRequestFocus || node.skipTraversal) {
+        continue;
+      }
+      final nodeCtx = node.context;
+      if (nodeCtx == null || Scrollable.maybeOf(nodeCtx) != row) continue;
+      final r = node.rect;
+      // Same band: excludes the rows above/below in a grid, which share one
+      // Scrollable with the focused item.
+      if (r.bottom <= rect.top || r.top >= rect.bottom) continue;
+      if (toLeft ? r.center.dx >= rect.center.dx : r.center.dx <= rect.center.dx) {
+        continue;
+      }
+      if (best == null ||
+          (toLeft
+              ? r.center.dx > best.rect.center.dx
+              : r.center.dx < best.rect.center.dx)) {
+        best = node;
+      }
+    }
+    return best;
+  }
+
+  /// Focuses [node] and scrolls it into view — [FocusNode.requestFocus] alone
+  /// does not, unlike the traversal policy's move.
+  void _focusAndReveal(FocusNode node) {
+    node.requestFocus();
+    final ctx = node.context;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      alignment: 0.1,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+    );
+  }
+
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
@@ -99,10 +153,19 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
     final railDir = rtl ? TraversalDirection.right : TraversalDirection.left;
     final bodyDir = rtl ? TraversalDirection.left : TraversalDirection.right;
 
-    // Toward the rail from the body: move within the body, or escape to the
-    // rail at the edge.
+    // Toward the rail from the body: move within the row, or escape to the
+    // rail at its edge.
     if (towardRail && !inRail) {
-      if (!focused.focusInDirection(railDir)) {
+      final ctx = focused.context;
+      final inRow = ctx != null && Scrollable.maybeOf(ctx) != null;
+      final neighbour = _rowNeighbour(focused, toLeft: !rtl);
+      if (neighbour != null) {
+        _focusAndReveal(neighbour);
+      } else if (inRow) {
+        // Edge of the row — the rail, without asking traversal, which would
+        // wander into another row's scrolled-off items.
+        _focusFirstIn(_railScope);
+      } else if (!focused.focusInDirection(railDir)) {
         _focusFirstIn(_railScope);
       }
       return KeyEventResult.handled;

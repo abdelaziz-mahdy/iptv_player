@@ -83,13 +83,14 @@ class VideoPlayerControllerAdapter implements PlayerController {
       // fvp/MDK: the desktop player, and the Android backend under
       // FORCE_FVP=true. On Android TV PowerVR GPUs MDK's 10-bit EGLConfig
       // corrupts video — MainActivity sets EGL_SDR_DEPTH=8 (fvp#374).
-      // Android renders via FVP_DIRECT_SURFACE (MainActivity): MediaCodec
-      // outputs straight into the platform view's SurfaceView, no GL — 4K
-      // scans out at native resolution (24fps at 4K24, 56fps at 4K60
-      // benchmarked). The pinned fork routes HDR/10-bit videos back to the
-      // GL path per video (non-tunneled HDR wedges the Realtek decoder);
-      // maxWidth/maxHeight only apply to that GL fallback — the fork skips
-      // the clamp in direct mode.
+      // Android renders with 'directSurface': MediaCodec outputs straight
+      // into the platform view's SurfaceView, no GL — 4K scans out at native
+      // resolution (24fps at 4K24, 56fps at 4K60 benchmarked), so
+      // maxWidth/maxHeight (a GL-path clamp) do not apply.
+      // HDR CAVEAT: this pin is the upstream PR branch (fvp#379), which does
+      // NOT carry the fork's per-video HDR-to-GL routing — non-tunneled HDR
+      // wedges the Realtek decoder (mdk-sdk#361), so HDR titles are expected
+      // to stall on this build.
       // OpenSL audio: MDK slaves video pacing to the audio backend's position
       // clock, and this TV's AAudio reports positions too coarsely — frames
       // burst at ~10 presented fps. OpenSL paces frame-perfectly (24.2 fps,
@@ -101,6 +102,7 @@ class VideoPlayerControllerAdapter implements PlayerController {
               ? {
                   'maxWidth': 1920,
                   'maxHeight': 1088,
+                  'directSurface': true,
                   'player': {
                     'audio.renderer': 'OpenSL',
                     // MDK defaults to 1s min / 4s max buffered ahead — too
@@ -116,6 +118,16 @@ class VideoPlayerControllerAdapter implements PlayerController {
                 }
               : null);
       _fvpRegistered = true;
+    }
+
+    // Re-entrant: PlayerCubit.retry() calls initialize again on the same
+    // adapter, so drop whatever the failed attempt left behind.
+    if (_controller != null) {
+      final old = _controller;
+      _controller = null;
+      _initialized = false;
+      old!.removeListener(_onControllerUpdate);
+      unawaited(old.dispose());
     }
 
     // SurfaceView platform view on Android: own display layer, and with

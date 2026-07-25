@@ -19,8 +19,23 @@ class FakePlayerController implements PlayerController {
   // ignore: unused_field
   bool get initialized => _initialized;
 
+  /// When set, [initialize] throws it — drives the failure/retry paths.
+  /// Cleared automatically after one throw so a retry can succeed.
+  Object? failNextInitializeWith;
+
+  /// Emitted as [PlayerStatus.buffering] on every status tick.
+  bool buffering = false;
+
+  int initializeCount = 0;
+
   @override
   Future<void> initialize(String url, {Duration? startAt}) async {
+    initializeCount++;
+    final failure = failNextInitializeWith;
+    if (failure != null) {
+      failNextInitializeWith = null;
+      throw failure;
+    }
     _initialized = true;
     // Real backends begin playback at startAt (mpv `start` property / a
     // post-init seek) — mirror that so resume tests observe the position.
@@ -76,13 +91,17 @@ class FakePlayerController implements PlayerController {
     await _statusCtrl.close();
   }
 
+  /// Pushes one status tick with the current fake state — lets a test drive
+  /// buffering transitions without touching playback.
+  void emitStatusForTesting() => _emit();
+
   void _emit() {
     if (!_statusCtrl.isClosed) {
       _statusCtrl.add(PlayerStatus(
         isPlaying: _playing,
         position: _position,
         duration: _duration,
-        buffering: false,
+        buffering: buffering,
       ));
     }
   }

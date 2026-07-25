@@ -45,6 +45,12 @@ class MediaKitPlayerController implements PlayerController {
 
   @override
   Future<void> initialize(String url, {Duration? startAt}) async {
+    // Re-entrant: PlayerCubit.retry() calls initialize again on the same
+    // controller, and the listeners below would otherwise stack up.
+    for (final s in _subs) {
+      unawaited(s.cancel());
+    }
+    _subs.clear();
     if (kMpvLogCaptureBuild) {
       _subs.add(_player.stream.log.listen(
         (l) => debugPrint('[mpv] [${l.prefix}] ${l.level}: ${l.text}'),

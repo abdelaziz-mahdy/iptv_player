@@ -55,5 +55,11 @@
   "tabUpload": "رفع",
   "noResults": "لا نتائج",
   "resultsLabel": "نتيجة",
-  "channels": "قناة"
+  "channels": "قناة",
+  "retry": "إعادة المحاولة",
+  "playbackFailedNetwork": "تعذّر الوصول إلى البث. تحقق من اتصالك وحاول مرة أخرى.",
+  "playbackFailedUnavailable": "لم يعد هذا البث متاحًا لدى المزوّد.",
+  "playbackFailedRefused": "رفض المزوّد هذا البث. قد لا يشمله اشتراكك، أو أن عدد الأجهزة المتصلة كبير.",
+  "playbackFailedTimeout": "لم يستجب البث في الوقت المحدد.",
+  "playbackFailedUnknown": "تعذّر تشغيل هذا البث."
 }
