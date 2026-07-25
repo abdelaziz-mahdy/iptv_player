@@ -182,10 +182,9 @@ class _PlayerScreenState extends State<PlayerScreen>
   bool _sliderFocused = false;
   // Focus restored to the play/pause button each time controls are revealed.
   final FocusNode _playPauseFocus = FocusNode(debugLabel: 'player-playpause');
-  // Left/right are seeking rather than traversing the control row. Entered by
-  // a left/right press while the controls are hidden, left by any other key or
-  // when the controls hide again.
-  bool _seekMode = false;
+  // Set when a seek revealed the controls, so the reveal hands focus to the
+  // scrubber instead of the play/pause button.
+  bool _revealedBySeek = false;
 
   @override
   void initState() {
@@ -211,17 +210,17 @@ class _PlayerScreenState extends State<PlayerScreen>
   /// Global key handler: any key wakes the controls and resets the idle timer,
   /// whichever widget ends up consuming the event.
   ///
-  /// It also owns left/right for seeking. A press while the controls are
-  /// hidden seeks straight away — pressing up, landing on the scrubber and
-  /// only then seeking is three presses for what a TV remote should do in
-  /// one — and puts the screen in [_seekMode] so the following presses keep
-  /// seeking instead of traversing the button row. Any other key leaves that
-  /// mode, so the controls stay reachable.
+  /// It also owns the *first* left/right press, the one that arrives while no
+  /// control has focus — pressing up, landing on the scrubber and only then
+  /// seeking is three presses for what a remote should do in one. That press
+  /// seeks and moves focus onto the scrubber, so the highlight sits on the
+  /// thing that is moving; every press after it is handled by the scrubber
+  /// itself ([_onSliderKey]).
   ///
-  /// This has to live here rather than in a Focus handler: it runs before
-  /// focus dispatch, and afterwards "were the controls hidden?" can no longer
-  /// be answered. Returns true only when it seeks, so nothing else acts on
-  /// the same press.
+  /// It has to live here rather than in a Focus handler: it runs before focus
+  /// dispatch, and afterwards "were the controls hidden?" can no longer be
+  /// answered. Returns true only when it seeks, so nothing else acts on the
+  /// same press.
   bool _handleHardwareKey(KeyEvent event) {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) return false;
     final cubit = _cubit;
@@ -230,16 +229,17 @@ class _PlayerScreenState extends State<PlayerScreen>
     final key = event.logicalKey;
     final isSeekKey = key == LogicalKeyboardKey.arrowLeft ||
         key == LogicalKeyboardKey.arrowRight;
-    if (isSeekKey &&
-        (!cubit.state.showControls || _seekMode) &&
-        _seek(cubit, key)) {
-      _seekMode = true;
-      // Keep focus off the control row so the next press seeks again.
-      _rootFocus.requestFocus();
+    // The scrubber handles its own keys once focused.
+    if (isSeekKey && !_sliderFocus.hasPrimaryFocus && _seek(cubit, key)) {
+      _revealedBySeek = true;
       cubit.revealControls();
+      // Hidden controls sit behind ExcludeFocus, so the scrubber cannot take
+      // focus until the reveal has been laid out.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _sliderFocus.requestFocus();
+      });
       return true;
     }
-    if (!isSeekKey) _seekMode = false;
     cubit.revealControls();
     return false;
   }
@@ -414,17 +414,14 @@ class _PlayerScreenState extends State<PlayerScreen>
               // When controls reappear, move focus back onto a real control so
               // the D-pad works immediately.
               listenWhen: (prev, curr) =>
-                  prev.showControls != curr.showControls,
+                  !prev.showControls && curr.showControls,
               listener: (context, state) {
-                if (!state.showControls) {
-                  // Hidden again — the next left/right starts a fresh seek.
-                  _seekMode = false;
+                // A seek revealed them: focus belongs on the scrubber, which
+                // it already has (see [_handleHardwareKey]).
+                if (_revealedBySeek) {
+                  _revealedBySeek = false;
                   return;
                 }
-                // While seeking, focus stays on the root node so the next
-                // left/right press seeks instead of moving along the button
-                // row (see [_handleHardwareKey]).
-                if (_seekMode) return;
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) _playPauseFocus.requestFocus();
                 });

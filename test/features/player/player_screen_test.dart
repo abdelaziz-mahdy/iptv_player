@@ -257,6 +257,14 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pump();
     expect(cubit.state.position, before + const Duration(seconds: 10));
+    await tester.pump();
+    // The seek reveals the controls and puts the highlight on the scrubber,
+    // which then owns the following presses.
+    expect(cubit.state.showControls, isTrue);
+    expect(
+      FocusManager.instance.primaryFocus?.debugLabel,
+      'player-seek-slider',
+    );
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
     await tester.pump();
