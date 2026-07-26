@@ -153,15 +153,22 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
     return best;
   }
 
-  /// Focuses [node] and scrolls it into view — [FocusNode.requestFocus] alone
+  /// Focuses [node] and brings it into view — [FocusNode.requestFocus] alone
   /// does not, unlike the traversal policy's move.
-  void _focusAndReveal(FocusNode node) {
+  ///
+  /// Scrolls only as far as it must, like Flutter's own directional traversal:
+  /// a fixed alignment would drag the row along on every press even when the
+  /// target is already on screen.
+  void _focusAndReveal(FocusNode node, {bool towardStart = true}) {
     node.requestFocus();
     final ctx = node.context;
     if (ctx == null) return;
     Scrollable.ensureVisible(
       ctx,
-      alignment: 0.1,
+      alignment: towardStart ? 0.0 : 1.0,
+      alignmentPolicy: towardStart
+          ? ScrollPositionAlignmentPolicy.keepVisibleAtStart
+          : ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeOut,
     );
@@ -222,7 +229,7 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
       final neighbour = _rowNeighbour(focused, toLeft: !rtl) ??
           _visibleNeighbour(focused, toLeft: !rtl);
       if (neighbour != null) {
-        _focusAndReveal(neighbour);
+        _focusAndReveal(neighbour, towardStart: !rtl);
       } else {
         // Remember where we left so RIGHT comes back here.
         _lastBodyFocus = focused;
