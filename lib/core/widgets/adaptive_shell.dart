@@ -121,6 +121,38 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
     return best;
   }
 
+  /// Nearest focusable to the given side that is **currently on screen**,
+  /// anywhere in the body — the category sidebar beside a grid, for instance.
+  ///
+  /// Visibility is the filter that [_rowNeighbour] gets from staying inside
+  /// one Scrollable: a list keeps its scrolled-off items at real off-screen
+  /// coordinates, and without this check LEFT would land on one of them.
+  FocusNode? _visibleNeighbour(FocusNode focused, {required bool toLeft}) {
+    final screen = Offset.zero & MediaQuery.sizeOf(context);
+    final rect = focused.rect;
+    FocusNode? best;
+    for (final node in _bodyScope.traversalDescendants) {
+      if (node == focused || !node.canRequestFocus || node.skipTraversal) {
+        continue;
+      }
+      final r = node.rect;
+      if (!r.overlaps(screen)) continue;
+      if (r.bottom <= rect.top || r.top >= rect.bottom) continue;
+      if (toLeft
+          ? r.center.dx >= rect.center.dx
+          : r.center.dx <= rect.center.dx) {
+        continue;
+      }
+      if (best == null ||
+          (toLeft
+              ? r.center.dx > best.rect.center.dx
+              : r.center.dx < best.rect.center.dx)) {
+        best = node;
+      }
+    }
+    return best;
+  }
+
   /// Focuses [node] and scrolls it into view — [FocusNode.requestFocus] alone
   /// does not, unlike the traversal policy's move.
   void _focusAndReveal(FocusNode node) {
@@ -182,24 +214,17 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
     // flip the hop directions under RTL or the rail becomes unreachable.
     final rtl = Directionality.of(context) == TextDirection.rtl;
     final towardRail = rtl ? isRight : isLeft;
-    final railDir = rtl ? TraversalDirection.right : TraversalDirection.left;
     final bodyDir = rtl ? TraversalDirection.left : TraversalDirection.right;
 
-    // Toward the rail from the body: move within the row, or escape to the
-    // rail at its edge.
+    // Along the row first, then whatever is visible beside it (a grid's
+    // category sidebar), and only then out to the rail.
     if (towardRail && !inRail) {
-      final ctx = focused.context;
-      final inRow = ctx != null && Scrollable.maybeOf(ctx) != null;
-      final neighbour = _rowNeighbour(focused, toLeft: !rtl);
+      final neighbour = _rowNeighbour(focused, toLeft: !rtl) ??
+          _visibleNeighbour(focused, toLeft: !rtl);
       if (neighbour != null) {
         _focusAndReveal(neighbour);
-      } else if (inRow) {
-        // Edge of the row — the rail, without asking traversal, which would
-        // wander into another row's scrolled-off items. Remember where we
-        // left so RIGHT comes back here.
-        _lastBodyFocus = focused;
-        _focusFirstIn(_railScope);
-      } else if (!focused.focusInDirection(railDir)) {
+      } else {
+        // Remember where we left so RIGHT comes back here.
         _lastBodyFocus = focused;
         _focusFirstIn(_railScope);
       }

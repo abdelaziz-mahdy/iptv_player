@@ -44,7 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   longer stretched to fill the screen.
 - Moving **left to the side menu** now works from the first item of any row.
   Previously the menu could only be reached when every row happened to be
-  scrolled fully to the left.
+  scrolled fully to the left. On Movies and Series, left from the first column
+  lands on the **category list** first, as it should, instead of skipping
+  straight past it.
 - Playback on Android now uses the **mpv engine** (media_kit): noticeably
   smoother frame pacing on TV hardware, with a corruption-free picture on
   TVs with PowerVR graphics.
