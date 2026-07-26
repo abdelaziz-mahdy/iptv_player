@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   progress bar for partially watched episodes and a checkmark for finished
   ones, updated as soon as you come back from the player.
 
+### Changed
+- The app now keeps **three days of diagnostic logs** (previously seven) and
+  records what the video engine reports, so a problem you hit yesterday can
+  still be looked into today.
+
 ### Fixed
 - **Movies opened from Favorites now play.** They were handed to the player
   without a stream address, so playback failed with "invalid or unsupported

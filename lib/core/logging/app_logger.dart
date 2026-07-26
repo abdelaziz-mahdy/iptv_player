@@ -31,7 +31,10 @@ String scrubUrl(String url) => url
 
 /// Opens the file sink, prunes logs older than [keepDays], and flushes any
 /// buffered early events. Call once from `main()`; safe to skip in tests.
-Future<void> initAppLogging({int keepDays = 7}) => _fileObserver.open(keepDays);
+///
+/// Three days is enough to look back at "it broke yesterday" while the app is
+/// still running, without letting MDK's output pile up.
+Future<void> initAppLogging({int keepDays = 3}) => _fileObserver.open(keepDays);
 
 class _FileLogObserver extends TalkerObserver {
   IOSink? _sink;

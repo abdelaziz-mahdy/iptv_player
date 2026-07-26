@@ -19,17 +19,26 @@ Future<void> main() async {
     appLog.handle(details.exception, details.stack, 'FlutterError');
     FlutterError.presentError(details);
   };
-  if (kFvpCaptureBuild) {
-    // fvp routes MDK's `log=all` output through package:logging; with no root
-    // listener those lines are dropped before reaching logcat. Surface them so
-    // the fvp#374 report carries the complete MDK log. (`print`, not
-    // `debugPrint`, so long runs aren't throttled/truncated.)
-    Logger.root.level = Level.ALL;
-    Logger.root.onRecord.listen((r) {
+  // fvp routes MDK's output through package:logging, and with no root listener
+  // those lines are dropped. They are the only view into decode/audio-clock
+  // behaviour when playback misbehaves on the TV, so they ship: INFO into the
+  // pullable app log, everything under FVP_CAPTURE.
+  Logger.root.level = kFvpCaptureBuild ? Level.ALL : Level.INFO;
+  Logger.root.onRecord.listen((r) {
+    final line = '[${r.loggerName}] ${r.message}';
+    if (r.level >= Level.SEVERE) {
+      appLog.error(line);
+    } else if (r.level >= Level.WARNING) {
+      appLog.warning(line);
+    } else {
+      appLog.debug(line);
+    }
+    if (kFvpCaptureBuild) {
+      // print, not debugPrint: long runs must not be throttled/truncated.
       // ignore: avoid_print
       print('[${r.loggerName}] ${r.level.name}: ${r.message}');
-    });
-  }
+    }
+  });
   HydratedBloc.storage = await HydratedStorage.build(
     storageDirectory: HydratedStorageDirectory(
       (await getApplicationSupportDirectory()).path,

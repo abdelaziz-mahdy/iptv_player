@@ -115,9 +115,11 @@ class VideoPlayerControllerAdapter implements PlayerController {
                     // value is recommended. Latency is not affected."
                     'buffer': '2000+30000',
                   },
-                  // FVP_CAPTURE builds: full MDK log for upstream reports
-                  // (main.dart surfaces package:logging to logcat).
-                  if (kFvpCaptureBuild) 'global': {'logLevel': 'all'},
+                  // MDK's own log. 'info' ships (decoder open/close, seeks,
+                  // stream info, errors); FVP_CAPTURE raises it to every line
+                  // for upstream reports. main.dart routes both into the
+                  // pullable app log.
+                  'global': {'logLevel': kFvpCaptureBuild ? 'all' : 'info'},
                 }
               : null);
       _fvpRegistered = true;
