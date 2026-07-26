@@ -18,3 +18,6 @@ docs/fvp-issue.md
 scripts/build_fvp_capture.sh
 scripts/fvp_capture_logs.sh
 tv-logs/
+
+# Flutter crash reports (local diagnostics, contain local paths)
+flutter_*.log
