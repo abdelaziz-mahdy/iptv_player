@@ -33,6 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   still be looked into today.
 
 ### Fixed
+- **Live channels no longer freeze on a still picture while the sound keeps
+  playing.** The audio engine the app asked for could start its clock from the
+  wrong point on live streams, leaving the video permanently "in the future";
+  the app now uses the player's own default engine.
 - **Movies opened from Favorites now play.** They were handed to the player
   without a stream address, so playback failed with "invalid or unsupported
   media" while the same movie played fine from the Movies tab.

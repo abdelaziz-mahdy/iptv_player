@@ -32,6 +32,11 @@ const kMpvAo = String.fromEnvironment('BENCH_MPV_AO');
 /// fvp: force an audio renderer ('AudioTrack' or 'OpenSL'); empty = mdk default.
 const kFvpAudioBackend = String.fromEnvironment('FVP_AUDIO_BACKEND');
 
+/// Seconds to seek to right after opening — reproduces "resume a partly
+/// watched title", where MDK sometimes starts the audio clock at 0 instead of
+/// the seek position and video never becomes due (frozen picture, audio fine).
+const kSeekSec = int.fromEnvironment('BENCH_SEEK');
+
 /// fvp: 'texture' (Flutter texture, the old view) or 'platform' (SurfaceView
 /// platform view, fvp PR #379). With the FVP_DIRECT_SURFACE=1 env var (set by
 /// MainActivity from the `direct_surface` launch intent extra) the platform
@@ -55,7 +60,8 @@ void main() {
   // ignore: avoid_print
   print('[BENCH_META] variant=$kVariant backend=$kBackend url=$kUrl '
       'view=$kBenchView direct=$kDirectSurface '
-      'fvpCopy=$kFvpDecoderCopy fvpAudio=${kFvpAudioBackend.isEmpty ? '-' : kFvpAudioBackend}');
+      'fvpCopy=$kFvpDecoderCopy fvpAudio=${kFvpAudioBackend.isEmpty ? '-' : kFvpAudioBackend} '
+      'seek=${kSeekSec}s');
   if (kBackend == 'fvp') {
     // MDK logs arrive via package:logging; print() to avoid debugPrint throttling.
     Logger.root.level = Level.ALL;
@@ -169,6 +175,9 @@ class _BenchScreenState extends State<BenchScreen> {
     try {
       await c.initialize();
       await c.setLooping(true);
+      if (kSeekSec > 0) {
+        await c.seekTo(Duration(seconds: kSeekSec));
+      }
       await c.play();
     } catch (e) {
       // ignore: avoid_print

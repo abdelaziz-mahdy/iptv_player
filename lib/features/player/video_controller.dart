@@ -90,13 +90,10 @@ class VideoPlayerControllerAdapter implements PlayerController {
       // NOT carry the fork's per-video HDR-to-GL routing — non-tunneled HDR
       // wedges the Realtek decoder (mdk-sdk#361), so HDR titles are expected
       // to stall on this build.
-      // OpenSL audio: MDK slaves video pacing to the audio backend's position
-      // clock, and this TV's AAudio reported positions too coarsely — frames
-      // burst at ~10 presented fps. OpenSL paces frame-perfectly (24.2 fps,
-      // zero droughts, benchmarked; fvp#384, fixed upstream but not yet in a
-      // released SDK). Set via MDK's "audio.renderer" player property
-      // (== setAudioBackends), which stock fvp forwards from
-      // options['player'] before prepare — no fork API needed.
+      // Audio backend: MDK's default. It was pinned to OpenSL while AAudio
+      // reported positions too coarsely here (fvp#384, fixed upstream), but
+      // OpenSL zeroes the audio clock on live streams whose timestamps start
+      // far from zero, freezing video while sound plays — see kAudioRenderer.
       fvp.registerWith(
           options: Platform.isAndroid
               ? {
@@ -106,7 +103,8 @@ class VideoPlayerControllerAdapter implements PlayerController {
                   // SurfaceView — the only path that sustains 4K here.
                   'tunnel': true,
                   'player': {
-                    'audio.renderer': 'OpenSL',
+                    if (kAudioRenderer.isNotEmpty)
+                      'audio.renderer': kAudioRenderer,
                     // MDK defaults to 1s min / 4s max buffered ahead — too
                     // shallow for jittery IPTV providers — fvp starved at
                     // ~5fps input while the provider burst-served 10MB/s,

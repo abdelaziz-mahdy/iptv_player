@@ -20,6 +20,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SERIAL="${SERIAL:-192.168.2.17:5555}"
 DURATION="${DURATION:-60}"
+# Seek target for the resume-repro variants (clip is 360s).
+RESUME_AT="${RESUME_AT:-300}"
+# Runs per variant — the resume bug is intermittent (~3 in 5 on the TV).
+REPEAT="${REPEAT:-1}"
 OUTDIR="${OUTDIR:-$ROOT/bench-results/$(date +%F)}"
 APKDIR="$ROOT/bench-results/apks"
 PKG=com.iptvplayer.benchmark_player
@@ -62,6 +66,14 @@ variant_defines() {
     [234][0-9]-fvp-pvd-*|[234][0-9]-fvp-pv-*)
                            echo "BENCH_BACKEND=fvp BENCH_URL=$(clip_for "$1") BENCH_VIEW=platform FVP_AUDIO_BACKEND=OpenSL" ;;
     3[0-9]-media_kit-*)    echo "BENCH_BACKEND=media_kit BENCH_URL=$(clip_for "$1")" ;;
+    # -- resume repro (mdk-sdk): open, then seek to RESUME_AT before play.
+    # MDK sometimes starts the audio clock at 0 instead of the seek position;
+    # video is paced against it, so frames never come due — frozen picture,
+    # audio fine. Texture view, so the platform-view work is not involved.
+    7[0-9]-resume-opensl)     echo "BENCH_BACKEND=fvp BENCH_URL=$CLIP FVP_AUDIO_BACKEND=OpenSL BENCH_SEEK=$RESUME_AT" ;;
+    7[0-9]-resume-aaudio)     echo "BENCH_BACKEND=fvp BENCH_URL=$CLIP FVP_AUDIO_BACKEND=AAudio BENCH_SEEK=$RESUME_AT" ;;
+    7[0-9]-resume-audiotrack) echo "BENCH_BACKEND=fvp BENCH_URL=$CLIP FVP_AUDIO_BACKEND=AudioTrack BENCH_SEEK=$RESUME_AT" ;;
+    7[0-9]-resume-default)    echo "BENCH_BACKEND=fvp BENCH_URL=$CLIP BENCH_SEEK=$RESUME_AT" ;;
     *) return 1 ;;
   esac
 }
@@ -94,6 +106,9 @@ variant_extras() {
 ALL_VARIANTS=(01-media_kit-baseline 02-fvp-default 03-fvp-copy 04-fvp-audiotrack
               05-fvp-noaudio 06-media_kit-live 07-fvp-live)
 EXTRA_VARIANTS=(08-media_kit-noaudio 09-fvp-opensl 10-fvp-live-opensl)
+# Resume repro across audio backends; run with REPEAT=5.
+RESUME_VARIANTS=(70-resume-opensl 71-resume-aaudio 72-resume-audiotrack
+                 73-resume-default)
 # The render-path × load matrix. mpv references show the device ceiling per
 # clip (mpv 1080p24 = variant 01).
 MATRIX_VARIANTS=(20-fvp-tex-1080p24 21-fvp-pv-1080p24 22-fvp-pvd-1080p24
