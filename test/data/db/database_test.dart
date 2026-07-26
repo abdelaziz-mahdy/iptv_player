@@ -100,4 +100,85 @@ void main() {
     // Non-existent returns null.
     expect(await db.getCredentials('no-such-id') == null, true);
   });
+
+  group('recently viewed', () {
+    Future<void> view(String key, DateTime at) => db.recordRecentlyViewed(
+          RecentlyViewedRowsCompanion.insert(
+            itemKey: key,
+            playlistId: 'p1',
+            viewedAt: at,
+          ),
+        );
+
+    test('the prefix filter and limit are per kind, not shared', () async {
+      final t0 = DateTime.utc(2026, 1, 1);
+      await view('channel:c1', t0);
+      for (var i = 0; i < 30; i++) {
+        await view('movie:m$i', t0.add(Duration(minutes: i + 1)));
+      }
+
+      // A movie binge must not evict the channel: each kind gets its own cap.
+      final channels =
+          await db.watchRecentlyViewed('p1', 'channel:', 20).first;
+      expect(channels.map((r) => r.itemKey), ['channel:c1']);
+
+      final movies = await db.watchRecentlyViewed('p1', 'movie:', 20).first;
+      expect(movies.length, 20);
+      expect(movies.first.itemKey, 'movie:m29', reason: 'newest first');
+    });
+
+    test('re-viewing an item moves it to the front', () async {
+      final t0 = DateTime.utc(2026, 1, 1);
+      await view('movie:a', t0);
+      await view('movie:b', t0.add(const Duration(minutes: 1)));
+      await view('movie:a', t0.add(const Duration(minutes: 2)));
+
+      final rows = await db.watchRecentlyViewed('p1', 'movie:', 20).first;
+      expect(rows.map((r) => r.itemKey), ['movie:a', 'movie:b']);
+    });
+  });
+
+  group('categories', () {
+    test('getCategories returns the provider order, name as tie-break',
+        () async {
+      await db.replaceCategories('p1', 'live', [
+        CategoriesCompanion.insert(
+            playlistId: 'p1',
+            type: 'live',
+            categoryId: 'c-sport',
+            name: 'Sports',
+            position: const Value(0)),
+        CategoriesCompanion.insert(
+            playlistId: 'p1',
+            type: 'live',
+            categoryId: 'c-news',
+            name: 'News',
+            position: const Value(1)),
+        // Legacy rows (imported before `position` existed) all carry 0.
+        CategoriesCompanion.insert(
+            playlistId: 'p1', type: 'live', categoryId: 'c-a', name: 'Aaa'),
+      ]);
+
+      final rows = await db.getCategories('p1', 'live');
+      expect(rows.map((r) => r.categoryId), ['c-a', 'c-sport', 'c-news']);
+    });
+
+    test('category use is recorded most-recent-first', () async {
+      Future<void> use(String id, DateTime at) => db.recordCategoryUse(
+            CategoryUsageRowsCompanion.insert(
+              playlistId: 'p1',
+              type: 'live',
+              categoryId: id,
+              usedAt: at,
+            ),
+          );
+      final t0 = DateTime.utc(2026, 1, 1);
+      await use('c1', t0);
+      await use('c2', t0.add(const Duration(minutes: 1)));
+      await use('c1', t0.add(const Duration(minutes: 2)));
+
+      final rows = await db.watchCategoryUse('p1', 'live').first;
+      expect(rows.map((r) => r.categoryId), ['c1', 'c2']);
+    });
+  });
 }

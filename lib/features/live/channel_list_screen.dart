@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/focusable_button.dart';
+import '../../core/widgets/remote_image.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../data/models/models.dart';
 
 /// A full-screen list of channels for a single group.
@@ -38,7 +40,7 @@ class ChannelListScreen extends StatelessWidget {
       body: channels.isEmpty
           ? Center(
               child: Text(
-                'No channels',
+                AppLocalizations.of(context)!.noChannels,
                 style: Theme.of(context)
                     .textTheme
                     .bodyLarge
@@ -101,13 +103,12 @@ class _ChannelRow extends StatelessWidget {
               alignment: Alignment.center,
               child: channel.logoUrl != null
                   ? ClipOval(
-                      child: Image.network(
-                        channel.logoUrl!,
+                      child: RemoteImage(
+                        url: channel.logoUrl!,
                         width: 44,
                         height: 44,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, e, st) =>
-                            _Abbr(name: channel.name, palette: p),
+                        memWidth: 132,
+                        fallback: _Abbr(name: channel.name, palette: p),
                       ),
                     )
                   : _Abbr(name: channel.name, palette: p),
@@ -159,7 +160,7 @@ class _Abbr extends StatelessWidget {
       abbr.toUpperCase(),
       style: TextStyle(
         color: p.accent,
-        fontSize: 13,
+        fontSize: 15,
         fontWeight: FontWeight.w800,
       ),
     );

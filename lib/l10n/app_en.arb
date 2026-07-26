@@ -66,5 +66,13 @@
   "director": "Director",
   "genre": "Genre",
   "country": "Country",
-  "loading": "Loading…"
+  "loading": "Loading…",
+  "recentlyViewed": "Recently Viewed",
+  "allCategory": "All",
+  "otherCategory": "Other",
+  "noChannels": "No channels",
+  "noContentYet": "No content yet",
+  "setUpPlaylist": "Set up a playlist",
+  "noItemsFound": "No items found",
+  "jumpToLetter": "Jump to letter"
 }

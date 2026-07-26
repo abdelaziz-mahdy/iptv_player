@@ -5,18 +5,35 @@ import '../../core/a11y/accessibility_cubit.dart';
 import '../../core/di/injection.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/focusable_button.dart';
+import '../../core/widgets/jump_to_letter.dart';
 import '../../core/widgets/live_badge.dart';
+import '../../core/widgets/remote_image.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'channel_list_screen.dart';
 import 'cubit/live_cubit.dart';
 
+/// Display label for a group: the synthetic ones are localized here, since the
+/// cubit has no BuildContext.
+String _groupLabel(AppLocalizations l10n, ChannelGroup g) => switch (g.id) {
+      kRecentGroupId => l10n.recentlyViewed,
+      kAllGroupId => l10n.allCategory,
+      kOtherGroupId => l10n.otherCategory,
+      _ => g.name,
+    };
+
 /// Minimum width (logical pixels) for the wide (sidebar + grid) layout.
 const double _kWideBreakpoint = 700.0;
 
 /// Width of the left group-selector sidebar in wide layout.
 const double _kSidebarWidth = 180.0;
+
+/// Channel tile metrics — shared by the grid delegate and the letter jump,
+/// which computes a scroll offset from them.
+const double _kChannelTileWidth = 190.0;
+const double _kChannelTileHeight = 152.0;
+const double _kChannelTileSpacing = 8.0;
 
 class LiveScreen extends StatelessWidget {
   const LiveScreen({super.key, required this.onPlayChannel});
@@ -36,10 +53,46 @@ class LiveScreen extends StatelessWidget {
   }
 }
 
-class _LiveView extends StatelessWidget {
+class _LiveView extends StatefulWidget {
   const _LiveView({required this.onPlayChannel});
 
   final void Function(List<Channel> channels, int index) onPlayChannel;
+
+  @override
+  State<_LiveView> createState() => _LiveViewState();
+}
+
+class _LiveViewState extends State<_LiveView> {
+  final _gridController = ScrollController();
+
+  @override
+  void dispose() {
+    _gridController.dispose();
+    super.dispose();
+  }
+
+  /// Scrolls the channel grid to the first channel starting with a letter the
+  /// user picks. Tiles are a fixed size, so the offset is arithmetic — no need
+  /// to build the intervening rows first.
+  Future<void> _jumpToLetter(List<Channel> channels) async {
+    final index = buildLetterIndex([for (final c in channels) c.name]);
+    if (index.isEmpty) return;
+    final letter = await showJumpToLetter(
+      context,
+      available: index.keys.toSet(),
+      title: AppLocalizations.of(context)!.jumpToLetter,
+    );
+    final target = letter == null ? null : index[letter];
+    if (target == null || !mounted || !_gridController.hasClients) return;
+
+    final width = MediaQuery.sizeOf(context).width - _kSidebarWidth - 25;
+    final columns = (width / _kChannelTileWidth).ceil().clamp(1, 100);
+    final row = target ~/ columns;
+    final offset = row * (_kChannelTileHeight + _kChannelTileSpacing);
+    _gridController.jumpTo(
+      offset.clamp(0.0, _gridController.position.maxScrollExtent),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +111,20 @@ class _LiveView extends StatelessWidget {
               ),
         ),
         actions: [
+          BlocBuilder<LiveCubit, LiveState>(
+            builder: (context, state) {
+              if (state.channelsInGroup.isEmpty) return const SizedBox.shrink();
+              return FocusableButton(
+                semanticLabel: l10n.jumpToLetter,
+                onPressed: () => _jumpToLetter(state.channelsInGroup),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Icon(Icons.sort_by_alpha,
+                      color: context.palette.fg, size: 24),
+                ),
+              );
+            },
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: LiveBadge(
@@ -81,7 +148,7 @@ class _LiveView extends StatelessWidget {
           if (state.groups.isEmpty) {
             return Center(
               child: Text(
-                'No channels',
+                l10n.noChannels,
                 style: Theme.of(context)
                     .textTheme
                     .bodyLarge
@@ -91,9 +158,12 @@ class _LiveView extends StatelessWidget {
           }
 
           if (isWide) {
-            return _WideLayout(onPlayChannel: onPlayChannel);
+            return _WideLayout(
+              onPlayChannel: widget.onPlayChannel,
+              gridController: _gridController,
+            );
           } else {
-            return _NarrowLayout(onPlayChannel: onPlayChannel);
+            return _NarrowLayout(onPlayChannel: widget.onPlayChannel);
           }
         },
       ),
@@ -106,9 +176,10 @@ class _LiveView extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _WideLayout extends StatelessWidget {
-  const _WideLayout({required this.onPlayChannel});
+  const _WideLayout({required this.onPlayChannel, required this.gridController});
 
   final void Function(List<Channel> channels, int index) onPlayChannel;
+  final ScrollController gridController;
 
   @override
   Widget build(BuildContext context) {
@@ -128,11 +199,24 @@ class _WideLayout extends StatelessWidget {
                   itemBuilder: (context, index) {
                     final group = state.groups[index];
                     final isSelected = group.id == state.selectedGroupId;
-                    return _GroupTile(
+                    final tile = _GroupTile(
                       group: group,
+                      label: _groupLabel(AppLocalizations.of(context)!, group),
                       isSelected: isSelected,
-                      autofocus: index == 0,
+                      autofocus: isSelected,
                       onTap: () => context.read<LiveCubit>().selectGroup(group.id),
+                    );
+                    // Separates the pinned block (All + the groups you use)
+                    // from the provider's full list.
+                    if (index != state.pinnedGroupCount || index == 0) {
+                      return tile;
+                    }
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Divider(height: 17, thickness: 1, color: p.border),
+                        tile,
+                      ],
                     );
                   },
                 ),
@@ -145,6 +229,7 @@ class _WideLayout extends StatelessWidget {
               child: _ChannelGrid(
                 channels: state.channelsInGroup,
                 onPlayChannel: onPlayChannel,
+                controller: gridController,
               ),
             ),
           ],
@@ -172,16 +257,17 @@ class _NarrowLayout extends StatelessWidget {
           itemCount: state.groups.length,
           itemBuilder: (context, index) {
             final group = state.groups[index];
+            final label = _groupLabel(AppLocalizations.of(context)!, group);
             return FocusableButton(
-              autofocus: index == 0,
-              semanticLabel: group.name,
+              autofocus: group.id == state.selectedGroupId,
+              semanticLabel: label,
               onPressed: () {
                 final cubit = context.read<LiveCubit>();
                 cubit.selectGroup(group.id);
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => ChannelListScreen(
-                      groupName: group.name,
+                      groupName: label,
                       channels: cubit.state.channelsInGroup,
                       onPlayChannel: onPlayChannel,
                     ),
@@ -198,7 +284,7 @@ class _NarrowLayout extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        group.name,
+                        label,
                         style: Theme.of(context)
                             .textTheme
                             .bodyMedium
@@ -236,12 +322,14 @@ class _NarrowLayout extends StatelessWidget {
 class _GroupTile extends StatelessWidget {
   const _GroupTile({
     required this.group,
+    required this.label,
     required this.isSelected,
     required this.autofocus,
     required this.onTap,
   });
 
   final ChannelGroup group;
+  final String label;
   final bool isSelected;
   final bool autofocus;
   final VoidCallback onTap;
@@ -251,7 +339,7 @@ class _GroupTile extends StatelessWidget {
     final p = context.palette;
     return FocusableButton(
       autofocus: autofocus,
-      semanticLabel: group.name,
+      semanticLabel: label,
       onPressed: onTap,
       child: Container(
         padding:
@@ -266,7 +354,7 @@ class _GroupTile extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                group.name,
+                label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: isSelected ? p.accent : p.fg,
                       fontWeight:
@@ -280,7 +368,6 @@ class _GroupTile extends StatelessWidget {
               '${group.count}',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: isSelected ? p.accent : p.dim,
-                    fontSize: 11,
                   ),
             ),
           ],
@@ -295,10 +382,12 @@ class _ChannelGrid extends StatelessWidget {
   const _ChannelGrid({
     required this.channels,
     required this.onPlayChannel,
+    this.controller,
   });
 
   final List<Channel> channels;
   final void Function(List<Channel> channels, int index) onPlayChannel;
+  final ScrollController? controller;
 
   @override
   Widget build(BuildContext context) {
@@ -306,7 +395,7 @@ class _ChannelGrid extends StatelessWidget {
     if (channels.isEmpty) {
       return Center(
         child: Text(
-          'No channels',
+          AppLocalizations.of(context)!.noChannels,
           style: Theme.of(context)
               .textTheme
               .bodyLarge
@@ -315,12 +404,13 @@ class _ChannelGrid extends StatelessWidget {
       );
     }
     return GridView.builder(
+      controller: controller,
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 160,
-        mainAxisExtent: 120,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
+        maxCrossAxisExtent: _kChannelTileWidth,
+        mainAxisExtent: _kChannelTileHeight,
+        crossAxisSpacing: _kChannelTileSpacing,
+        mainAxisSpacing: _kChannelTileSpacing,
       ),
       itemCount: channels.length,
       itemBuilder: (context, index) {
@@ -374,13 +464,12 @@ class _ChannelTile extends StatelessWidget {
               alignment: Alignment.center,
               child: channel.logoUrl != null
                   ? ClipOval(
-                      child: Image.network(
-                        channel.logoUrl!,
+                      child: RemoteImage(
+                        url: channel.logoUrl!,
                         width: 48,
                         height: 48,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, e, st) =>
-                            _Abbr(name: channel.name, palette: p),
+                        memWidth: 144,
+                        fallback: _Abbr(name: channel.name, palette: p),
                       ),
                     )
                   : _Abbr(name: channel.name, palette: p),
@@ -391,7 +480,7 @@ class _ChannelTile extends StatelessWidget {
             Flexible(
               child: Text(
                 channel.name,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: p.fg,
                       fontWeight: FontWeight.w600,
                     ),
@@ -404,7 +493,6 @@ class _ChannelTile extends StatelessWidget {
               channel.number,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: p.dim,
-                    fontSize: 10,
                   ),
             ),
           ],
@@ -430,7 +518,7 @@ class _Abbr extends StatelessWidget {
       abbr.toUpperCase(),
       style: TextStyle(
         color: p.accent,
-        fontSize: 12,
+        fontSize: 16,
         fontWeight: FontWeight.w800,
       ),
     );

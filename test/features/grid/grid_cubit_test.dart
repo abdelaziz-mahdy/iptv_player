@@ -37,8 +37,9 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(cubit.state.categories.isNotEmpty, isTrue);
-      expect(cubit.state.categories.first.name, 'All');
+      // The "All" entry is identified by its empty id; the screen localizes it.
       expect(cubit.state.categories.first.id, '');
+      expect(cubit.state.categories.first.name, '');
 
       await cubit.close();
     });
@@ -346,6 +347,48 @@ void main() {
       expect(cubit.state.favoriteKeys, contains('episode:${entry.id}'));
 
       await cubit.close();
+    });
+  });
+
+  group('GridCubit — recent categories', () {
+    test('a used category is pinned under All and not repeated below',
+        () async {
+      final content = FakeContentRepository();
+      final cubit = GridCubit(content, FakePlaylistRepository(), GridKind.movies);
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      // cat2 (Drama) sits after cat1 (Action) in the provider's order.
+      cubit.selectCategory('cat2');
+      await Future<void>.delayed(Duration.zero);
+
+      final ids = cubit.state.categories.map((c) => c.id).toList();
+      expect(ids, ['', 'cat2', 'cat1'],
+          reason: 'used category moves up; it must not appear twice');
+      expect(cubit.state.pinnedCategoryCount, 2,
+          reason: 'All + one pinned category');
+
+      await cubit.close();
+    });
+
+    test('the last used category is restored on the next load', () async {
+      final content = FakeContentRepository();
+      final playlists = FakePlaylistRepository();
+      final first = GridCubit(content, playlists, GridKind.movies);
+      await first.load();
+      await Future<void>.delayed(Duration.zero);
+      first.selectCategory('cat2');
+      await Future<void>.delayed(Duration.zero);
+      await first.close();
+
+      final second = GridCubit(content, playlists, GridKind.movies);
+      await second.load();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(second.state.selectedCategoryId, 'cat2');
+
+      await second.close();
     });
   });
 }

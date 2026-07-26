@@ -143,6 +143,24 @@ class Categories extends Table {
   TextColumn get categoryId => text()();
   TextColumn get name => text()();
 
+  /// Index in the provider's own category list. Providers group related
+  /// categories together, so their order is the only meaningful one we have —
+  /// row order is not stable across a re-import.
+  IntColumn get position => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {playlistId, type, categoryId};
+}
+
+/// Last time the user opened each category, per section. Powers the recency
+/// block pinned above the provider's category list.
+@DataClassName('CategoryUsageRow')
+class CategoryUsageRows extends Table {
+  TextColumn get playlistId => text()();
+  TextColumn get type => text()();
+  TextColumn get categoryId => text()();
+  DateTimeColumn get usedAt => dateTime()();
+
   @override
   Set<Column> get primaryKey => {playlistId, type, categoryId};
 }

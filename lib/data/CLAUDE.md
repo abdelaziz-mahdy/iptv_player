@@ -31,7 +31,19 @@ Persistence happens in repositories, not sources.
 
 ## db/ — drift SQLite
 
-`AppDatabase` (`db/database.dart`) opens `noor.db` (drift_flutter). Schema version 3; migrations add `XtreamCredentials` (v2) and `Categories` (v3). Tables: `Playlists`, `Channels`, `VodItems`, `SeriesItems`, `Seasons`, `Episodes`, `EpgProgrammes`, `WatchProgressRows`, `Favorites`, `XtreamCredentials`, `Categories`.
+`AppDatabase` (`db/database.dart`) opens `noor.db` (drift_flutter). Schema version 6; migrations add `XtreamCredentials` (v2), `Categories` (v3), `RecentlyViewedRows` (v4), `Favorites.title` (v5), and `Categories.position` + `CategoryUsageRows` (v6). Tables: `Playlists`, `Channels`, `VodItems`, `SeriesItems`, `Seasons`, `Episodes`, `EpgProgrammes`, `WatchProgressRows`, `Favorites`, `XtreamCredentials`, `Categories`, `CategoryUsageRows`, `RecentlyViewedRows`.
+
+**GOTCHA: `watchRecentlyViewed` filters by key prefix in SQL.** One table holds
+`channel:` / `movie:` / `series:` keys. A single shared `LIMIT` let a movie binge
+evict every channel from Live's "Recently Viewed", so the prefix and the limit
+are both query arguments — each section gets its own budget
+(`kRecentlyViewedLimit`).
+
+**Category order comes from `Categories.position`**, written at import in the
+provider's order; `getCategories` orders by it with `name` as the tie-break
+(rows imported before v6 all carry 0). `CategoryUsageRows` records when the user
+last opened each category, which drives the recency block pinned above the
+provider's list (`kRecentCategoryLimit`).
 
 **GOTCHA: `database.g.dart` is generated** (not committed). After changing `tables.dart` or `database.dart`, run:
 ```

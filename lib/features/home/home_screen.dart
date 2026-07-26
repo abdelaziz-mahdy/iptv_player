@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/content_rail.dart';
 import '../../core/widgets/focusable_button.dart';
 import '../../core/widgets/poster_card.dart';
+import '../../core/widgets/remote_image.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -66,11 +67,11 @@ class _HomeView extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('No content yet'),
+                Text(AppLocalizations.of(context)!.noContentYet),
                 const SizedBox(height: 16),
                 FocusableButton(
                   autofocus: true,
-                  semanticLabel: 'Set up a playlist',
+                  semanticLabel: AppLocalizations.of(context)!.setUpPlaylist,
                   onPressed: onAddPlaylist,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -79,9 +80,9 @@ class _HomeView extends StatelessWidget {
                       color: Theme.of(context).colorScheme.primary,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text(
-                      'Set up a playlist',
-                      style: TextStyle(color: Colors.white),
+                    child: Text(
+                      AppLocalizations.of(context)!.setUpPlaylist,
+                      style: const TextStyle(color: Colors.white),
                     ),
                   ),
                 ),
@@ -171,11 +172,7 @@ class _HeroBanner extends StatelessWidget {
           if (featured.posterUrl != null)
             Opacity(
               opacity: 0.3,
-              child: Image.network(
-                featured.posterUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const SizedBox(),
-              ),
+              child: RemoteImage(url: featured.posterUrl!, memWidth: 900),
             ),
           // Gradient scrim over backdrop
           DecoratedBox(

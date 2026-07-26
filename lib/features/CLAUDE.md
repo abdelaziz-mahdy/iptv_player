@@ -62,6 +62,22 @@ the "no content until restart" bug fixed in commit d7603ae.
   `package:flutter_android_tv_text_field`. This opens the system keyboard overlay. On non-Android
   it degrades to a plain `TextField` via the same controller.
 
+## Category sidebars (Live / Movies / Series)
+
+Both sidebars are built the same way: `Recently Viewed` (items you played),
+`All`, then the categories you have **opened**, most recent first and capped at
+`kRecentCategoryLimit`, then everything else in the provider's order. A category
+in the recency block is removed from the block below — it is never listed twice.
+`pinnedGroupCount` / `pinnedCategoryCount` mark where the separator goes.
+
+Synthetic entries (`Recently Viewed`, `All`, `Other`) are emitted with an **empty
+name** — the cubit has no `BuildContext`, so the screen resolves a localized
+label from the id (`_groupLabel` / `_categoryLabel`). Do not put user-visible
+strings in these cubits.
+
+Selection is restored from the last-used category on load, and the sidebar
+autofocuses the *selected* tile rather than index 0.
+
 ## Favorite item keys
 
 Movies: `movie:<id>` with `MediaKind.movie`.

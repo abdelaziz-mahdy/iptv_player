@@ -26,8 +26,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Episode lists now show **how much of each episode you've watched** — a
   progress bar for partially watched episodes and a checkmark for finished
   ones, updated as soon as you come back from the player.
+- A **Jump to letter** button on Live, Movies and Series: pick a letter and the
+  list jumps to the first title starting with it, instead of scrolling through
+  thousands of items with the remote.
 
 ### Changed
+- **Channel groups and categories no longer feel randomly ordered.** The groups
+  you actually open are pinned in a block right under "All", most recent first,
+  and everything else follows in the provider's own order. A pinned group is not
+  repeated further down the list.
+- Live, Movies and Series now **open on the group you were last in**, with the
+  highlight already on it, instead of resetting to "All" every launch.
+- **Recently Viewed no longer runs out.** Live, Movies and Series each keep their
+  own history of 20, so a run of movies can no longer push every channel out of
+  Live's Recently Viewed (and vice versa).
+- Posters, backdrops and channel logos are now **cached on the device** — they
+  no longer reload every time you scroll past them.
+- **Text on TV is bigger.** Channel names, numbers and category counts were sized
+  for a phone in your hand and were hard to read across a room.
 - The app now keeps **three days of diagnostic logs** (previously seven) and
   records what the video engine reports, so a problem you hit yesterday can
   still be looked into today.

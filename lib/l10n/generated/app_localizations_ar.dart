@@ -211,4 +211,28 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get loading => 'جارٍ التحميل…';
+
+  @override
+  String get recentlyViewed => 'شوهد مؤخرًا';
+
+  @override
+  String get allCategory => 'الكل';
+
+  @override
+  String get otherCategory => 'أخرى';
+
+  @override
+  String get noChannels => 'لا توجد قنوات';
+
+  @override
+  String get noContentYet => 'لا يوجد محتوى بعد';
+
+  @override
+  String get setUpPlaylist => 'إعداد قائمة تشغيل';
+
+  @override
+  String get noItemsFound => 'لا توجد عناصر';
+
+  @override
+  String get jumpToLetter => 'الانتقال إلى حرف';
 }

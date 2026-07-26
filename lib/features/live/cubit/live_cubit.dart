@@ -8,8 +8,11 @@ import '../../../data/repositories/repositories.dart';
 
 part 'live_state.dart';
 
-/// Id of the synthetic "Recently Viewed" group pinned at the top.
+/// Ids of the synthetic groups pinned above the provider's own list. They have
+/// no name of their own — the UI resolves a localized label from the id.
 const kRecentGroupId = 'recent';
+const kAllGroupId = 'all';
+const kOtherGroupId = 'other';
 
 class LiveCubit extends Cubit<LiveState> {
   LiveCubit(this._content, this._playlists, {this._playback})
@@ -24,6 +27,7 @@ class LiveCubit extends Cubit<LiveState> {
   StreamSubscription<Playlist?>? _activeSub;
   StreamSubscription<List<Channel>>? _channelsSub;
   StreamSubscription<List<String>>? _recentSub;
+  StreamSubscription<List<String>>? _recentGroupSub;
   String? _playlistId;
   bool _hasBound = false;
 
@@ -33,8 +37,20 @@ class LiveCubit extends Cubit<LiveState> {
   /// Recently-viewed browsable keys, most-recent first.
   List<String> _recentKeys = const [];
 
+  /// Category ids the user has opened, most-recent first.
+  List<String> _recentGroupIds = const [];
+
+  /// Category ids in the provider's own order.
+  List<String> _categoryOrder = const [];
+
   /// Category name lookup: categoryId → name.
   Map<String, String> _categoryNames = {};
+
+  /// Set once per playlist, when the first recency list arrives: the group the
+  /// user was last in becomes the initial selection.
+  bool _restoredSelection = false;
+
+  String? _selectedGroupId;
 
   /// React to the ACTIVE playlist so an imported/switched playlist shows live,
   /// without an app restart.
@@ -53,11 +69,16 @@ class LiveCubit extends Cubit<LiveState> {
     _channelsSub = null;
     await _recentSub?.cancel();
     _recentSub = null;
+    await _recentGroupSub?.cancel();
+    _recentGroupSub = null;
     _recentKeys = const [];
+    _recentGroupIds = const [];
+    _restoredSelection = false;
 
     if (pid == null) {
       _allChannels = [];
       _categoryNames = {};
+      _categoryOrder = const [];
       emit(state.copyWith(
         loading: false,
         groups: const [],
@@ -69,10 +90,25 @@ class LiveCubit extends Cubit<LiveState> {
     // Load categories so we can resolve names for group labels.
     final cats = await _content.categories(pid, MediaKind.channel);
     _categoryNames = {for (final c in cats) c.id: c.name};
+    _categoryOrder = [for (final c in cats) c.id];
 
     // Recently-viewed (optional dependency).
-    _recentSub = _playback?.recentlyViewed(pid).listen((keys) {
+    _recentSub = _playback
+        ?.recentlyViewed(pid, prefix: 'channel:')
+        .listen((keys) {
       _recentKeys = keys;
+      _recompute();
+    });
+
+    _recentGroupSub =
+        _content.recentCategoryIds(pid, MediaKind.channel).listen((ids) {
+      _recentGroupIds = ids;
+      if (!_restoredSelection) {
+        _restoredSelection = true;
+        if (ids.isNotEmpty && state.selectedGroupId == null) {
+          _selectedGroupId = ids.first;
+        }
+      }
       _recompute();
     });
 
@@ -84,24 +120,37 @@ class LiveCubit extends Cubit<LiveState> {
 
   /// Changes the active group and filters [channelsInGroup] accordingly.
   void selectGroup(String id) {
-    final filtered = _filterChannels(_allChannels, id);
+    _selectedGroupId = id;
     emit(state.copyWith(
       selectedGroupId: id,
-      channelsInGroup: filtered,
+      channelsInGroup: _filterChannels(_allChannels, id),
     ));
+    final pid = _playlistId;
+    if (pid != null && !_isSyntheticGroup(id)) {
+      _content.recordCategoryUse(pid, MediaKind.channel, id);
+    }
   }
 
   /// Rebuilds groups + the current group's channels from raw channels and
   /// recent keys, preserving the selected group.
   void _recompute() {
-    final selectedId = state.selectedGroupId ?? 'all';
+    final built = _buildGroups(_allChannels);
+    var selectedId = _selectedGroupId ?? kAllGroupId;
+    // A restored or previously selected group can vanish when the provider
+    // drops a category.
+    if (!built.groups.any((g) => g.id == selectedId)) selectedId = kAllGroupId;
+    _selectedGroupId = selectedId;
     emit(state.copyWith(
       loading: false,
-      groups: _buildGroups(_allChannels),
+      groups: built.groups,
+      pinnedGroupCount: built.pinned,
       selectedGroupId: selectedId,
       channelsInGroup: _filterChannels(_allChannels, selectedId),
     ));
   }
+
+  static bool _isSyntheticGroup(String id) =>
+      id == kRecentGroupId || id == kAllGroupId || id == kOtherGroupId;
 
   /// Recently-viewed channels in recency order, only those still present.
   List<Channel> _recentChannels() {
@@ -123,11 +172,16 @@ class LiveCubit extends Cubit<LiveState> {
 
   /// Builds the list of [ChannelGroup]s from [channels].
   ///
-  /// Always prepends an "All" group. Channels with null or unknown categoryId
-  /// are grouped under "Other" (only added when there are uncategorised channels
-  /// and the channel list is non-trivial — i.e. at least one named category
-  /// exists; otherwise they all go into "All" only).
-  List<ChannelGroup> _buildGroups(List<Channel> channels) {
+  /// Order: "Recently Viewed" (channels), "All", the groups the user has
+  /// opened — most recent first, capped at [kRecentCategoryLimit] — then the
+  /// rest in the provider's own order. A group in the recency block is
+  /// *removed* from the block below, so nothing is listed twice.
+  ///
+  /// Channels with null or unknown categoryId are grouped under "Other" (only
+  /// when at least one named category exists; otherwise they all go into
+  /// "All" only).
+  ({List<ChannelGroup> groups, int pinned}) _buildGroups(
+      List<Channel> channels) {
     // Build per-category counts.
     final counts = <String, int>{}; // categoryId → count
     int uncategorised = 0;
@@ -143,31 +197,50 @@ class LiveCubit extends Cubit<LiveState> {
 
     final recentCount = _recentChannels().length;
     final groups = <ChannelGroup>[
+      // Synthetic groups carry no display name — the UI localizes them by id.
       if (recentCount > 0)
-        (id: kRecentGroupId, name: 'Recently Viewed', count: recentCount),
-      (id: 'all', name: 'All', count: channels.length),
+        (id: kRecentGroupId, name: '', count: recentCount),
+      (id: kAllGroupId, name: '', count: channels.length),
     ];
 
-    for (final entry in counts.entries) {
-      groups.add((
-        id: entry.key,
-        name: _categoryNames[entry.key] ?? entry.key,
-        count: entry.value,
-      ));
+    ChannelGroup group(String id) => (
+          id: id,
+          name: _categoryNames[id] ?? id,
+          count: counts[id] ?? 0,
+        );
+
+    final pinned = <String>{};
+    for (final id in _recentGroupIds) {
+      if (pinned.length >= kRecentCategoryLimit) break;
+      if (!counts.containsKey(id)) continue;
+      if (!pinned.add(id)) continue;
+      groups.add(group(id));
+    }
+
+    final pinnedCount = groups.length;
+
+    for (final id in _categoryOrder) {
+      if (pinned.contains(id) || !counts.containsKey(id)) continue;
+      groups.add(group(id));
+    }
+    // Categories present on channels but absent from the provider's list.
+    for (final id in counts.keys) {
+      if (pinned.contains(id) || _categoryOrder.contains(id)) continue;
+      groups.add(group(id));
     }
 
     if (uncategorised > 0 && counts.isNotEmpty) {
-      groups.add((id: 'other', name: 'Other', count: uncategorised));
+      groups.add((id: kOtherGroupId, name: '', count: uncategorised));
     }
 
-    return groups;
+    return (groups: groups, pinned: pinnedCount);
   }
 
   /// Returns channels belonging to the group identified by [groupId].
   List<Channel> _filterChannels(List<Channel> channels, String groupId) {
     if (groupId == kRecentGroupId) return _recentChannels();
-    if (groupId == 'all') return List.unmodifiable(channels);
-    if (groupId == 'other') {
+    if (groupId == kAllGroupId) return List.unmodifiable(channels);
+    if (groupId == kOtherGroupId) {
       return channels
           .where((ch) =>
               ch.categoryId == null ||
@@ -184,6 +257,7 @@ class LiveCubit extends Cubit<LiveState> {
     await _activeSub?.cancel();
     await _channelsSub?.cancel();
     await _recentSub?.cancel();
+    await _recentGroupSub?.cancel();
     return super.close();
   }
 }

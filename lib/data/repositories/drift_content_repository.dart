@@ -360,6 +360,26 @@ class DriftContentRepository implements ContentRepository {
     return rows.map((r) => CategoryRef(id: r.categoryId, name: r.name)).toList();
   }
 
+  @override
+  Future<void> recordCategoryUse(
+      String playlistId, MediaKind kind, String categoryId) {
+    return _db.recordCategoryUse(
+      CategoryUsageRowsCompanion.insert(
+        playlistId: playlistId,
+        type: _kindToType(kind),
+        categoryId: categoryId,
+        usedAt: DateTime.now().toUtc(),
+      ),
+    );
+  }
+
+  @override
+  Stream<List<String>> recentCategoryIds(String playlistId, MediaKind kind) {
+    return _db.watchCategoryUse(playlistId, _kindToType(kind)).map(
+          (rows) => rows.map((r) => r.categoryId).toList(),
+        );
+  }
+
   // ---------------------------------------------------------------------------
   // ContentRepository — importPlaylist
   // ---------------------------------------------------------------------------
@@ -395,15 +415,18 @@ class DriftContentRepository implements ContentRepository {
             playlistId: p.id,
           );
 
-          // Group categories by type and persist each group.
+          // Group categories by type and persist each group, keeping the
+          // provider's own order — it is the only meaningful one we get.
           final catsByType = <String, List<CategoriesCompanion>>{};
           for (final cat in content.categories) {
-            catsByType.putIfAbsent(cat.type, () => []).add(
+            final group = catsByType.putIfAbsent(cat.type, () => []);
+            group.add(
               CategoriesCompanion.insert(
                 playlistId: p.id,
                 type: cat.type,
                 categoryId: cat.id,
                 name: cat.name,
+                position: Value(group.length),
               ),
             );
           }

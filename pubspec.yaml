@@ -68,6 +68,7 @@ dependencies:
   flutter_android_tv_text_field:
     path: packages/flutter_android_tv_text_field
   talker_flutter: ^5.1.19
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:

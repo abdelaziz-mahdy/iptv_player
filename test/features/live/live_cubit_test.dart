@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:iptv_player/data/models/models.dart';
 import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
 import 'package:iptv_player/features/live/cubit/live_cubit.dart';
 
@@ -66,8 +67,9 @@ void main() {
       await cubit.load();
       await Future<void>.delayed(Duration.zero);
 
-      final groupNames = cubit.state.groups.map((g) => g.name).toList();
-      expect(groupNames, contains('All'));
+      // Synthetic groups carry no name — the screen localizes them by id.
+      final groupIds = cubit.state.groups.map((g) => g.id).toList();
+      expect(groupIds, contains(kAllGroupId));
 
       await cubit.close();
     });
@@ -169,6 +171,47 @@ void main() {
       expect(groupIds, contains('all'));
 
       await cubit.close();
+    });
+  });
+
+  group('LiveCubit — group recency', () {
+    test('selecting a real group records it; synthetic groups do not',
+        () async {
+      final content = FakeContentRepository();
+      final cubit = LiveCubit(content, FakePlaylistRepository());
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      cubit.selectGroup(kAllGroupId);
+      cubit.selectGroup('cat3');
+      await Future<void>.delayed(Duration.zero);
+
+      final used = await content.recentCategoryIds('p1', MediaKind.channel).first;
+      expect(used, ['cat3'], reason: '"All" is synthetic and is not recorded');
+
+      await cubit.close();
+    });
+
+    test('the last used group is restored on the next load', () async {
+      final content = FakeContentRepository();
+      final playlists = FakePlaylistRepository();
+      final first = LiveCubit(content, playlists);
+      await first.load();
+      await Future<void>.delayed(Duration.zero);
+      first.selectGroup('cat3');
+      await Future<void>.delayed(Duration.zero);
+      await first.close();
+
+      final second = LiveCubit(content, playlists);
+      await second.load();
+      await Future<void>.delayed(Duration.zero);
+
+      // The fake channels are uncategorised, so cat3 holds nothing and the
+      // restore falls back to All rather than selecting an empty group.
+      expect(second.state.selectedGroupId, kAllGroupId);
+
+      await second.close();
     });
   });
 }

@@ -212,4 +212,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loading => 'Loading…';
+
+  @override
+  String get recentlyViewed => 'Recently Viewed';
+
+  @override
+  String get allCategory => 'All';
+
+  @override
+  String get otherCategory => 'Other';
+
+  @override
+  String get noChannels => 'No channels';
+
+  @override
+  String get noContentYet => 'No content yet';
+
+  @override
+  String get setUpPlaylist => 'Set up a playlist';
+
+  @override
+  String get noItemsFound => 'No items found';
+
+  @override
+  String get jumpToLetter => 'Jump to letter';
 }

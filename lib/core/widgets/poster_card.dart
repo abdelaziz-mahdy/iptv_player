@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'focusable_button.dart';
+import 'remote_image.dart';
 
 /// A 2:3 poster tile used across Home rails and grids: artwork with a gradient
 /// scrim, optional badge and progress bar, and a title/subtitle beneath.
@@ -59,11 +60,7 @@ class PosterCard extends StatelessWidget {
                   if (imageUrl != null)
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10),
-                      child: Image.network(
-                        imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const SizedBox(),
-                      ),
+                      child: RemoteImage(url: imageUrl!, memWidth: 400),
                     ),
                   if (badge != null)
                     Positioned(

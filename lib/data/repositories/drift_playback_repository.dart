@@ -83,8 +83,12 @@ class DriftPlaybackRepository implements PlaybackRepository {
   }
 
   @override
-  Stream<List<String>> recentlyViewed(String playlistId) {
-    return _db.watchRecentlyViewed(playlistId).map(
+  Stream<List<String>> recentlyViewed(
+    String playlistId, {
+    required String prefix,
+    int limit = kRecentlyViewedLimit,
+  }) {
+    return _db.watchRecentlyViewed(playlistId, prefix, limit).map(
           (rows) => rows.map((r) => r.itemKey).toList(),
         );
   }

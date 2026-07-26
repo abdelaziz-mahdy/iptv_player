@@ -68,6 +68,11 @@ class GridState extends Equatable {
   /// The set of favorited itemKeys (e.g. "movie:m1") for this grid.
   final Set<String> favoriteKeys;
 
+  /// How many leading entries of [categories] sit above the provider's own
+  /// list: "Recently Viewed"/"All" plus the recency block. The sidebar draws
+  /// its separator here.
+  final int pinnedCategoryCount;
+
   const GridState({
     this.loading = false,
     this.items = const [],
@@ -75,6 +80,7 @@ class GridState extends Equatable {
     this.selectedCategoryId,
     this.recentItems = const [],
     this.favoriteKeys = const {},
+    this.pinnedCategoryCount = 0,
   });
 
   GridState copyWith({
@@ -85,6 +91,7 @@ class GridState extends Equatable {
     bool clearCategory = false,
     List<GridEntry>? recentItems,
     Set<String>? favoriteKeys,
+    int? pinnedCategoryCount,
   }) {
     return GridState(
       loading: loading ?? this.loading,
@@ -94,6 +101,7 @@ class GridState extends Equatable {
           clearCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
       recentItems: recentItems ?? this.recentItems,
       favoriteKeys: favoriteKeys ?? this.favoriteKeys,
+      pinnedCategoryCount: pinnedCategoryCount ?? this.pinnedCategoryCount,
     );
   }
 
@@ -104,8 +112,15 @@ class GridState extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [loading, items, categories, selectedCategoryId, recentItems, favoriteKeys];
+  List<Object?> get props => [
+        loading,
+        items,
+        categories,
+        selectedCategoryId,
+        recentItems,
+        favoriteKeys,
+        pinnedCategoryCount,
+      ];
 }
 
 // ---------------------------------------------------------------------------
@@ -128,6 +143,7 @@ class GridCubit extends Cubit<GridState> {
   StreamSubscription<List<Series>>? _seriesSub;
   StreamSubscription<List<Favorite>>? _favoritesSub;
   StreamSubscription<List<String>>? _recentSub;
+  StreamSubscription<List<String>>? _recentCatSub;
   String? _playlistId;
   bool _hasBound = false;
 
@@ -135,9 +151,17 @@ class GridCubit extends Cubit<GridState> {
   List<GridEntry> _rawItems = const [];
   List<CategoryRef> _resolvedCats = const [];
   List<String> _recentKeys = const [];
+  List<String> _recentCategoryIds = const [];
+
+  /// Set once per playlist: the category the user was last in becomes the
+  /// initial selection.
+  bool _restoredSelection = false;
 
   /// Key prefix for this section's browsable items (`movie:` / `series:`).
   String get _recentPrefix => kind == GridKind.movies ? 'movie:' : 'series:';
+
+  MediaKind get _mediaKind =>
+      kind == GridKind.movies ? MediaKind.movie : MediaKind.episode;
 
   /// React to the ACTIVE playlist so an imported/switched playlist shows live,
   /// without an app restart.
@@ -160,8 +184,12 @@ class GridCubit extends Cubit<GridState> {
     _favoritesSub = null;
     await _recentSub?.cancel();
     _recentSub = null;
+    await _recentCatSub?.cancel();
+    _recentCatSub = null;
     _rawItems = const [];
     _recentKeys = const [];
+    _recentCategoryIds = const [];
+    _restoredSelection = false;
 
     if (pid == null) {
       emit(state.copyWith(
@@ -174,11 +202,8 @@ class GridCubit extends Cubit<GridState> {
       return;
     }
 
-    // Determine the MediaKind for category resolution.
-    final mediaKind = kind == GridKind.movies ? MediaKind.movie : MediaKind.episode;
-
     // Load categories eagerly so they're available when stream emits.
-    _resolvedCats = await _content.categories(pid, mediaKind);
+    _resolvedCats = await _content.categories(pid, _mediaKind);
 
     // Subscribe to favorites stream.
     _favoritesSub = _content.favorites(pid).listen(
@@ -188,8 +213,20 @@ class GridCubit extends Cubit<GridState> {
     );
 
     // Subscribe to recently-viewed (optional dependency).
-    _recentSub = _playback?.recentlyViewed(pid).listen((keys) {
+    _recentSub =
+        _playback?.recentlyViewed(pid, prefix: _recentPrefix).listen((keys) {
       _recentKeys = keys;
+      _recompute();
+    });
+
+    _recentCatSub = _content.recentCategoryIds(pid, _mediaKind).listen((ids) {
+      _recentCategoryIds = ids;
+      if (!_restoredSelection) {
+        _restoredSelection = true;
+        if (ids.isNotEmpty && state.selectedCategoryId == null) {
+          emit(state.copyWith(selectedCategoryId: ids.first));
+        }
+      }
       _recompute();
     });
 
@@ -271,22 +308,47 @@ class GridCubit extends Cubit<GridState> {
       if (b != null && b.isNotEmpty) counts[b] = (counts[b] ?? 0) + 1;
     }
 
+    final catById = {for (final c in _resolvedCats) c.id: c};
+
+    // Categories the user has opened come first, most recent first and capped;
+    // each one is then skipped in the provider block below so nothing is
+    // listed twice.
+    final pinnedIds = <String>{};
+    final pinnedCats = <CategoryRef>[];
+    for (final id in _recentCategoryIds) {
+      if (pinnedIds.length >= kRecentCategoryLimit) break;
+      final cat = catById[id];
+      if (cat == null || !pinnedIds.add(id)) continue;
+      pinnedCats.add(cat.copyWith(count: counts[id] ?? 0));
+    }
+
     final cats = <CategoryRef>[
+      // Synthetic entries carry no display name — the UI localizes them by id.
       if (recent.isNotEmpty)
-        CategoryRef(
-          id: kRecentCategoryId,
-          name: 'Recently Viewed',
-          count: recent.length,
-        ),
-      CategoryRef(id: '', name: 'All', count: _rawItems.length),
-      for (final c in _resolvedCats) c.copyWith(count: counts[c.id] ?? 0),
+        CategoryRef(id: kRecentCategoryId, name: '', count: recent.length),
+      CategoryRef(id: '', name: '', count: _rawItems.length),
+      ...pinnedCats,
     ];
+    final pinnedCount = cats.length;
+    for (final c in _resolvedCats) {
+      if (pinnedIds.contains(c.id)) continue;
+      cats.add(c.copyWith(count: counts[c.id] ?? 0));
+    }
+
+    // A restored category can vanish when the provider drops it.
+    final selected = state.selectedCategoryId;
+    final missing = selected != null &&
+        selected != kRecentCategoryId &&
+        selected.isNotEmpty &&
+        !cats.any((c) => c.id == selected);
 
     emit(state.copyWith(
       loading: false,
       items: _rawItems,
       categories: cats,
+      pinnedCategoryCount: pinnedCount,
       recentItems: recent,
+      clearCategory: missing,
     ));
   }
 
@@ -295,8 +357,12 @@ class GridCubit extends Cubit<GridState> {
   void selectCategory(String? categoryId) {
     if (categoryId == null || categoryId.isEmpty) {
       emit(state.copyWith(clearCategory: true));
-    } else {
-      emit(state.copyWith(selectedCategoryId: categoryId));
+      return;
+    }
+    emit(state.copyWith(selectedCategoryId: categoryId));
+    final pid = _playlistId;
+    if (pid != null && categoryId != kRecentCategoryId) {
+      _content.recordCategoryUse(pid, _mediaKind, categoryId);
     }
   }
 
@@ -307,6 +373,7 @@ class GridCubit extends Cubit<GridState> {
     await _seriesSub?.cancel();
     await _favoritesSub?.cancel();
     await _recentSub?.cancel();
+    await _recentCatSub?.cancel();
     return super.close();
   }
 }

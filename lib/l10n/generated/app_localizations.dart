@@ -499,6 +499,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading…'**
   String get loading;
+
+  /// No description provided for @recentlyViewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently Viewed'**
+  String get recentlyViewed;
+
+  /// No description provided for @allCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get allCategory;
+
+  /// No description provided for @otherCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get otherCategory;
+
+  /// No description provided for @noChannels.
+  ///
+  /// In en, this message translates to:
+  /// **'No channels'**
+  String get noChannels;
+
+  /// No description provided for @noContentYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No content yet'**
+  String get noContentYet;
+
+  /// No description provided for @setUpPlaylist.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up a playlist'**
+  String get setUpPlaylist;
+
+  /// No description provided for @noItemsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No items found'**
+  String get noItemsFound;
+
+  /// No description provided for @jumpToLetter.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump to letter'**
+  String get jumpToLetter;
 }
 
 class _AppLocalizationsDelegate

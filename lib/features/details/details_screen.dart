@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iptv_player/core/di/injection.dart';
 import 'package:iptv_player/core/theme/app_theme.dart';
 import 'package:iptv_player/core/widgets/focusable_button.dart';
+import 'package:iptv_player/core/widgets/remote_image.dart';
 import 'package:iptv_player/data/models/models.dart';
 import 'package:iptv_player/data/repositories/repositories.dart';
 import 'package:iptv_player/l10n/generated/app_localizations.dart';
@@ -231,10 +232,10 @@ class _AmbientBackdrop extends StatelessWidget {
       children: [
         ImageFiltered(
           imageFilter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-          child: Image.network(
-            posterUrl!,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => ColoredBox(color: p.surface),
+          child: RemoteImage(
+            url: posterUrl!,
+            memWidth: 400,
+            fallback: ColoredBox(color: p.surface),
           ),
         ),
         // Darken + fade toward the bottom so text is legible.
@@ -269,10 +270,10 @@ class _Poster extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: posterUrl == null
             ? _GradientPlaceholder(title: title)
-            : Image.network(
-                posterUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => _GradientPlaceholder(title: title),
+            : RemoteImage(
+                url: posterUrl!,
+                memWidth: 600,
+                fallback: _GradientPlaceholder(title: title),
               ),
       ),
     );

@@ -20,6 +20,7 @@ part 'database.g.dart';
     Favorites,
     XtreamCredentials,
     Categories,
+    CategoryUsageRows,
     RecentlyViewedRows,
   ],
 )
@@ -28,7 +29,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'noor'));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -45,6 +46,10 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 5) {
             await m.addColumn(favorites, favorites.title);
+          }
+          if (from < 6) {
+            await m.addColumn(categories, categories.position);
+            await m.createTable(categoryUsageRows);
           }
         },
       );
@@ -142,19 +147,47 @@ class AppDatabase extends _$AppDatabase {
         b.deleteWhere(categories, (t) => t.playlistId.equals(playlistId) & t.type.equals(type));
         b.insertAll(categories, rows, mode: InsertMode.insertOrReplace);
       });
+  /// Provider order. Rows imported before the `position` column exists all
+  /// carry 0, so the name is the tie-break until the next sync backfills them.
   Future<List<CategoryRow>> getCategories(String playlistId, String type) =>
-      (select(categories)..where((t) => t.playlistId.equals(playlistId) & t.type.equals(type))).get();
+      (select(categories)
+            ..where((t) => t.playlistId.equals(playlistId) & t.type.equals(type))
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.position),
+              (t) => OrderingTerm(expression: t.name),
+            ]))
+          .get();
+
+  // --- Category usage (recency) ---
+  Future<void> recordCategoryUse(CategoryUsageRowsCompanion r) =>
+      into(categoryUsageRows).insertOnConflictUpdate(r);
+  Stream<List<CategoryUsageRow>> watchCategoryUse(
+          String playlistId, String type) =>
+      (select(categoryUsageRows)
+            ..where((t) => t.playlistId.equals(playlistId) & t.type.equals(type))
+            ..orderBy([
+              (t) => OrderingTerm(expression: t.usedAt, mode: OrderingMode.desc)
+            ]))
+          .watch();
 
   // --- Recently viewed ---
   Future<void> recordRecentlyViewed(RecentlyViewedRowsCompanion r) =>
       into(recentlyViewedRows).insertOnConflictUpdate(r);
-  Stream<List<RecentlyViewedRow>> watchRecentlyViewed(String playlistId) =>
+  /// [prefix] is the browsable-key prefix (`channel:` / `movie:` / `series:`).
+  /// It must be filtered in SQL: one shared limit across all kinds let a movie
+  /// binge push every channel out of Live's recent list.
+  Stream<List<RecentlyViewedRow>> watchRecentlyViewed(
+    String playlistId,
+    String prefix,
+    int limit,
+  ) =>
       (select(recentlyViewedRows)
-            ..where((t) => t.playlistId.equals(playlistId))
+            ..where((t) =>
+                t.playlistId.equals(playlistId) & t.itemKey.like('$prefix%'))
             ..orderBy([
               (t) => OrderingTerm(expression: t.viewedAt, mode: OrderingMode.desc)
             ])
-            ..limit(50))
+            ..limit(limit))
           .watch();
 
   // --- Xtream credentials ---

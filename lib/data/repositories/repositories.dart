@@ -1,6 +1,12 @@
 import '../../core/result.dart';
 import '../models/models.dart';
 
+/// How many recently-opened items each section keeps.
+const int kRecentlyViewedLimit = 20;
+
+/// How many recently-opened categories are pinned above the provider's list.
+const int kRecentCategoryLimit = 15;
+
 /// Manages the set of user playlists and which one is active.
 abstract class PlaylistRepository {
   Future<Result<List<Playlist>>> all();
@@ -59,6 +65,13 @@ abstract class ContentRepository {
   /// list — callers should fall back to group-title ids in that case.
   Future<List<CategoryRef>> categories(String playlistId, MediaKind kind);
 
+  /// Records that the user opened [categoryId] in the [kind] section.
+  Future<void> recordCategoryUse(
+      String playlistId, MediaKind kind, String categoryId);
+
+  /// Category ids the user has opened in the [kind] section, most-recent first.
+  Stream<List<String>> recentCategoryIds(String playlistId, MediaKind kind);
+
   /// Fetches the playlist's content from its source and persists it locally.
   Future<Result<void>> importPlaylist(Playlist p);
 }
@@ -86,7 +99,13 @@ abstract class PlaybackRepository {
   /// also tracks live channels, and powers the "Recently Viewed" category.
   Future<void> recordView({required String playlistId, required String itemKey});
 
-  /// The browsable keys recently opened in [playlistId], most-recent first.
-  /// Consumers filter by key prefix (`movie:`/`series:`/`channel:`).
-  Stream<List<String>> recentlyViewed(String playlistId);
+  /// The browsable keys recently opened in [playlistId], most-recent first,
+  /// restricted to [prefix] (`movie:` / `series:` / `channel:`) and capped at
+  /// [limit]. The prefix is part of the query, not a post-filter: a single
+  /// shared cap let one section's history evict another's.
+  Stream<List<String>> recentlyViewed(
+    String playlistId, {
+    required String prefix,
+    int limit = kRecentlyViewedLimit,
+  });
 }

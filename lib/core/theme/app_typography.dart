@@ -36,12 +36,19 @@ TextTheme buildTextTheme({
     );
   }
 
+  // Sizes are tuned for a 10-foot TV viewing distance. bodySmall/labelSmall
+  // are defined here on purpose: undefined slots fall back to Material's
+  // defaults (12/11 px) which are both unreadable across a room AND lose the
+  // bundled font.
   return TextTheme(
     displayLarge: base(34, FontWeight.w800, fg),
     headlineMedium: base(24, FontWeight.w800, fg),
     titleLarge: base(18, FontWeight.w700, fg),
     bodyLarge: base(15, FontWeight.w500, fg),
     bodyMedium: base(14, FontWeight.w500, dim),
+    bodySmall: base(14, FontWeight.w500, dim),
     labelLarge: base(13, FontWeight.w700, fg),
+    labelMedium: base(13, FontWeight.w600, fg),
+    labelSmall: base(13, FontWeight.w600, dim),
   );
 }

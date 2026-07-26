@@ -225,6 +225,26 @@ class FakeContentRepository implements ContentRepository {
   }
 
   @override
+  Future<void> recordCategoryUse(
+      String playlistId, MediaKind kind, String categoryId) async {
+    final used = _categoryUse.putIfAbsent(kind, () => <String>[])
+      ..remove(categoryId)
+      ..insert(0, categoryId);
+    _recentCategories
+        .putIfAbsent(kind, () => _Store<List<String>>([]))
+        .value = List<String>.from(used);
+  }
+
+  @override
+  Stream<List<String>> recentCategoryIds(String playlistId, MediaKind kind) =>
+      _recentCategories
+          .putIfAbsent(kind, () => _Store<List<String>>([]))
+          .stream;
+
+  final _categoryUse = <MediaKind, List<String>>{};
+  final _recentCategories = <MediaKind, _Store<List<String>>>{};
+
+  @override
   Future<Result<void>> importPlaylist(Playlist p) async => const Ok(null);
 }
 
@@ -297,5 +317,11 @@ class FakePlaybackRepository implements PlaybackRepository {
   }
 
   @override
-  Stream<List<String>> recentlyViewed(String playlistId) => _recents.stream;
+  Stream<List<String>> recentlyViewed(
+    String playlistId, {
+    required String prefix,
+    int limit = kRecentlyViewedLimit,
+  }) =>
+      _recents.stream.map((keys) =>
+          keys.where((k) => k.startsWith(prefix)).take(limit).toList());
 }

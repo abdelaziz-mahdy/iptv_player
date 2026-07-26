@@ -161,7 +161,8 @@ void main() {
         await cubit.start();
         await Future<void>.delayed(Duration.zero);
 
-        final recent = await playback.recentlyViewed('p1').first;
+        final recent =
+            await playback.recentlyViewed('p1', prefix: 'channel:').first;
         expect(recent, contains('channel:c1'));
 
         await cubit.close();
@@ -183,7 +184,8 @@ void main() {
         await cubit.start();
         await Future<void>.delayed(Duration.zero);
 
-        final recent = await playback.recentlyViewed('p1').first;
+        final recent =
+            await playback.recentlyViewed('p1', prefix: 'series:').first;
         expect(recent, contains('series:s1'));
         expect(recent, isNot(contains('episode:e9')));
 

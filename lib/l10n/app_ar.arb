@@ -66,5 +66,13 @@
   "director": "المخرج",
   "genre": "النوع",
   "country": "البلد",
-  "loading": "جارٍ التحميل…"
+  "loading": "جارٍ التحميل…",
+  "recentlyViewed": "شوهد مؤخرًا",
+  "allCategory": "الكل",
+  "otherCategory": "أخرى",
+  "noChannels": "لا توجد قنوات",
+  "noContentYet": "لا يوجد محتوى بعد",
+  "setUpPlaylist": "إعداد قائمة تشغيل",
+  "noItemsFound": "لا توجد عناصر",
+  "jumpToLetter": "الانتقال إلى حرف"
 }
