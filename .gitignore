@@ -21,3 +21,8 @@ tv-logs/
 
 # Flutter crash reports (local diagnostics, contain local paths)
 flutter_*.log
+
+# Device logs, APKs and SDK archives — local diagnostics, never committed.
+# See "What never gets committed" in CLAUDE.md.
+*.apk
+mdk-sdk*.7z

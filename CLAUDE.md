@@ -58,3 +58,26 @@ Requirements: Flutter **3.44.2** (stable), Dart 3.12+, JDK 17, Android SDK 36.
   not implementation steps, tooling, or repo housekeeping.
 - **Releases use a `v` prefix** (`v1.0.0`); CI triggers on `v*` tags.
 - **Git history is append-only** — new commits over amend; regular push over force-push.
+
+## What never gets committed
+
+Device logs, crash reports and build artifacts are **local diagnostics**. They
+have leaked in twice, both times via a blanket `git add -A`: a pulled TV log
+(`tv-logs/…/app-*.log`) and a Flutter crash report (`flutter_01.log`). Removing
+them needed a history rewrite and a force-push — the one operation this repo
+otherwise forbids.
+
+- **Stage explicitly.** `git add <paths>`, not `git add -A`, unless you have
+  just read `git status` and every entry belongs in the commit.
+- **Never commit:** `tv-logs/`, `flutter_*.log`, `*.apk`, `mdk-sdk*.7z`,
+  `bench-results/`, anything under `docs/issue-*/`. All are gitignored — keep
+  it that way rather than un-ignoring for convenience.
+- **Provider identity is sensitive, not just credentials.** `scrubUrl` masks
+  username/password, so a log looks safe — but the server host
+  (`http://<provider>/…`) and the playlist id stay in clear text and tie the
+  user to their subscription. Treat any pulled log as private.
+- **Upstream reports:** attach logs to the issue/PR, scrubbed, never to a
+  commit. `scripts/pull_logs.sh` writes to the gitignored `tv-logs/`.
+- **Before making a repo public**, scan history, not just the working tree:
+  `git rev-list --all | while read c; do git grep -inE '<pattern>' $c -- .;
+  done`. Working-tree greps miss everything already committed.
