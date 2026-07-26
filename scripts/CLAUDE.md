@@ -52,7 +52,7 @@ adb mdns services
 ```
 
 **Renderer choice for this device (PowerVR TV):**
-Impeller+Vulkan and plain GLES both flicker on the PowerVR GPU. **Skia** (`set_impeller.py skia`) is the stable renderer. On the video side, **media_kit** (not fvp/MDK) is used on Android because MDK corrupts video on PowerVR.
+Impeller+Vulkan and plain GLES both flicker on the PowerVR GPU. **Skia** (`set_impeller.py skia`) is the stable renderer. On the video side, **fvp/MDK** decodes straight into a SurfaceView (`tunnel`), the only path that sustains 4K here; MDK's GL renderer corrupts video on PowerVR, worked around with an 8-bit render target (fvp#374).
 
 **`set_impeller.py` / `set_fvp.py` mutate tracked files.**
 Always restore with `git checkout -- <file>` after diagnostic sweeps (or use `tv_render_all.sh` which does this automatically for the manifest).

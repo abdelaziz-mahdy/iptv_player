@@ -22,9 +22,8 @@ Pushed routes (outside the shell): `/player`, `/details/movie`, `/details/series
 `/playlists`, `/import`, `/onboarding`. Arguments are passed via `state.extra` as typed objects
 (e.g. `PlayerArgs`, `VodItem`, `Series`).
 
-Player controller in the `/player` route: media_kit on Android (mpv, smooth
-TV pacing), `VideoPlayerControllerAdapter` (fvp) on desktop or when
-`FORCE_FVP=true` — see `lib/features/player/CLAUDE.md`.
+Player controller in the `/player` route: `VideoPlayerControllerAdapter` (fvp)
+on every platform — see `lib/features/player/CLAUDE.md`.
 
 ## result.dart — Result Type
 
@@ -43,8 +42,8 @@ const bool kFvpCaptureBuild = bool.fromEnvironment('FVP_CAPTURE'); // default: f
 ```
 
 Enable with `--dart-define=FVP_CAPTURE=true`. Attaches a root `Logger` listener so MDK (fvp)
-logs reach logcat. Off in all shipping/CI builds. Built for the wang-bin/fvp#374 investigation,
-kept for player diagnostics.
+logs reach logcat, and asks MDK for `logLevel: all`. Off in all shipping/CI builds. Built for the
+wang-bin/fvp#374 investigation, kept for player diagnostics — it is the only debug flag left.
 
 ## widgets/ — TV-Focused Reusable Widgets
 

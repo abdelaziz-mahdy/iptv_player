@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   media" while the same movie played fine from the Movies tab.
 
 ### Changed
+- **Playback now uses a single engine (MDK) on every platform.** On Android TV
+  the decoder writes straight into the display layer, so 4K plays at the
+  panel's own resolution and frame rate. The app is also ~40 MB smaller.
 - Left / right on the remote now **skips 10 seconds straight away** while the
   controls are hidden, instead of only waking them up first.
 - **Next** in a series now continues into the **following season** when you

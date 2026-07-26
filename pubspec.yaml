@@ -56,14 +56,10 @@ dependencies:
   flutter_secure_storage: ^10.3.1
   connectivity_plus: ^7.1.1
   video_player: ^2.11.1
+  # fvp (MDK) backs video_player on every platform. On Android its
+  # decoder-to-SurfaceView path is the only one that sustains 4K on TV
+  # hardware; media_kit/libmpv was the Android player until that landed.
   fvp: ^0.37.2
-  # media_kit (libmpv, mpv vo_gpu) is the ANDROID player: its frame pacing
-  # on the TV beats fvp/MDK through both the texture path and the SurfaceView
-  # platform view (fvp#134). fvp is the desktop player and the Android
-  # fallback under --dart-define=FORCE_FVP=true.
-  media_kit: ^1.1.11
-  media_kit_video: ^1.2.5
-  media_kit_libs_android_video: ^1.3.6
   wakelock_plus: ^1.6.1
   subtitle: ^0.2.0
   # Used only by the FVP_CAPTURE debug build to surface MDK's log=all output
@@ -139,16 +135,17 @@ flutter:
           weight: 700
 
 
-# fvp fork branch bench/direct-surface = SurfaceView platform view (upstream
-# PR wang-bin/fvp#379) + 8-bit EGLConfig fallback (PR #385, fixes #374)
-# + FVP_DIRECT_SURFACE mode: MediaCodec renders straight into the platform
-# view's surface — no GL, the only 4K-capable path on the TV (benchmarked
-# 2026-07-19, posted on #379) — including the background->foreground decoder
-# re-attach fix. Drop pieces as upstream merges them. The audio backend needs
-# no fork: stock fvp forwards options['player'] via setProperty, and MDK's
-# "audio.renderer" property == setAudioBackends (see video_controller.dart).
+# fvp pinned to the branch of upstream PR wang-bin/fvp#379: SurfaceView
+# platform view + `tunnel` decoding straight into it (MediaCodec writes to the
+# surface, no GL) — the only 4K-capable path on this TV, benchmarked
+# 2026-07-19 and posted on the PR — plus the surface detach/re-attach that
+# survives backgrounding. Drop the override once it is merged and released.
+# NOTE: this branch has no HDR-to-GL fallback, so HDR titles stall until
+# wang-bin/mdk-sdk#361 is fixed. The audio backend needs no fork: stock fvp
+# forwards options['player'] via setProperty, and MDK's "audio.renderer"
+# property == setAudioBackends (see video_controller.dart).
 dependency_overrides:
   fvp:
     git:
       url: https://github.com/abdelaziz-mahdy/fvp.git
-      ref: db62cddf4199ccb31e6436f6ccf32fe4cb08cbac
+      ref: 01c07d7e0e05057f679a0513fecda21cad8ff367

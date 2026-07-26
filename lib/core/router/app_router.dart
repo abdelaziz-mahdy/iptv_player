@@ -1,5 +1,4 @@
 
-import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -15,7 +14,6 @@ import '../../features/home/home_screen.dart';
 import '../../features/import/import_screen.dart';
 import '../../features/live/live_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
-import '../../features/player/media_kit_controller.dart';
 import '../../features/player/player_screen.dart';
 import '../../features/player/video_controller.dart';
 import '../../features/playlists/playlists_screen.dart';
@@ -23,7 +21,6 @@ import '../../features/search/cubit/search_cubit.dart';
 import '../../features/search/search_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../debug_flags.dart';
 import '../di/injection.dart';
 import '../widgets/adaptive_shell.dart';
 
@@ -316,13 +313,7 @@ GoRouter buildRouter() {
             }
           }
           return PlayerScreen(
-            // media_kit (mpv vo_gpu) on Android: better frame pacing on
-            // the TV than fvp/MDK via either view type (fvp#134 — MDK
-            // presents in bursts). fvp stays on desktop, and FORCE_FVP=true
-            // flips Android back to fvp for A/B tests. See debug_flags.dart.
-            controller: (Platform.isAndroid && !kForceFvpVideo)
-                ? MediaKitPlayerController()
-                : VideoPlayerControllerAdapter(),
+            controller: VideoPlayerControllerAdapter(),
             // Key by queue position so `context.replace` to a neighbour tears
             // down the old player State (and its controller) and builds a fresh
             // one, instead of reusing the state with a stale controller.

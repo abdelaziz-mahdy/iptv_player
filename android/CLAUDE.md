@@ -38,9 +38,8 @@ Convention: **install only, do not auto-launch** — let the user open the app o
 
 ## Video player
 
-`media_kit` (mpv) is the Android video player (smoother frame pacing than
-fvp/MDK on TV GPUs — fvp#134). fvp remains available on Android under
-`--dart-define=FORCE_FVP=true`; for that path `MainActivity.kt` sets
-`EGL_SDR_DEPTH=8` in `onCreate()` **before** `super.onCreate()` (fvp#374 —
-MDK's 10-bit surface corrupts on PowerVR). Keep the setenv; it is inert for
-media_kit. Full story: `lib/features/player/CLAUDE.md`.
+`fvp`/MDK is the video player. `MainActivity.kt` sets `EGL_SDR_DEPTH=8` in
+`onCreate()` **before** `super.onCreate()` (fvp#374 — MDK's 10-bit surface
+corrupts on PowerVR); it only affects the GL path, which the `tunnel` mode
+bypasses, but stays for the fallback. Full story:
+`lib/features/player/CLAUDE.md`.

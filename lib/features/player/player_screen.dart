@@ -3,7 +3,6 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../core/a11y/accessibility_cubit.dart';
@@ -15,7 +14,6 @@ import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'cubit/player_cubit.dart';
-import 'media_kit_controller.dart';
 import 'video_controller.dart';
 
 /// Small red "LIVE" pill shown in place of the seek scrubber for live channels.
@@ -344,15 +342,6 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   Widget _buildVideoSurface() {
     final c = widget.controller;
-    if (c is MediaKitPlayerController) {
-      // media_kit renders via mpv's vo_gpu; NoVideoControls disables its own
-      // overlay since we draw our own controls.
-      return Video(
-        controller: c.videoController,
-        controls: NoVideoControls,
-        fit: BoxFit.contain,
-      );
-    }
     if (c is VideoPlayerControllerAdapter) {
       if (c.isInitialized) {
         // `VideoPlayer` has no fit of its own — it fills whatever constraints

@@ -30,8 +30,7 @@ class PlayerStatus extends Equatable {
 abstract class PlayerController {
   /// Prepares [url] for playback. When [startAt] is given, playback begins
   /// at that position (resume) — backends apply it in the most reliable way
-  /// they support (mpv: the `start` property at load; video_player: a seek
-  /// after initialization).
+  /// they support (video_player: a seek after initialization).
   Future<void> initialize(String url, {Duration? startAt});
   Future<void> play();
   Future<void> pause();
@@ -80,35 +79,39 @@ class VideoPlayerControllerAdapter implements PlayerController {
   @override
   Future<void> initialize(String url, {Duration? startAt}) async {
     if (!_fvpRegistered) {
-      // fvp/MDK: the desktop player, and the Android backend under
-      // FORCE_FVP=true. On Android TV PowerVR GPUs MDK's 10-bit EGLConfig
-      // corrupts video — MainActivity sets EGL_SDR_DEPTH=8 (fvp#374).
-      // Android renders with 'directSurface': MediaCodec outputs straight
-      // into the platform view's SurfaceView, no GL — 4K scans out at native
-      // resolution (24fps at 4K24, 56fps at 4K60 benchmarked), so
-      // maxWidth/maxHeight (a GL-path clamp) do not apply.
+      // fvp/MDK is the player on every platform. On Android TV PowerVR GPUs
+      // MDK's 10-bit EGLConfig corrupts video — MainActivity sets
+      // EGL_SDR_DEPTH=8 (fvp#374).
+      // 'tunnel' makes MediaCodec output straight into the platform view's
+      // SurfaceView, no GL — 4K scans out at native resolution (24fps at
+      // 4K24, 56fps at 4K60 benchmarked), so maxWidth/maxHeight (a GL-path
+      // clamp) do not apply.
       // HDR CAVEAT: this pin is the upstream PR branch (fvp#379), which does
       // NOT carry the fork's per-video HDR-to-GL routing — non-tunneled HDR
       // wedges the Realtek decoder (mdk-sdk#361), so HDR titles are expected
       // to stall on this build.
       // OpenSL audio: MDK slaves video pacing to the audio backend's position
-      // clock, and this TV's AAudio reports positions too coarsely — frames
+      // clock, and this TV's AAudio reported positions too coarsely — frames
       // burst at ~10 presented fps. OpenSL paces frame-perfectly (24.2 fps,
-      // zero droughts, benchmarked; fvp#384). Set via MDK's "audio.renderer"
-      // player property (== setAudioBackends), which stock fvp forwards from
+      // zero droughts, benchmarked; fvp#384, fixed upstream but not yet in a
+      // released SDK). Set via MDK's "audio.renderer" player property
+      // (== setAudioBackends), which stock fvp forwards from
       // options['player'] before prepare — no fork API needed.
       fvp.registerWith(
           options: Platform.isAndroid
               ? {
                   'maxWidth': 1920,
                   'maxHeight': 1088,
-                  'directSurface': true,
+                  // Decoder writes straight into the platform view's
+                  // SurfaceView — the only path that sustains 4K here.
+                  'tunnel': true,
                   'player': {
                     'audio.renderer': 'OpenSL',
                     // MDK defaults to 1s min / 4s max buffered ahead — too
-                    // shallow for jittery IPTV providers (mpv rides the same
-                    // links with 10-13s cached; fvp starved at ~5fps input
-                    // while the provider burst-served 10MB/s). Docs: "Large
+                    // shallow for jittery IPTV providers — fvp starved at
+                    // ~5fps input while the provider burst-served 10MB/s,
+                    // where mpv rode the same links with 10-13s cached.
+                    // Docs: "Large
                     // value is recommended. Latency is not affected."
                     'buffer': '2000+30000',
                   },
@@ -131,8 +134,8 @@ class VideoPlayerControllerAdapter implements PlayerController {
     }
 
     // SurfaceView platform view on Android: own display layer, and with
-    // FVP_DIRECT_SURFACE the decoder fills it directly — the only path that
-    // sustains 4K on this TV. Texture path on desktop.
+    // 'tunnel' the decoder fills it directly — the only path that sustains 4K
+    // on this TV. Texture path on desktop.
     _controller = VideoPlayerController.networkUrl(
       Uri.parse(url),
       viewType: Platform.isAndroid

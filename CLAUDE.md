@@ -1,7 +1,7 @@
 # IPTV Player — agent & contributor guide
 
 A Flutter IPTV client for **Android (phone + TV)** and **desktop (macOS/Windows/Linux)**.
-Xtream Codes / M3U / XMLTV sources, libmpv playback. The app hosts no content —
+Xtream Codes / M3U / XMLTV sources, MDK (fvp) playback. The app hosts no content —
 playlists are user-supplied.
 
 This file is the **index**. Each major directory has its own `CLAUDE.md` with the
@@ -15,7 +15,7 @@ detail for that area — read the relevant one before working there.
 | Shared infra | [lib/core/CLAUDE.md](lib/core/CLAUDE.md) | DI, router, theme, widgets, a11y, i18n, `Result`, debug flags |
 | Data layer | [lib/data/CLAUDE.md](lib/data/CLAUDE.md) | sources, drift DB, repositories (+ fakes), models |
 | Features | [lib/features/CLAUDE.md](lib/features/CLAUDE.md) | screen+cubit module pattern |
-| Video player | [lib/features/player/CLAUDE.md](lib/features/player/CLAUDE.md) | media_kit/fvp backends, progress saving |
+| Video player | [lib/features/player/CLAUDE.md](lib/features/player/CLAUDE.md) | fvp/MDK backend, direct-to-surface 4K, progress saving |
 | Tests | [test/CLAUDE.md](test/CLAUDE.md) | fakes, async-binding gotcha, test hooks |
 | Android | [android/CLAUDE.md](android/CLAUDE.md) | manifest, renderer (Skia), gradle |
 | Scripts | [scripts/CLAUDE.md](scripts/CLAUDE.md) | TV install/diagnostic helpers |
@@ -38,9 +38,11 @@ Requirements: Flutter **3.44.2** (stable), Dart 3.12+, JDK 17, Android SDK 36.
 - **Renderer = Skia on Android.** Impeller (Vulkan) flickers on PowerVR TV GPUs;
   OpenGLES Impeller is ignored by Flutter 3.44.2. Forced via AndroidManifest. See
   [android/CLAUDE.md](android/CLAUDE.md).
-- **Video backend differs per platform.** Android = `media_kit`; desktop = `fvp`.
-  fvp/MDK corrupts video on PowerVR (upstream fvp#374). See
-  [lib/features/player/CLAUDE.md](lib/features/player/CLAUDE.md).
+- **One video backend: `fvp`/MDK behind `video_player`.** On Android it decodes
+  straight into a SurfaceView (`tunnel`), the only path that sustains 4K on TV
+  hardware; MDK's GL renderer corrupts video on PowerVR (upstream fvp#374) and
+  HDR stalls the decoder in direct mode (mdk-sdk#361). fvp is pinned to a fork
+  branch — see [lib/features/player/CLAUDE.md](lib/features/player/CLAUDE.md).
 - **Active playlist is a stream.** Feature cubits subscribe to
   `PlaylistRepository.active()` and re-bind on change — never read `.first` once
   (that caused "no content until restart"). See [lib/features/CLAUDE.md](lib/features/CLAUDE.md).

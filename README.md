@@ -4,7 +4,7 @@
 
 A real IPTV client for **Android (phone + TV)** and **desktop (macOS / Windows / Linux)**, built with Flutter.
 
-Xtream Codes • M3U / M3U8 • XMLTV EPG • real playback via libmpv (media_kit / fvp)
+Xtream Codes • M3U / M3U8 • XMLTV EPG • real playback via MDK (fvp)
 
 </div>
 
@@ -19,11 +19,12 @@ Xtream Codes • M3U / M3U8 • XMLTV EPG • real playback via libmpv (media_ki
   - **Xtream Codes** portals (live, VOD, series, categories, EPG)
   - **M3U / M3U8** playlists (URL or file)
   - **XMLTV** EPG parsing
-- **Playback** via libmpv — [`media_kit`](https://pub.dev/packages/media_kit) on
-  Android, [`fvp`](https://pub.dev/packages/fvp) on desktop — handling the wide
-  range of codecs/containers IPTV streams use that native players often can't,
-  with hardware decoding. Live/VOD aware, real-time bitrate badge, auto-hiding
-  controls.
+- **Playback** via [`fvp`](https://pub.dev/packages/fvp) (MDK) backing
+  `video_player` — handling the wide range of codecs/containers IPTV streams
+  use that native players often can't, with hardware decoding. On Android TV
+  the decoder writes straight into a SurfaceView, so 4K plays at the panel's
+  resolution rather than the UI layer's. Live/VOD aware, real-time bitrate
+  badge, auto-hiding controls.
 - **Continue Watching** — VOD resumes where you left off. The position is saved
   continuously during playback and when the app is backgrounded, so it survives
   the app being closed from the Home button or killed by the TV.
@@ -53,7 +54,7 @@ Xtream Codes • M3U / M3U8 • XMLTV EPG • real playback via libmpv (media_ki
 - **Persistence:** `drift` (SQLite) with schema migrations
 - **Models/codegen:** `freezed` + `json_serializable` + `build_runner`
 - **Data:** `xtream_code_client`, `m3u_nullsafe`, `xml` (XMLTV), `dio`
-- **Video:** libmpv — `media_kit` (Android), `fvp` backing `video_player` (desktop)
+- **Video:** `fvp` (MDK) backing `video_player` on every platform
 - **Fonts:** bundled Hanken Grotesk (variable), IBM Plex Sans Arabic, Atkinson Hyperlegible
 
 ## Android TV renderer & video notes
@@ -71,11 +72,23 @@ appear; both are worked around here:
   <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false" />
   ```
 
-- **Video corruption** with `fvp`/MDK's GL renderer (reproduces with every
-  decoder, even software — decoding is fine, the renderer isn't). Android
-  therefore plays via **`media_kit`** (mpv `vo_gpu`), which renders the same
-  streams correctly on the same GPU; desktop keeps `fvp`, where it works.
-  Upstream: wang-bin/fvp#374.
+- **Video corruption** with `fvp`/MDK's GL renderer on PowerVR: the driver
+  advertises RGBA_1010102 window configs but marks them all non-conformant, and
+  rendering into one corrupts the picture (reproduces with every decoder, even
+  software — decoding is fine, the renderer isn't). Fixed by falling back to an
+  8-bit render target. Upstream: wang-bin/fvp#374, PR #385.
+
+- **4K on TV** needs the decoder to bypass the GL renderer entirely
+  (`tunnel: true` + `VideoViewType.platformView`): MediaCodec writes into the
+  SurfaceView's buffer queue, so the video scans out at panel resolution while
+  the UI layer stays at 1080p. Measured on a Realtek TV: 24.0 fps at 4K24 and
+  56.3 fps at 4K60, against ~22 through the GL platform view and 10.9 through
+  the Flutter texture. Upstream: wang-bin/fvp#379.
+
+- **Audio backend drives frame pacing.** MDK slaves video timing to the audio
+  clock; this TV's AAudio reported positions too coarsely and frames presented
+  in bursts at ~10 fps. The app asks for OpenSL (`audio.renderer`) until the
+  AAudio fixes reach a released SDK. Upstream: wang-bin/fvp#384.
 
 Related upstream issues: flutter#177319, flutter#165983, flutter#161316.
 

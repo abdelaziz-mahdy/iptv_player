@@ -234,10 +234,9 @@ class PlayerCubit extends Cubit<PlayerUiState> {
       return;
     }
 
-    // Resolve the resume position BEFORE initialize: backends apply it at
-    // load (mpv's `start` property), which is reliable where a post-open
-    // seek command is silently dropped (media-kit/media-kit#1215). A watched
-    // item replays from the start instead of resuming at the final seconds.
+    // Resolve the resume position BEFORE initialize so the backend can apply
+    // it at load. A watched item replays from the start instead of resuming at
+    // the final seconds.
     Duration? startAt;
     if (!isLive) {
       final progress = await _playback.progressFor(itemKey);

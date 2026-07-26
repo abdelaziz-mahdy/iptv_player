@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:flutter/widgets.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:logging/logging.dart';
-import 'package:media_kit/media_kit.dart';
 import 'package:path_provider/path_provider.dart';
 import 'app.dart';
 import 'core/debug_flags.dart';
@@ -32,10 +30,6 @@ Future<void> main() async {
       print('[${r.loggerName}] ${r.level.name}: ${r.message}');
     });
   }
-  // media_kit (mpv) is the Android player — better frame pacing on TV GPUs
-  // than fvp/MDK (fvp#134). Desktop uses fvp; FORCE_FVP=true flips Android
-  // to fvp for A/B testing.
-  if (Platform.isAndroid && !kForceFvpVideo) MediaKit.ensureInitialized();
   HydratedBloc.storage = await HydratedStorage.build(
     storageDirectory: HydratedStorageDirectory(
       (await getApplicationSupportDirectory()).path,

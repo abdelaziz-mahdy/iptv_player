@@ -11,51 +11,40 @@ Backend-agnostic interface. All backends implement:
 
 ---
 
-## Backends: media_kit on Android, fvp on desktop
+## Backend: fvp (MDK) behind `video_player`
 
-Chosen at route time in `core/router/app_router.dart`:
+One backend everywhere — `VideoPlayerControllerAdapter` (`video_controller.dart`),
+built directly in the `/player` route. media_kit/libmpv was the Android player
+until the decoder-to-SurfaceView path landed; it is gone (removed with its
+`media_kit_libs_android_video` natives, which clashed with MDK's).
 
-```dart
-controller: (Platform.isAndroid && !kForceFvpVideo)
-    ? MediaKitPlayerController()   // mpv vo_gpu — smooth pacing on TV GPUs
-    : VideoPlayerControllerAdapter() // fvp/MDK — desktop (+ FORCE_FVP A/B)
-```
-
-### Android: `MediaKitPlayerController` (`media_kit_controller.dart`)
-- Wraps media_kit / libmpv (`vo_gpu`). Opens with `play: false`.
-- **Resume** is passed as `initialize(url, startAt:)` → `Media(start:)` — mpv
-  applies it at load. A seek command right after open is silently dropped by
-  mpv (media-kit/media-kit#1215); early scrubber seeks are parked and applied
-  once the duration arrives.
-- Video surface: `Video(controller: c.videoController, controls: NoVideoControls)`.
-
-### Desktop (+ FORCE_FVP): `VideoPlayerControllerAdapter` (`video_controller.dart`)
-- Wraps `video_player` with fvp (MDK); registered once via `fvp.registerWith()`
-  (Android options: `maxWidth/maxHeight` 1920×1088 cap).
-- On Android uses `VideoViewType.platformView` (SurfaceView from the pinned
-  fvp fork — own display layer, prerequisite for tunneled true-4K).
+- Wraps `video_player` with fvp (MDK); registered once via `fvp.registerWith()`.
+- On Android uses `VideoViewType.platformView` plus `'tunnel': true`:
+  MediaCodec writes decoded frames straight into the SurfaceView's buffer
+  queue — no GL renderer, no EGLConfig, no GPU copy. This is the only path
+  that sustains 4K on the TV (24.0 fps at 4K24, 56.3 at 4K60, against ~22
+  through GL and 10.9 through a Flutter texture). `maxWidth`/`maxHeight` are a
+  GL-path clamp and do not apply.
+- `'audio.renderer': 'OpenSL'` — MDK paces video off the audio clock, and this
+  TV's AAudio reported positions too coarsely (frames burst at ~10 fps). Fixed
+  upstream (fvp#384) but not in a released SDK, so the override stays.
+- `'buffer': '2000+30000'` — 30 s of network buffer; the default 1 s/4 s
+  starved on burst-serving IPTV providers.
 - `initialize(startAt:)` seeks after init (video_player has no start option).
 
-### WHY media_kit on Android
-fvp/MDK **paces frames badly on this TV** through BOTH the texture path and
-the SurfaceView platform view: frames present in 60 Hz bursts separated by
-80–183 ms droughts while decode/network/CPU are all healthy (measured via
-SurfaceFlinger timestamps; matches upstream fvp#134, where media_kit and
-video_player are smooth through the same Flutter texture). mpv's VO thread
-paces against a smoothed clock with vsync feedback; MDK appears to schedule
-off raw timers. fvp also needed the 8-bit EGLConfig workaround on PowerVR
-(fvp#374, `EGL_SDR_DEPTH=8` in MainActivity — kept for FORCE_FVP builds).
-Upstream fvp work continues: PR #379 (SurfaceView platform view), PR #380
-(10-bit driver probe, draft), tunnel-at-open ordering (needs libmdk).
+**Pinned to a fork** (`pubspec.yaml` `dependency_overrides`): the branch of
+upstream PR wang-bin/fvp#379. Drop the override once it merges and ships.
 
----
+**HDR caveat:** direct-to-surface output wedges the Realtek decoder on HDR
+content (mdk-sdk#361 — h264 + PQ/BT.2020 VUI stalls, HEVC 10-bit HDR10 plays).
+The PR branch has no HDR-to-GL fallback, so HDR titles stall until that is
+fixed in MDK.
 
 ## `kFvpCaptureBuild` (`core/debug_flags.dart`)
 
-Debug flags (`core/debug_flags.dart`), all off in shipping builds:
-- `FVP_CAPTURE=true` — root logging listener so MDK's `log=all` reaches logcat.
-- `MPV_LOG_CAPTURE=true` — verbose mpv log → logcat (media_kit backend).
-- `FORCE_FVP=true` — Android uses fvp instead of media_kit (A/B testing).
+The only debug flag left (`core/debug_flags.dart`), off in shipping builds:
+- `FVP_CAPTURE=true` — root logging listener plus MDK `logLevel: all`, so the
+  full MDK log reaches logcat for upstream reports.
 
 ---
 
@@ -63,8 +52,11 @@ Debug flags (`core/debug_flags.dart`), all off in shipping builds:
 
 Manages playback state, controls visibility, and VOD progress persistence.
 
-**Startup sequence:** `start()` → `initialize(url)` → seek to resume pos → `play()` →
-enable wakelock → subscribe to `status` stream → start timers.
+**Startup sequence:** `start()` → refuse an empty url → `initialize(url)` →
+seek to resume pos → `play()` → enable wakelock → subscribe to `status` stream
+→ start timers. A failure is classified into `PlaybackFailure`
+(network/unavailable/refused/timeout/unknown), emitted to state and rendered as
+a localized message with Retry — `start()` never throws.
 
 **Timers running during playback:**
 - `_bitrateTimer` (2 s): polls `currentBitRate` / `streamBadge` → updates badge.
@@ -93,10 +85,18 @@ Priority: bitrate (Mbps/Kbps) > resolution string > null (badge hidden).
 
 - Accepts `PlayerController` and `PlaybackRepository` directly (no DI) — tests
   can inject fakes without a service locator.
-- `_buildVideoSurface()` runtime-branches on controller type (no interface method for surface).
+- `_buildVideoSurface()` wraps `VideoPlayer` in an `AspectRatio` — the widget
+  itself fills its constraints, and the parent Stack is `StackFit.expand`, so
+  without it the picture is stretched to the panel shape. It rebuilds on
+  controller value changes (live streams switch resolution mid-play).
 - `WidgetsBindingObserver.didChangeAppLifecycleState` → calls `saveProgressNow()`.
-- `HardwareKeyboard.instance.addHandler` — any key reveals controls / resets idle timer;
-  handler always returns `false` (never consumes the event).
+- `HardwareKeyboard.instance.addHandler` — any key reveals controls / resets the
+  idle timer. It also owns the first left/right press while no control has
+  focus: that seeks ±10s and moves focus onto the scrubber, so the highlight
+  sits on what is moving and later presses go to the scrubber's own handler.
+  It must live here, not in a Focus handler — it runs before focus dispatch,
+  and afterwards "were the controls hidden?" cannot be answered. Returns true
+  only when it seeks.
 - Controls use `_hideable()` = `AnimatedOpacity` + `IgnorePointer` + `ExcludeFocus`
   so hidden controls are fully invisible and unreachable by D-pad focus.
 - Focus management: `_rootFocus` holds focus while controls are hidden; on reveal,

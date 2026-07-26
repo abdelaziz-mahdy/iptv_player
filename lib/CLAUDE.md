@@ -11,7 +11,7 @@
 ## Entry point
 
 `main.dart` → `configureProductionDependencies()` → `runApp(NoorApp())` → `SyncService.syncActive()` (background).
-Video: media_kit (mpv) on Android, fvp/MDK on desktop; `FORCE_FVP=true` flips Android to fvp (see `features/player/CLAUDE.md`).
+Video: fvp/MDK backing `video_player` on every platform (see `features/player/CLAUDE.md`).
 
 `app.dart` wraps `MaterialApp.router` in `MultiBlocProvider` for `AccessibilityCubit` and `LocaleCubit`.
 
