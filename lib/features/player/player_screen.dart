@@ -208,12 +208,13 @@ class _PlayerScreenState extends State<PlayerScreen>
   /// Global key handler: any key wakes the controls and resets the idle timer,
   /// whichever widget ends up consuming the event.
   ///
-  /// It also owns the *first* left/right press, the one that arrives while no
-  /// control has focus — pressing up, landing on the scrubber and only then
-  /// seeking is three presses for what a remote should do in one. That press
-  /// seeks and moves focus onto the scrubber, so the highlight sits on the
-  /// thing that is moving; every press after it is handled by the scrubber
-  /// itself ([_onSliderKey]).
+  /// It also owns left/right *while the controls are hidden* — pressing up,
+  /// landing on the scrubber and only then seeking is three presses for what a
+  /// remote should do in one. That press seeks and moves focus onto the
+  /// scrubber, so the highlight sits on the thing that is moving; every press
+  /// after it is handled by the scrubber itself ([_onSliderKey]). Once the
+  /// controls are visible it keeps its hands off: left/right are how the user
+  /// moves between play/pause, skip and mute.
   ///
   /// It has to live here rather than in a Focus handler: it runs before focus
   /// dispatch, and afterwards "were the controls hidden?" can no longer be
@@ -227,8 +228,11 @@ class _PlayerScreenState extends State<PlayerScreen>
     final key = event.logicalKey;
     final isSeekKey = key == LogicalKeyboardKey.arrowLeft ||
         key == LogicalKeyboardKey.arrowRight;
-    // The scrubber handles its own keys once focused.
-    if (isSeekKey && !_sliderFocus.hasPrimaryFocus && _seek(cubit, key)) {
+    // Only while the controls are hidden. Once they are up, left/right belong
+    // to focus traversal — otherwise every press from a button seeks and
+    // yanks the highlight back to the scrubber, and the other controls can
+    // never be reached.
+    if (isSeekKey && !cubit.state.showControls && _seek(cubit, key)) {
       _revealedBySeek = true;
       cubit.revealControls();
       // Hidden controls sit behind ExcludeFocus, so the scrubber cannot take

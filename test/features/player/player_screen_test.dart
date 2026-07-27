@@ -270,4 +270,33 @@ void main() {
     await tester.pump();
     expect(cubit.state.position, before);
   });
+
+  testWidgets('with the controls up, left/right leave the buttons alone',
+      (tester) async {
+    final controller = FakePlayerController();
+    await tester.pumpWidget(_buildPlayer(controller: controller));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final cubit = BlocProvider.of<PlayerCubit>(
+      tester.element(find.byType(BlocConsumer<PlayerCubit, PlayerUiState>)),
+    );
+    expect(cubit.state.showControls, isTrue);
+
+    // Focus starts on play/pause, not the scrubber.
+    final focused = FocusManager.instance.primaryFocus?.debugLabel;
+    expect(focused, isNot('player-seek-slider'));
+
+    final before = cubit.state.position;
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+
+    // Right is traversal here: it must not seek, and must not drag the
+    // highlight back onto the scrubber.
+    expect(cubit.state.position, before);
+    expect(
+      FocusManager.instance.primaryFocus?.debugLabel,
+      isNot('player-seek-slider'),
+    );
+  });
 }

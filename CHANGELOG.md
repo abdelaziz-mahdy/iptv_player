@@ -49,6 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   still be looked into today.
 
 ### Fixed
+- **The player's buttons are reachable again.** With the controls showing, left
+  and right moved between play/pause, skip and mute as expected — instead they
+  seeked and pulled the highlight back onto the seek bar every time.
 - **Live channels no longer freeze on a still picture while the sound keeps
   playing.** The audio engine the app asked for could start its clock from the
   wrong point on live streams, leaving the video permanently "in the future";
