@@ -74,5 +74,14 @@
   "noContentYet": "No content yet",
   "setUpPlaylist": "Set up a playlist",
   "noItemsFound": "No items found",
-  "jumpToLetter": "Jump to letter"
+  "jumpToLetter": "Jump to letter",
+  "addToFavorites": "Add to favorites",
+  "removeFromFavorites": "Remove from favorites",
+  "seasonNumber": "Season {number}",
+  "@seasonNumber": {"placeholders": {"number": {"type": "int"}}},
+  "playEpisode": "Play episode {number}: {title}",
+  "@playEpisode": {"placeholders": {"number": {"type": "int"}, "title": {"type": "String"}}},
+  "skipBackward": "Skip back 10 seconds",
+  "skipForward": "Skip forward 10 seconds",
+  "audioTrack": "Audio track"
 }

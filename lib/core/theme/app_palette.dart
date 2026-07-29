@@ -8,6 +8,19 @@ import 'package:flutter/material.dart';
 class AppPalette {
   final Color bg, bg2, surface, surface2, border, fg, dim, focus, accent, accent2, live;
 
+  /// Text and icons drawn *on* an [accent] or [live] fill. Both are light
+  /// enough to need dark ink; screens used to pick `Colors.black` or
+  /// `Colors.white` by hand, which silently breaks if the accent changes.
+  final Color onAccent;
+
+  /// Overlay behind content that sits on artwork (poster badges, the heart
+  /// button) — artwork is arbitrary, so these need their own scrim rather
+  /// than a surface colour.
+  final Color scrim;
+
+  /// Text and icons on top of [scrim] or artwork.
+  final Color onScrim;
+
   const AppPalette({
     required this.bg,
     required this.bg2,
@@ -20,6 +33,9 @@ class AppPalette {
     required this.accent,
     required this.accent2,
     required this.live,
+    this.onAccent = const Color(0xFF0A0D13),
+    this.scrim = const Color(0x8C000000),
+    this.onScrim = const Color(0xFFFFFFFF),
   });
 
   // Shared across both palettes.
@@ -53,5 +69,7 @@ class AppPalette {
     accent: accentColor,
     accent2: accent2Color,
     live: liveColor,
+    onAccent: Color(0xFF000000),
+    scrim: Color(0xE6000000),
   );
 }

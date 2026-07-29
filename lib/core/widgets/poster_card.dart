@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../l10n/generated/app_localizations.dart';
+import '../theme/app_sizes.dart';
 import '../theme/app_theme.dart';
 import 'focusable_button.dart';
 import 'remote_image.dart';
@@ -36,6 +39,7 @@ class PosterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final l10n = AppLocalizations.of(context)!;
     return FocusableButton(
       semanticLabel: title,
       autofocus: autofocus,
@@ -69,13 +73,15 @@ class PosterCard extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.black54,
+                          color: p.scrim,
                           borderRadius: BorderRadius.circular(5),
                         ),
                         child: Text(
                           badge!,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: p.onScrim,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                       ),
                     ),
@@ -89,7 +95,7 @@ class PosterCard extends StatelessWidget {
                         child: LinearProgressIndicator(
                           value: progress,
                           minHeight: 4,
-                          backgroundColor: Colors.white24,
+                          backgroundColor: p.onScrim.withValues(alpha: 0.24),
                           valueColor: AlwaysStoppedAnimation(p.accent),
                         ),
                       ),
@@ -100,26 +106,37 @@ class PosterCard extends StatelessWidget {
                   // on a remote), so moving across the grid never lands on it.
                   if (onToggleFavorite != null)
                     PositionedDirectional(
-                      top: 6,
-                      start: 6,
+                      top: -2,
+                      start: -2,
                       child: Semantics(
                         button: true,
                         label: isFavorite
-                            ? 'Remove from favorites'
-                            : 'Add to favorites',
+                            ? l10n.removeFromFavorites
+                            : l10n.addToFavorites,
+                        // 44x44 tap target around a 28px dot: the visual size
+                        // suits the poster, the target meets the minimum.
                         child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
                           onTap: onToggleFavorite,
-                          child: Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: Colors.black45,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Icon(
-                              isFavorite ? Icons.favorite : Icons.favorite_border,
-                              color: isFavorite ? p.accent : Colors.white,
-                              size: 16,
+                          child: SizedBox(
+                            width: 44,
+                            height: 44,
+                            child: Center(
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: p.scrim,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  isFavorite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: isFavorite ? p.accent : p.onScrim,
+                                  size: IconSize.sm,
+                                ),
+                              ),
                             ),
                           ),
                         ),

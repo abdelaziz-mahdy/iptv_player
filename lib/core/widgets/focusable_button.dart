@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../a11y/accessibility_cubit.dart';
 import '../theme/app_theme.dart';
 
 /// A button that shows a high-contrast focus ring when focused — for TV remote /
@@ -11,15 +14,20 @@ import '../theme/app_theme.dart';
 /// ### Focus ring
 /// When focused, renders a 3 px `context.palette.fg` border via
 /// [foregroundDecoration] (does NOT affect layout size) PLUS scales the widget
-/// up to 1.04 via [AnimatedScale] (skipped when [reduceMotion] is true).
+/// up to 1.04 via [AnimatedScale].
 ///
-/// Pass [reduceMotion] from `AccessibilityCubit().state.reduceMotion`.
+/// The scale is skipped when the user has asked for reduced motion. That is
+/// read from [AccessibilityCubit] here rather than passed in: as a parameter
+/// it defaulted to "animate" and not one of the ~36 call sites ever set it, so
+/// the setting did nothing at all.
 class FocusableButton extends StatefulWidget {
   final Widget child;
   final VoidCallback onPressed;
   final String? semanticLabel;
   final bool autofocus;
-  final bool reduceMotion;
+
+  /// Overrides the user's reduced-motion setting. Only for tests and previews.
+  final bool? reduceMotion;
   final FocusNode? focusNode;
 
   const FocusableButton({
@@ -28,7 +36,7 @@ class FocusableButton extends StatefulWidget {
     required this.onPressed,
     this.semanticLabel,
     this.autofocus = false,
-    this.reduceMotion = false,
+    this.reduceMotion,
     this.focusNode,
   });
 
@@ -39,9 +47,20 @@ class FocusableButton extends StatefulWidget {
 class _FocusableButtonState extends State<FocusableButton> {
   bool _focused = false;
 
+  /// The cubit is absent in widget tests that pump a single screen, so fall
+  /// back to animating rather than failing to build.
+  bool get _reduceMotion {
+    if (widget.reduceMotion != null) return widget.reduceMotion!;
+    try {
+      return context.watch<AccessibilityCubit>().state.reduceMotion;
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final focusedScale = widget.reduceMotion ? 1.0 : (_focused ? 1.04 : 1.0);
+    final focusedScale = _reduceMotion ? 1.0 : (_focused ? 1.04 : 1.0);
 
     return Semantics(
       button: true,

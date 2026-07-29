@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_sizes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/focusable_button.dart';
 import '../../core/widgets/remote_image.dart';
@@ -53,7 +54,6 @@ class ChannelListScreen extends StatelessWidget {
                 final channel = channels[index];
                 return _ChannelRow(
                   channel: channel,
-                  palette: p,
                   autofocus: index == 0,
                   onPlay: () => onPlayChannel(channels, index),
                 );
@@ -66,19 +66,17 @@ class ChannelListScreen extends StatelessWidget {
 class _ChannelRow extends StatelessWidget {
   const _ChannelRow({
     required this.channel,
-    required this.palette,
     required this.autofocus,
     required this.onPlay,
   });
 
   final Channel channel;
-  final dynamic palette;
   final bool autofocus;
   final VoidCallback onPlay;
 
   @override
   Widget build(BuildContext context) {
-    final p = palette as dynamic;
+    final p = context.palette;
     return FocusableButton(
       autofocus: autofocus,
       semanticLabel: channel.name,
@@ -108,10 +106,10 @@ class _ChannelRow extends StatelessWidget {
                         width: 44,
                         height: 44,
                         memWidth: 132,
-                        fallback: _Abbr(name: channel.name, palette: p),
+                        fallback: _Abbr(name: channel.name),
                       ),
                     )
-                  : _Abbr(name: channel.name, palette: p),
+                  : _Abbr(name: channel.name),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -136,7 +134,7 @@ class _ChannelRow extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.play_circle_outline_rounded, color: p.accent, size: 24),
+            Icon(Icons.play_circle_outline_rounded, color: p.accent, size: IconSize.md),
           ],
         ),
       ),
@@ -145,14 +143,13 @@ class _ChannelRow extends StatelessWidget {
 }
 
 class _Abbr extends StatelessWidget {
-  const _Abbr({required this.name, required this.palette});
+  const _Abbr({required this.name});
 
   final String name;
-  final dynamic palette;
 
   @override
   Widget build(BuildContext context) {
-    final p = palette as dynamic;
+    final p = context.palette;
     final abbr = name.isNotEmpty
         ? name.trim().split(RegExp(r'\s+')).take(2).map((w) => w[0]).join()
         : '?';

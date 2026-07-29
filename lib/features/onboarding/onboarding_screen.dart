@@ -65,7 +65,7 @@ class OnboardingScreen extends StatelessWidget {
                     child: Text(
                       l10n.getStarted,
                       style: textTheme.labelLarge?.copyWith(
-                        color: Colors.black,
+                        color: p.onAccent,
                         fontWeight: FontWeight.w700,
                       ),
                     ),

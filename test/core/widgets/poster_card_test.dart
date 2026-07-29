@@ -4,11 +4,14 @@ import 'package:iptv_player/core/theme/app_palette.dart';
 import 'package:iptv_player/core/theme/app_theme.dart';
 import 'package:iptv_player/core/widgets/focusable_button.dart';
 import 'package:iptv_player/core/widgets/poster_card.dart';
+import 'package:iptv_player/l10n/generated/app_localizations.dart';
 
 void main() {
   testWidgets('shows title, badge, and is tappable', (tester) async {
     var tapped = false;
     await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       home: Scaffold(
         body: PosterCard(
@@ -29,6 +32,8 @@ void main() {
 
   testWidgets('no heart icon when onToggleFavorite is null', (tester) async {
     await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       home: const Scaffold(
         body: PosterCard(
@@ -43,6 +48,8 @@ void main() {
 
   testWidgets('heart button is shown when onToggleFavorite is provided', (tester) async {
     await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       home: Scaffold(
         body: PosterCard(
@@ -59,6 +66,8 @@ void main() {
 
   testWidgets('shows filled heart when isFavorite is true', (tester) async {
     await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       home: Scaffold(
         body: PosterCard(
@@ -78,6 +87,8 @@ void main() {
     var heartTapped = false;
 
     await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       home: Scaffold(
         body: PosterCard(
@@ -100,6 +111,8 @@ void main() {
     var tapped = false;
 
     await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       home: Scaffold(
         body: PosterCard(
@@ -119,6 +132,8 @@ void main() {
 
   testWidgets('heart has Semantics label for accessibility', (tester) async {
     await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       home: Scaffold(
         body: PosterCard(
@@ -142,6 +157,8 @@ void main() {
     var cardTapped = false;
 
     await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       home: Scaffold(
         body: PosterCard(

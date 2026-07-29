@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/di/injection.dart';
 import '../../core/theme/app_palette.dart';
+import '../../core/theme/app_sizes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/focusable_button.dart';
+import '../../core/widgets/status_views.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -55,7 +57,7 @@ class _PlaylistsView extends StatelessWidget {
     return BlocBuilder<PlaylistsCubit, PlaylistsState>(
       builder: (context, state) {
         if (state.loading) {
-          return const Center(child: CircularProgressIndicator());
+          return const LoadingState();
         }
 
         return Scaffold(
@@ -162,7 +164,7 @@ class _PlaylistTile extends StatelessWidget {
                   child: Text(
                     playlist.initial,
                     style: textTheme.titleMedium?.copyWith(
-                      color: Colors.black,
+                      color: p.onAccent,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -201,7 +203,7 @@ class _PlaylistTile extends StatelessWidget {
               ),
               // Active checkmark
               if (isActive)
-                Icon(Icons.check_circle_rounded, color: p.accent, size: 24),
+                Icon(Icons.check_circle_rounded, color: p.accent, size: IconSize.md),
             ],
           ),
         ),
@@ -249,7 +251,7 @@ class _AddPlaylistButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.add_rounded, color: p.fg, size: 20),
+              Icon(Icons.add_rounded, color: p.fg, size: IconSize.sm),
               const SizedBox(width: 8),
               Text(
                 l10n.addPlaylist,

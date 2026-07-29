@@ -5,8 +5,11 @@ import 'package:flutter_android_tv_text_field/native_textfield_tv.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/di/injection.dart';
+import '../../core/theme/app_sizes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/poster_card.dart';
+import '../../core/widgets/section_app_bar.dart';
+import '../../core/widgets/status_views.dart';
 import '../../data/repositories/repositories.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'cubit/search_cubit.dart';
@@ -98,6 +101,7 @@ class _SearchViewState extends State<_SearchView> {
       builder: (context, state) {
         return Scaffold(
           backgroundColor: p.bg,
+          appBar: SectionAppBar(title: l10n.search),
           // The IME is an overlay on TV; don't resize the body for it.
           resizeToAvoidBottomInset: false,
           body: SafeArea(
@@ -108,7 +112,6 @@ class _SearchViewState extends State<_SearchView> {
                   controller: _controller,
                   focusNode: _fieldFocus,
                   hint: l10n.search,
-                  palette: p,
                   textTheme: textTheme,
                   onSubmitted: _moveToResults,
                 ),
@@ -118,7 +121,6 @@ class _SearchViewState extends State<_SearchView> {
                     loading: state.loading,
                     query: state.query,
                     onOpen: widget.onOpen,
-                    palette: p,
                     textTheme: textTheme,
                     l10n: l10n,
                     favoriteKeys: state.favoriteKeys,
@@ -138,7 +140,6 @@ class _SearchBar extends StatelessWidget {
     required this.controller,
     required this.focusNode,
     required this.hint,
-    required this.palette,
     required this.textTheme,
     required this.onSubmitted,
   });
@@ -146,13 +147,12 @@ class _SearchBar extends StatelessWidget {
   final NativeTextFieldController controller;
   final FocusNode focusNode;
   final String hint;
-  final dynamic palette;
   final TextTheme textTheme;
   final VoidCallback onSubmitted;
 
   @override
   Widget build(BuildContext context) {
-    final p = palette;
+    final p = context.palette;
 
     // Android (incl. TV): native EditText for working D-pad text entry.
     if (Platform.isAndroid) {
@@ -185,7 +185,7 @@ class _SearchBar extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Icon(Icons.search_rounded, color: p.dim, size: 22),
+              child: Icon(Icons.search_rounded, color: p.dim, size: IconSize.sm),
             ),
             Expanded(
               child: TextField(
@@ -220,7 +220,6 @@ class _ResultsRails extends StatelessWidget {
     required this.loading,
     required this.query,
     required this.onOpen,
-    required this.palette,
     required this.textTheme,
     required this.l10n,
     required this.favoriteKeys,
@@ -230,17 +229,14 @@ class _ResultsRails extends StatelessWidget {
   final bool loading;
   final String query;
   final void Function(SearchEntry) onOpen;
-  final dynamic palette;
   final TextTheme textTheme;
   final AppLocalizations l10n;
   final Set<String> favoriteKeys;
 
   @override
   Widget build(BuildContext context) {
-    final p = palette;
-
     if (loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const LoadingState();
     }
 
     // Empty query — show nothing (hint could go here if desired).
@@ -253,11 +249,9 @@ class _ResultsRails extends StatelessWidget {
     final hasResults = movies.isNotEmpty || series.isNotEmpty;
 
     if (!hasResults) {
-      return Center(
-        child: Text(
-          l10n.noResults,
-          style: textTheme.bodyMedium?.copyWith(color: p.dim),
-        ),
+      return EmptyState(
+        icon: Icons.search_off,
+        message: l10n.noResults,
       );
     }
 

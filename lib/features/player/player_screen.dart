@@ -8,6 +8,7 @@ import 'package:video_player/video_player.dart';
 import '../../core/a11y/accessibility_cubit.dart';
 import '../../core/a11y/accessibility_settings.dart';
 import '../../core/a11y/caption_style.dart';
+import '../../core/theme/app_sizes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/focusable_button.dart';
 import '../../data/models/models.dart';
@@ -76,7 +77,7 @@ class _PlayerError extends StatelessWidget {
             children: [
               Icon(
                 Icons.error_outline,
-                size: 56,
+                size: IconSize.xl,
                 color: Colors.white.withValues(alpha: 0.8),
               ),
               const SizedBox(height: 16),
@@ -390,6 +391,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       return const ColoredBox(color: Colors.black);
     }
 
+    final l10n = AppLocalizations.of(context)!;
     final isLive = _cubit!.isLive;
 
     return BlocProvider<PlayerCubit>.value(
@@ -472,7 +474,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                             children: [
                               // Back button
                               FocusableButton(
-                                semanticLabel: 'Back',
+                                semanticLabel: l10n.back,
                                 onPressed: widget.onBack,
                                 child: Container(
                                   width: 40,
@@ -484,7 +486,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                                   child: const Icon(
                                     Icons.arrow_back,
                                     color: Colors.white,
-                                    size: 20,
+                                    size: IconSize.sm,
                                   ),
                                 ),
                               ),
@@ -770,7 +772,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                                         child: Icon(
                                           Icons.skip_previous,
                                           color: Colors.white,
-                                          size: 28,
+                                          size: IconSize.lg,
                                         ),
                                       ),
                                     ),
@@ -779,7 +781,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                                   // Skip backward 10s — VOD only
                                   if (!isLive) ...[
                                     FocusableButton(
-                                      semanticLabel: 'Skip backward 10 seconds',
+                                      semanticLabel: l10n.skipBackward,
                                       onPressed: () => context
                                           .read<PlayerCubit>()
                                           .skipBackward(),
@@ -788,7 +790,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                                         child: Icon(
                                           Icons.replay_10,
                                           color: Colors.white,
-                                          size: 28,
+                                          size: IconSize.lg,
                                         ),
                                       ),
                                     ),
@@ -818,7 +820,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                                             ? Icons.pause
                                             : Icons.play_arrow,
                                         color: Colors.white,
-                                        size: 32,
+                                        size: IconSize.lg,
                                       ),
                                     ),
                                   ),
@@ -826,7 +828,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                                   if (!isLive) ...[
                                     const SizedBox(width: 24),
                                     FocusableButton(
-                                      semanticLabel: 'Skip forward 10 seconds',
+                                      semanticLabel: l10n.skipForward,
                                       onPressed: () => context
                                           .read<PlayerCubit>()
                                           .skipForward(),
@@ -835,7 +837,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                                         child: Icon(
                                           Icons.forward_10,
                                           color: Colors.white,
-                                          size: 28,
+                                          size: IconSize.lg,
                                         ),
                                       ),
                                     ),
@@ -854,7 +856,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                                         child: Icon(
                                           Icons.skip_next,
                                           color: Colors.white,
-                                          size: 28,
+                                          size: IconSize.lg,
                                         ),
                                       ),
                                     ),
@@ -885,7 +887,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                                         color: Colors.white.withValues(
                                           alpha: 0.6,
                                         ),
-                                        size: 24,
+                                        size: IconSize.md,
                                       ),
                                     ),
                                   ),
@@ -927,14 +929,14 @@ class _PlayerScreenState extends State<PlayerScreen>
                                             : Colors.white.withValues(
                                                 alpha: 0.6,
                                               ),
-                                        size: 24,
+                                        size: IconSize.md,
                                       ),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
                                   // Audio track button (placeholder)
                                   FocusableButton(
-                                    semanticLabel: 'Audio track',
+                                    semanticLabel: l10n.audioTrack,
                                     onPressed: () {},
                                     child: Padding(
                                       padding: const EdgeInsets.all(6),
@@ -943,7 +945,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                                         color: Colors.white.withValues(
                                           alpha: 0.6,
                                         ),
-                                        size: 24,
+                                        size: IconSize.md,
                                       ),
                                     ),
                                   ),

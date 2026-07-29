@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/di/injection.dart';
+import '../../core/theme/app_sizes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/content_rail.dart';
 import '../../core/widgets/focusable_button.dart';
 import '../../core/widgets/poster_card.dart';
 import '../../core/widgets/remote_image.dart';
+import '../../core/widgets/status_views.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -60,7 +62,7 @@ class _HomeView extends StatelessWidget {
     return BlocBuilder<HomeCubit, HomeState>(
       builder: (context, state) {
         if (state.loading) {
-          return const Center(child: CircularProgressIndicator());
+          return const LoadingState();
         }
         if (!_hasContent(state)) {
           return Center(
@@ -77,12 +79,12 @@ class _HomeView extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 12),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: context.palette.accent,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       AppLocalizations.of(context)!.setUpPlaylist,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: context.palette.onAccent),
                     ),
                   ),
                 ),
@@ -230,13 +232,13 @@ class _HeroBanner extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.play_arrow_rounded,
-                                  color: Colors.black, size: 20),
+                              Icon(Icons.play_arrow_rounded,
+                                  color: p.onAccent, size: IconSize.sm),
                               const SizedBox(width: 8),
                               Text(
                                 l10n.play,
                                 style: textTheme.labelLarge?.copyWith(
-                                  color: Colors.black,
+                                  color: p.onAccent,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -260,7 +262,7 @@ class _HeroBanner extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.info_outline_rounded,
-                                  color: p.fg, size: 20),
+                                  color: p.fg, size: IconSize.sm),
                               const SizedBox(width: 8),
                               Text(
                                 l10n.moreInfo,

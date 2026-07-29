@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:iptv_player/core/di/injection.dart';
+import 'package:iptv_player/core/theme/app_sizes.dart';
 import 'package:iptv_player/core/theme/app_theme.dart';
 import 'package:iptv_player/core/widgets/focusable_button.dart';
 import 'package:iptv_player/core/widgets/remote_image.dart';
+import 'package:iptv_player/core/widgets/status_views.dart';
 import 'package:iptv_player/data/models/models.dart';
 import 'package:iptv_player/data/repositories/repositories.dart';
 import 'package:iptv_player/l10n/generated/app_localizations.dart';
@@ -196,7 +198,7 @@ class _DetailScaffold extends StatelessWidget {
                   color: p.surface.withAlpha(200),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.arrow_back, color: p.fg, size: 22),
+                child: Icon(Icons.arrow_back, color: p.fg, size: IconSize.sm),
               ),
             ),
           ),
@@ -407,7 +409,7 @@ class _MyListButtonState extends State<_MyListButton> {
             Icon(
               _inList ? Icons.check : Icons.add,
               color: _inList ? context.palette.accent : context.palette.fg,
-              size: 18,
+              size: IconSize.sm,
             ),
             const SizedBox(width: 6),
             Text(
@@ -449,7 +451,7 @@ class _PlayButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.play_arrow, color: context.palette.bg, size: 20),
+            Icon(Icons.play_arrow, color: context.palette.bg, size: IconSize.sm),
             const SizedBox(width: 6),
             Text(
               l10n.play,
@@ -710,7 +712,7 @@ class _SeriesDetailBody extends StatelessWidget {
             if (state.loading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: CircularProgressIndicator()),
+                child: LoadingState(),
               )
             else if (state.seasons.isEmpty)
               Text(
@@ -769,6 +771,7 @@ class _SeasonChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -777,7 +780,7 @@ class _SeasonChips extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FocusableButton(
-              semanticLabel: 'Season ${seasons[i].number}',
+              semanticLabel: l10n.seasonNumber(seasons[i].number),
               onPressed: () => onSelect(i),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
@@ -866,13 +869,14 @@ class _EpisodeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final tt = Theme.of(context).textTheme;
     final itemKey = 'episode:${episode.id}';
     final watched = progress?.isWatched ?? false;
     final fraction = progress?.fraction ?? 0.0;
     final showBar = !watched && fraction > 0;
     return FocusableButton(
-      semanticLabel: 'Play episode ${episode.number}: ${episode.title}',
+      semanticLabel: l10n.playEpisode(episode.number, episode.title),
       onPressed: onPlay,
       child: Container(
         margin: const EdgeInsets.only(bottom: 6),
@@ -943,11 +947,11 @@ class _EpisodeRow extends StatelessWidget {
                 Icons.check_circle,
                 key: Key('episode-watched-$itemKey'),
                 color: context.palette.accent,
-                size: 22,
+                size: IconSize.sm,
               )
             else
               Icon(Icons.play_circle_outline,
-                  color: context.palette.dim, size: 22),
+                  color: context.palette.dim, size: IconSize.sm),
           ],
         ),
       ),

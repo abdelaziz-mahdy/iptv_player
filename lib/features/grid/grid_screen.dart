@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/di/injection.dart';
+import '../../core/theme/app_sizes.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/category_sidebar.dart';
 import '../../core/widgets/focusable_button.dart';
 import '../../core/widgets/jump_to_letter.dart';
 import '../../core/widgets/poster_card.dart';
+import '../../core/widgets/section_app_bar.dart';
+import '../../core/widgets/status_views.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -21,9 +25,6 @@ String _categoryLabel(AppLocalizations l10n, CategoryRef c) => switch (c.id) {
 
 /// Minimum width (logical pixels) for the wide (sidebar + grid) layout.
 const double _kWideBreakpoint = 700.0;
-
-/// Width of the left category-selector sidebar in wide layout.
-const double _kSidebarWidth = 180.0;
 
 /// Poster metrics — shared by the grid delegate and the letter jump, which
 /// computes a scroll offset from them.
@@ -74,9 +75,7 @@ class _GridView extends StatelessWidget {
         if (state.loading) {
           return Scaffold(
             backgroundColor: p.bg,
-            body: Center(
-              child: CircularProgressIndicator(color: p.accent),
-            ),
+            body: const LoadingState(),
           );
         }
 
@@ -132,7 +131,7 @@ class _WideLayoutState extends State<_WideLayout> {
     final target = letter == null ? null : index[letter];
     if (target == null || !mounted || !_gridController.hasClients) return;
 
-    final width = MediaQuery.sizeOf(context).width - _kSidebarWidth - 25;
+    final width = MediaQuery.sizeOf(context).width - CategorySidebar.width - 25;
     final columns = (width / _kPosterWidth).ceil().clamp(1, 100);
     final tileWidth = (width - (columns - 1) * _kPosterSpacing) / columns;
     final row = target ~/ columns;
@@ -145,7 +144,6 @@ class _WideLayoutState extends State<_WideLayout> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final tt = Theme.of(context).textTheme;
     final title = widget.title;
     final onOpen = widget.onOpen;
 
@@ -155,15 +153,8 @@ class _WideLayoutState extends State<_WideLayout> {
 
         return Scaffold(
           backgroundColor: p.bg,
-          appBar: AppBar(
-            backgroundColor: p.bg2,
-            title: Text(
-              title,
-              style: tt.titleLarge?.copyWith(
-                color: p.fg,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+          appBar: SectionAppBar(
+            title: title,
             actions: [
               if (displayed.isNotEmpty)
                 FocusableButton(
@@ -171,7 +162,7 @@ class _WideLayoutState extends State<_WideLayout> {
                   onPressed: () => _jumpToLetter(displayed),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Icon(Icons.sort_by_alpha, color: p.fg, size: 24),
+                    child: Icon(Icons.sort_by_alpha, color: p.fg, size: IconSize.md),
                   ),
                 ),
             ],
@@ -179,44 +170,21 @@ class _WideLayoutState extends State<_WideLayout> {
           body: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ---- Sidebar: category list ----
-              SizedBox(
-                width: _kSidebarWidth,
-                child: Container(
-                  color: p.bg2,
-                  child: ListView.builder(
-                    itemCount: state.categories.length,
-                    itemBuilder: (context, index) {
-                      final cat = state.categories[index];
-                      final isAll = cat.id.isEmpty;
-                      final isSelected = isAll
-                          ? state.selectedCategoryId == null
-                          : state.selectedCategoryId == cat.id;
-                      final tile = _CategoryTile(
-                        name: _categoryLabel(
-                            AppLocalizations.of(context)!, cat),
-                        count: cat.count,
-                        isSelected: isSelected,
-                        autofocus: isSelected,
-                        onTap: () => ctx
-                            .read<GridCubit>()
-                            .selectCategory(isAll ? null : cat.id),
-                      );
-                      // Separates the pinned block (All + the categories you
-                      // use) from the provider's full list.
-                      if (index != state.pinnedCategoryCount || index == 0) {
-                        return tile;
-                      }
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Divider(height: 17, thickness: 1, color: p.border),
-                          tile,
-                        ],
-                      );
-                    },
-                  ),
-                ),
+              CategorySidebar(
+                entries: [
+                  for (final c in state.categories)
+                    (
+                      id: c.id,
+                      label: _categoryLabel(AppLocalizations.of(context)!, c),
+                      count: c.count,
+                    ),
+                ],
+                // "All" is the empty id; the cubit models that selection as null.
+                selectedId: state.selectedCategoryId ?? '',
+                pinnedCount: state.pinnedCategoryCount,
+                onSelect: (id) => ctx
+                    .read<GridCubit>()
+                    .selectCategory(id.isEmpty ? null : id),
               ),
               // Divider
               Container(width: 1, color: p.border),
@@ -348,7 +316,7 @@ class _NarrowLayout extends StatelessWidget {
                             style: tt.labelSmall?.copyWith(color: p.dim),
                           ),
                         ),
-                      Icon(Icons.chevron_right, color: p.dim, size: 20),
+                      Icon(Icons.chevron_right, color: p.dim, size: IconSize.sm),
                     ],
                   ),
                 ),
@@ -432,61 +400,3 @@ class CategoryResultsScreen extends StatelessWidget {
 // Shared sidebar tile widget (wide layout)
 // ---------------------------------------------------------------------------
 
-class _CategoryTile extends StatelessWidget {
-  const _CategoryTile({
-    required this.name,
-    required this.count,
-    required this.isSelected,
-    required this.autofocus,
-    required this.onTap,
-  });
-
-  final String name;
-  final int? count;
-  final bool isSelected;
-  final bool autofocus;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return FocusableButton(
-      autofocus: autofocus,
-      semanticLabel: name,
-      onPressed: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? p.accent.withValues(alpha: 0.18) : null,
-          border: isSelected
-              ? BorderDirectional(
-                  start: BorderSide(color: p.accent, width: 3))
-              : null,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                name,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isSelected ? p.accent : p.fg,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w400,
-                    ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (count != null)
-              Text(
-                '$count',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: isSelected ? p.accent : p.dim,
-                    ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}

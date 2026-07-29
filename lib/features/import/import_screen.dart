@@ -368,7 +368,7 @@ class _ImportViewState extends State<_ImportView> {
                 child: Text(
                   l10n.importAction,
                   style: textTheme.labelLarge?.copyWith(
-                    color: Colors.black,
+                    color: p.onAccent,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -451,7 +451,7 @@ class _TabSelector extends StatelessWidget {
                   child: Text(
                     label,
                     style: textTheme.labelMedium?.copyWith(
-                      color: isSelected ? Colors.black : p.fg,
+                      color: isSelected ? p.onAccent : p.fg,
                       fontWeight:
                           isSelected ? FontWeight.w700 : FontWeight.normal,
                     ),

@@ -547,6 +547,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Jump to letter'**
   String get jumpToLetter;
+
+  /// No description provided for @addToFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to favorites'**
+  String get addToFavorites;
+
+  /// No description provided for @removeFromFavorites.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favorites'**
+  String get removeFromFavorites;
+
+  /// No description provided for @seasonNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Season {number}'**
+  String seasonNumber(int number);
+
+  /// No description provided for @playEpisode.
+  ///
+  /// In en, this message translates to:
+  /// **'Play episode {number}: {title}'**
+  String playEpisode(int number, String title);
+
+  /// No description provided for @skipBackward.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip back 10 seconds'**
+  String get skipBackward;
+
+  /// No description provided for @skipForward.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip forward 10 seconds'**
+  String get skipForward;
+
+  /// No description provided for @audioTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio track'**
+  String get audioTrack;
 }
 
 class _AppLocalizationsDelegate

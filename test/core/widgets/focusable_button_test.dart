@@ -3,7 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_player/core/theme/app_palette.dart';
 import 'package:iptv_player/core/theme/app_theme.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:iptv_player/core/a11y/accessibility_cubit.dart';
 import 'package:iptv_player/core/widgets/focusable_button.dart';
+
+import '../../support/fake_hydrated_storage.dart';
 
 void main() {
   testWidgets('invokes onPressed on tap and exposes semantics', (tester) async {
@@ -102,5 +106,48 @@ void main() {
 
     final scale = tester.widget<AnimatedScale>(find.byType(AnimatedScale));
     expect(scale.scale, equals(1.0));
+  });
+
+  group('reduced motion comes from the accessibility setting', () {
+    setUp(installFakeHydratedStorage);
+
+    Future<double> scaleWith(WidgetTester tester,
+        {required bool reduceMotion}) async {
+      // Traditional highlight mode, so onShowFocusHighlight fires at all —
+      // the test environment defaults to touch.
+      FocusManager.instance.highlightStrategy =
+          FocusHighlightStrategy.alwaysTraditional;
+      addTearDown(() => FocusManager.instance.highlightStrategy =
+          FocusHighlightStrategy.automatic);
+
+      final cubit = AccessibilityCubit();
+      if (reduceMotion) cubit.toggleReduceMotion();
+      await tester.pumpWidget(BlocProvider.value(
+        value: cubit,
+        child: MaterialApp(
+          theme: buildTheme(
+              palette: AppPalette.standard, hyperlegible: false, rtl: false),
+          home: Scaffold(
+            body: FocusableButton(
+              autofocus: true,
+              onPressed: () {},
+              child: const Text('Play'),
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      return tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale;
+    }
+
+    testWidgets('animates when the setting is off', (tester) async {
+      expect(await scaleWith(tester, reduceMotion: false), greaterThan(1.0));
+    });
+
+    // Regression: reduceMotion used to be a parameter defaulting to false that
+    // no call site ever passed, so the setting did nothing.
+    testWidgets('stays still when the setting is on', (tester) async {
+      expect(await scaleWith(tester, reduceMotion: true), 1.0);
+    });
   });
 }

@@ -235,4 +235,29 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get jumpToLetter => 'الانتقال إلى حرف';
+
+  @override
+  String get addToFavorites => 'إضافة إلى المفضلة';
+
+  @override
+  String get removeFromFavorites => 'إزالة من المفضلة';
+
+  @override
+  String seasonNumber(int number) {
+    return 'الموسم $number';
+  }
+
+  @override
+  String playEpisode(int number, String title) {
+    return 'تشغيل الحلقة $number: $title';
+  }
+
+  @override
+  String get skipBackward => 'إرجاع ١٠ ثوانٍ';
+
+  @override
+  String get skipForward => 'تقديم ١٠ ثوانٍ';
+
+  @override
+  String get audioTrack => 'المسار الصوتي';
 }

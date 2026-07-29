@@ -51,7 +51,7 @@ class _LiveBadgeState extends State<LiveBadge> with SingleTickerProviderStateMix
           const SizedBox(width: 5),
           Text(
             widget.label,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 10),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12),
           ),
         ],
       ),

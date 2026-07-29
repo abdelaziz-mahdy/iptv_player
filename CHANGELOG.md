@@ -31,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   thousands of items with the remote.
 
 ### Changed
+- **Every section now has the same header.** Favorites and Search drew their
+  titles differently from Live, Movies and Series, so the top of the screen
+  shifted as you moved between tabs.
+- Empty screens now explain themselves with an icon and a line of text instead
+  of a bare sentence, and every spinner is the app's own colour — Home's was
+  stock purple.
 - **Channel groups and categories no longer feel randomly ordered.** The groups
   you actually open are pinned in a block right under "All", most recent first,
   and everything else follows in the provider's own order. A pinned group is not
@@ -49,6 +55,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   still be looked into today.
 
 ### Fixed
+- **"Reduce motion" now actually reduces motion.** The setting was read by
+  nothing — every button still zoomed when it took focus.
+- **Screen readers speak your language.** Season numbers, episode names, the
+  player's skip/back/audio buttons and the favorite heart were announced in
+  English even with the app set to Arabic.
+- The favorite heart on a poster is now easier to hit on a touch screen.
 - **The player's buttons are reachable again.** With the controls showing, left
   and right moved between play/pause, skip and mute as expected — instead they
   seeked and pulled the highlight back onto the seek bar every time.

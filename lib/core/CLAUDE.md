@@ -52,8 +52,20 @@ wang-bin/fvp#374 investigation, kept for player diagnostics — it is the only d
   intercepts LEFT/RIGHT arrow keys to hop focus between the rail scope and the body scope.
   Do not add nested `FocusScope` nodes inside branch screens without testing D-pad traversal.
 - **`FocusableButton`** — draws a 3 px focus ring via `foregroundDecoration` (no layout impact)
-  and scales to 1.04 on focus. Handles Enter, Space, Select, and GameButtonA. Pass
-  `reduceMotion` from `AccessibilityCubit` state.
+  and scales to 1.04 on focus. Handles Enter, Space, Select, and GameButtonA. It reads
+  `reduceMotion` from `AccessibilityCubit` **itself** — do NOT pass it (the parameter is a
+  test-only override). It used to be a required-by-convention argument defaulting to
+  `false`, and no call site ever set it, so the setting did nothing.
+- **`CategorySidebar`** — the left-hand picker shared by Live/Movies/Series. Takes
+  `entries` (id/label/count), `selectedId`, and `pinnedCount` (where the separator between
+  "categories you use" and the provider's list goes). Owns `CategorySidebar.width`.
+- **`SectionAppBar`** — the header every main tab uses, so the title does not move
+  between tabs.
+- **`LoadingState` / `EmptyState`** (`status_views.dart`) — use these instead of inlining
+  a `CircularProgressIndicator` or a centred `Text`; the inlined ones drifted (one screen
+  span in stock Material purple).
+- **`RemoteImage`** — cached network image. Use it for every poster/logo; a raw
+  `Image.network` re-downloads and re-decodes on each pass over a list.
 - **`PosterCard`** — 2:3 artwork tile. The favorite heart overlay is intentionally NOT a
   D-pad focus stop; tab/D-pad grid movement skips it.
 - **`ContentRail`** / **`LiveBadge`** — horizontal scrolling rail and live indicator badge.
@@ -65,11 +77,18 @@ wang-bin/fvp#374 investigation, kept for player diagnostics — it is the only d
 `ColorScheme` (e.g. `dim`, `border`, `focus`, `live`) live in `AppPalette` and are accessed via
 `context.palette.<token>` (extension on `BuildContext` backed by `PaletteExt` theme extension).
 
+Use `onAccent` for text/icons on an accent fill and `scrim`/`onScrim` for anything drawn
+over artwork — screens used to pick `Colors.black`/`Colors.white` per site, which silently
+breaks if the accent changes. Icon sizes come from `IconSize` (`app_sizes.dart`), not raw
+numbers. **Never take the palette as a `dynamic` constructor argument** — that pattern was
+removed; read `context.palette` in the widget that needs it.
+
 ## a11y/ — Accessibility
 
 `AccessibilitySettings` (freezed) holds: `textScale`, `reduceMotion`, `highContrast`,
 `colorblindSafe`, `hyperlegibleFont`, captions (on/size/bgOpacity/color). Persisted by
-`AccessibilityCubit`. Always thread `reduceMotion` into `FocusableButton`.
+`AccessibilityCubit`. `FocusableButton` reads `reduceMotion` from the cubit itself — do not
+thread it through call sites.
 
 ## i18n/ — Internationalisation
 

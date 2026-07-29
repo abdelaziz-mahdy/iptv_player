@@ -236,4 +236,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get jumpToLetter => 'Jump to letter';
+
+  @override
+  String get addToFavorites => 'Add to favorites';
+
+  @override
+  String get removeFromFavorites => 'Remove from favorites';
+
+  @override
+  String seasonNumber(int number) {
+    return 'Season $number';
+  }
+
+  @override
+  String playEpisode(int number, String title) {
+    return 'Play episode $number: $title';
+  }
+
+  @override
+  String get skipBackward => 'Skip back 10 seconds';
+
+  @override
+  String get skipForward => 'Skip forward 10 seconds';
+
+  @override
+  String get audioTrack => 'Audio track';
 }

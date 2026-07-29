@@ -74,5 +74,12 @@
   "noContentYet": "لا يوجد محتوى بعد",
   "setUpPlaylist": "إعداد قائمة تشغيل",
   "noItemsFound": "لا توجد عناصر",
-  "jumpToLetter": "الانتقال إلى حرف"
+  "jumpToLetter": "الانتقال إلى حرف",
+  "addToFavorites": "إضافة إلى المفضلة",
+  "removeFromFavorites": "إزالة من المفضلة",
+  "seasonNumber": "الموسم {number}",
+  "playEpisode": "تشغيل الحلقة {number}: {title}",
+  "skipBackward": "إرجاع ١٠ ثوانٍ",
+  "skipForward": "تقديم ١٠ ثوانٍ",
+  "audioTrack": "المسار الصوتي"
 }
