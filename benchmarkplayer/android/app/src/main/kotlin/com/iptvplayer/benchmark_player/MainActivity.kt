@@ -17,6 +17,12 @@ class MainActivity : FlutterActivity() {
         // (decoder -> SurfaceFlinger, no GL); `--es direct_mode tunnel` tries
         // true tunneled playback (tunnel=1 + ANativeWindow). Env var read in
         // fvp_plugin.cpp.
+        // One build, many clips: `am start --es bench_url <url>` overrides the
+        // BENCH_URL dart-define, so a clip sweep needs no rebuild per file.
+        intent?.getStringExtra("bench_url")?.let {
+            Os.setenv("BENCH_URL_OVERRIDE", it, true)
+            Log.i("BENCH", "BENCH_URL_OVERRIDE=$it")
+        }
         val directMode = intent?.getStringExtra("direct_mode")
             ?: if (intent?.getBooleanExtra("direct_surface", false) == true) "1" else null
         if (directMode != null) {

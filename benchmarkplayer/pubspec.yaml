@@ -26,16 +26,16 @@ dependencies:
   logging: ^1.3.0
 
 dependency_overrides:
-  # Fork branch bench/direct-surface = SurfaceView platform view (PR #379)
-  # + 8-bit EGLConfig fallback (PR #385) + env-gated FVP_DIRECT_SURFACE mode
-  # (MediaCodec renders straight to the platform-view surface, no GL — the
-  # experiment wang-bin asked for on #379). Audio backend selection needs no
-  # fork: stock fvp forwards options['player'] -> setProperty, and MDK's
+  # PR #379 as merged upstream: the SurfaceView platform view, with direct
+  # MediaCodec-to-surface output now carried by the `tunnel` option (the fork's
+  # separate `directSurface` option and its FVP_DIRECT_SURFACE env gate were
+  # dropped at wang-bin's request). Audio backend selection needs no fork:
+  # stock fvp forwards options['player'] -> setProperty, and MDK's
   # "audio.renderer" property == setAudioBackends.
   fvp:
     git:
       url: https://github.com/abdelaziz-mahdy/fvp.git
-      ref: 163149c9ea11d75a3d36eeeb484f2c52baf0524c
+      ref: 70806fb58dcaf0635a21acd648cb76d8a3d2f0f0
 
 dev_dependencies:
   flutter_lints: ^5.0.0

@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:io' show File, Platform;
 
 import 'package:flutter/material.dart';
 import 'package:fvp/fvp.dart' as fvp;
@@ -12,8 +12,17 @@ import 'package:video_player/video_player.dart';
 const kBackend =
     String.fromEnvironment('BENCH_BACKEND', defaultValue: 'media_kit');
 
-/// Clip URL; playback starts automatically on launch.
-const kUrl = String.fromEnvironment('BENCH_URL');
+/// Clip URL; playback starts automatically on launch. A `bench_url` launch
+/// intent extra (exported by MainActivity as BENCH_URL_OVERRIDE) wins, so one
+/// installed build can sweep a set of clips without a rebuild each.
+const _kUrlDefine = String.fromEnvironment('BENCH_URL');
+final String kUrl = () {
+  try {
+    final o = Platform.environment['BENCH_URL_OVERRIDE'];
+    if (o != null && o.isNotEmpty) return o;
+  } catch (_) {}
+  return _kUrlDefine;
+}();
 
 /// Human label for this run, shown in the on-screen HUD and in every
 /// [BENCH_STATS] log line, so captures are self-documenting.
@@ -45,6 +54,11 @@ const kSeekSec = int.fromEnvironment('BENCH_SEEK');
 const kBenchView =
     String.fromEnvironment('BENCH_VIEW', defaultValue: 'texture');
 
+/// fvp: `tunnel` — MediaCodec decodes straight into the platform view's
+/// SurfaceView, no GL renderer. Upstream carries the direct-surface path under
+/// this option since PR #379 merged; only meaningful with BENCH_VIEW=platform.
+const kFvpTunnel = bool.fromEnvironment('FVP_TUNNEL');
+
 /// True when MainActivity exported FVP_DIRECT_SURFACE=1 for this run (display
 /// only — the switch itself lives in the fvp fork's native code).
 final bool kDirectSurface = () {
@@ -59,7 +73,7 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // ignore: avoid_print
   print('[BENCH_META] variant=$kVariant backend=$kBackend url=$kUrl '
-      'view=$kBenchView direct=$kDirectSurface '
+      'view=$kBenchView direct=$kDirectSurface tunnel=$kFvpTunnel '
       'fvpCopy=$kFvpDecoderCopy fvpAudio=${kFvpAudioBackend.isEmpty ? '-' : kFvpAudioBackend} '
       'seek=${kSeekSec}s');
   if (kBackend == 'fvp') {
@@ -71,6 +85,7 @@ void main() {
     });
     fvp.registerWith(options: {
       'global': {'logLevel': 'all'},
+      if (kFvpTunnel) 'tunnel': true,
       if (kFvpDecoderCopy) 'video.decoders': ['AMediaCodec:copy=1', 'FFmpeg'],
       // MDK "audio.renderer" player property == setAudioBackends; stock fvp
       // forwards every options['player'] entry via setProperty before prepare.
@@ -165,12 +180,18 @@ class _BenchScreenState extends State<BenchScreen> {
   }
 
   Future<void> _initFvp() async {
-    final c = VideoPlayerController.networkUrl(
-      Uri.parse(kUrl),
-      viewType: kBenchView == 'platform'
-          ? VideoViewType.platformView
-          : VideoViewType.textureView,
-    );
+    final viewType = kBenchView == 'platform'
+        ? VideoViewType.platformView
+        : VideoViewType.textureView;
+    // A local file keeps the network out of the measurement — over WiFi a 4K
+    // clip starves MDK's buffer and the low fps reads as a decoder fault.
+    // networkUrl cannot open file://, so route those to the file constructor.
+    final c = kUrl.startsWith('file://')
+        ? VideoPlayerController.file(
+            File(Uri.parse(kUrl).toFilePath()),
+            viewType: viewType,
+          )
+        : VideoPlayerController.networkUrl(Uri.parse(kUrl), viewType: viewType);
     _fvpController = c;
     try {
       await c.initialize();
