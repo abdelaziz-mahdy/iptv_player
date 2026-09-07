@@ -2,7 +2,13 @@
 
 ## flutter_android_tv_text_field
 
-**Source:** fork of github.com/talhayasir/flutter_android_tv_text_field  
+**Source:** fork of the pub.dev package `flutter_android_tv_text_field` 1.0.2
+(© 2025 Talha Yasir), itself derived from github.com/zhuhaichao518/native_textfield_tv.
+That pub package has **no public source repo** — its `repository:` field points at
+zhuhaichao's, which does not contain the `AndroidTVTextField` wrapper or the border
+params at all. Our fork therefore lives at
+github.com/abdelaziz-mahdy/flutter_android_tv_text_field; there is no upstream to
+send the border fix to. Only the toolchain bump would apply to zhuhaichao's repo.  
 **License:** MIT — Copyright (c) 2025 Talha Yasir — keep LICENSE intact  
 **Referenced as:** path dependency in root `pubspec.yaml` → `packages/flutter_android_tv_text_field`
 
