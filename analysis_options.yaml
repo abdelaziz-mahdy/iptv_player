@@ -12,6 +12,12 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    # Separate Flutter project with its own pubspec and analysis_options. A
+    # root `flutter analyze` still descends into it but resolves packages
+    # against the root pubspec, so every media_kit import there reports as
+    # undefined — which is what has been failing CI (CI only runs pub get at
+    # the root). Analyse it from inside benchmarkplayer/ instead.
+    - benchmarkplayer/**
   errors:
     invalid_annotation_target: ignore
 
