@@ -5,6 +5,15 @@ All notable changes to IPTV Player are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- The Play button on a series now **says which episode it will play** — e.g.
+  "Resume S1E5" or "Play S2E1" — instead of a bare "Play". It picks up where
+  you left off, and that is not always the newest episode: if you go back and
+  rewatch part of an earlier one, Play continues *that* one. The button now
+  tells you before you press it.
+
 ## [1.0.0] - 2026-09-07
 
 ### Added

@@ -572,6 +572,18 @@ abstract class AppLocalizations {
   /// **'Play episode {number}: {title}'**
   String playEpisode(int number, String title);
 
+  /// No description provided for @playSeasonEpisode.
+  ///
+  /// In en, this message translates to:
+  /// **'Play S{season}E{episode}'**
+  String playSeasonEpisode(int season, int episode);
+
+  /// No description provided for @resumeSeasonEpisode.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume S{season}E{episode}'**
+  String resumeSeasonEpisode(int season, int episode);
+
   /// No description provided for @skipBackward.
   ///
   /// In en, this message translates to:

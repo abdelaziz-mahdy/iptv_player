@@ -170,8 +170,9 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // After episodes are loaded the series detail must have a Play button.
-    expect(find.text('Play'), findsAtLeast(1));
+    // After episodes are loaded the series detail must have a Play button,
+    // and it names the episode it will start (nothing watched -> S1E1).
+    expect(find.text('Play S1E1'), findsAtLeast(1));
   });
 
   testWidgets(
@@ -193,7 +194,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The Play button (localized label) should be visible.
-    final playFinder = find.text('Play');
+    final playFinder = find.text('Play S1E1');
     expect(playFinder, findsAtLeast(1));
 
     // Tap the first occurrence of Play (the primary series Play button).

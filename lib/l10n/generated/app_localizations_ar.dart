@@ -253,6 +253,16 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String playSeasonEpisode(int season, int episode) {
+    return 'تشغيل م$seasonح$episode';
+  }
+
+  @override
+  String resumeSeasonEpisode(int season, int episode) {
+    return 'متابعة م$seasonح$episode';
+  }
+
+  @override
   String get skipBackward => 'إرجاع ١٠ ثوانٍ';
 
   @override

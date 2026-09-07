@@ -79,6 +79,8 @@
   "removeFromFavorites": "إزالة من المفضلة",
   "seasonNumber": "الموسم {number}",
   "playEpisode": "تشغيل الحلقة {number}: {title}",
+  "playSeasonEpisode": "تشغيل م{season}ح{episode}",
+  "resumeSeasonEpisode": "متابعة م{season}ح{episode}",
   "skipBackward": "إرجاع ١٠ ثوانٍ",
   "skipForward": "تقديم ١٠ ثوانٍ",
   "audioTrack": "المسار الصوتي"

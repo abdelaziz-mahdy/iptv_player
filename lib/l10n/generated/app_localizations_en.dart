@@ -254,6 +254,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String playSeasonEpisode(int season, int episode) {
+    return 'Play S${season}E$episode';
+  }
+
+  @override
+  String resumeSeasonEpisode(int season, int episode) {
+    return 'Resume S${season}E$episode';
+  }
+
+  @override
   String get skipBackward => 'Skip back 10 seconds';
 
   @override

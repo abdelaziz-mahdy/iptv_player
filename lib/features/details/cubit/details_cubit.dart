@@ -142,7 +142,18 @@ class DetailsCubit extends Cubit<DetailsState> {
   /// first episode. [episodes] is the whole series in order (see
   /// [allEpisodes]), so Next keeps working across seasons. Returns null when
   /// the series has no episodes.
-  ({List<Episode> episodes, int episodeIndex})? playTarget() {
+  ///
+  /// Also reports which episode that is, so the button can name it. Without
+  /// that the choice is invisible and surprising: rewatching part of an
+  /// earlier episode makes it the newest unfinished one, so Play goes back to
+  /// it rather than on to the episode after the last one you finished.
+  ({
+    List<Episode> episodes,
+    int episodeIndex,
+    int seasonNumber,
+    int episodeNumber,
+    bool isResume,
+  })? playTarget() {
     if (state.seasons.isEmpty) return null;
 
     WatchProgress? resume;
@@ -197,7 +208,13 @@ class DetailsCubit extends Cubit<DetailsState> {
     final all = allEpisodes;
     final index = all.indexWhere((e) => e.id == seasonEpisodes[target.$2].id);
     if (index < 0) return null;
-    return (episodes: all, episodeIndex: index);
+    return (
+      episodes: all,
+      episodeIndex: index,
+      seasonNumber: state.seasons[target.$1].number,
+      episodeNumber: seasonEpisodes[target.$2].number,
+      isResume: resumeAt != null && target == resumeAt,
+    );
   }
 
   /// Switches to the season at [index] using the cached episode map.

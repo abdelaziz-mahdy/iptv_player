@@ -117,6 +117,32 @@ void main() {
         expect(target!.episodes.length, 4, reason: 'queue spans both seasons');
         expect(target.episodeIndex, 2);
         expect(target.episodes[target.episodeIndex].title, 'S2E1');
+        expect(target.isResume, isFalse,
+            reason: 'starting a fresh episode, not resuming one');
+        expect((target.seasonNumber, target.episodeNumber), (2, 1));
+      });
+
+      test('rewatching an earlier episode makes Play continue that one',
+          () async {
+        // The reported confusion: finish S1E1 and S1E2, then go back and seek
+        // into the middle of S1E1. It becomes the most recently played
+        // unfinished episode, so Play continues it rather than moving on to
+        // S2E1 — surprising unless the button says so, which is why the
+        // target reports its own season/episode and resume flag.
+        await playback.saveProgress(_progress('s3-1-e2', 2700));
+        await playback.saveProgress(_progress('s3-1-e1', 2700));
+        await playback.saveProgress(_progress('s3-1-e1', 900,
+            at: DateTime.utc(2026, 2, 1)));
+
+        final cubit = makeCubit();
+        await cubit.loadSeries(_series('s3'));
+        await Future<void>.delayed(Duration.zero);
+
+        final target = cubit.playTarget();
+        expect(target, isNotNull);
+        expect(target!.episodes[target.episodeIndex].title, 'S1E1');
+        expect(target.isResume, isTrue);
+        expect((target.seasonNumber, target.episodeNumber), (1, 1));
       });
     });
     group('movie metadata', () {

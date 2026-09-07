@@ -432,15 +432,26 @@ class _MyListButtonState extends State<_MyListButton> {
 class _PlayButton extends StatelessWidget {
   final VoidCallback onPressed;
   final bool autofocus;
-  const _PlayButton({required this.onPressed, this.autofocus = false});
+
+  /// What the button will actually play, e.g. "Resume S2E5". Null for a plain
+  /// "Play" (movies, or a series whose target is unknown). Naming the episode
+  /// matters because the target is not always the obvious one: rewatching part
+  /// of an earlier episode makes Play continue *that* one.
+  final String? label;
+  const _PlayButton({
+    required this.onPressed,
+    this.autofocus = false,
+    this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final tt = Theme.of(context).textTheme;
+    final text = label ?? l10n.play;
     return FocusableButton(
       autofocus: autofocus,
-      semanticLabel: l10n.play,
+      semanticLabel: text,
       onPressed: onPressed,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
@@ -454,7 +465,7 @@ class _PlayButton extends StatelessWidget {
             Icon(Icons.play_arrow, color: context.palette.bg, size: IconSize.sm),
             const SizedBox(width: 6),
             Text(
-              l10n.play,
+              text,
               style: tt.labelLarge?.copyWith(
                 color: context.palette.bg,
                 fontWeight: FontWeight.w700,
@@ -686,15 +697,31 @@ class _SeriesDetailBody extends StatelessWidget {
             ),
             actions: [
               if (hasEpisodes)
-                _PlayButton(
-                  autofocus: true,
+                Builder(builder: (btnCtx) {
                   // Resume-aware: the unfinished episode you played last, or
                   // the one after the last finished episode — not just S01E01.
-                  onPressed: () {
-                    final t = ctx.read<DetailsCubit>().playTarget();
-                    if (t != null) onPlayEpisode(t.episodes, t.episodeIndex);
-                  },
-                ),
+                  // The label names it, so the choice is visible before you
+                  // commit to it.
+                  final t = btnCtx.watch<DetailsCubit>().state.seasons.isEmpty
+                      ? null
+                      : btnCtx.read<DetailsCubit>().playTarget();
+                  return _PlayButton(
+                    autofocus: true,
+                    label: t == null
+                        ? null
+                        : t.isResume
+                            ? l10n.resumeSeasonEpisode(
+                                t.seasonNumber, t.episodeNumber)
+                            : l10n.playSeasonEpisode(
+                                t.seasonNumber, t.episodeNumber),
+                    onPressed: () {
+                      final target = btnCtx.read<DetailsCubit>().playTarget();
+                      if (target != null) {
+                        onPlayEpisode(target.episodes, target.episodeIndex);
+                      }
+                    },
+                  );
+                }),
               _MyListButton(
                 itemKey: 'episode:${series.id}',
                 playlistId: series.playlistId,
