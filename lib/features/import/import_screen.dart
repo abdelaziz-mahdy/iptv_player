@@ -148,15 +148,23 @@ class _ImportViewState extends State<_ImportView> {
               // Error + submit rebuild independently of the fields.
               BlocBuilder<ImportCubit, ImportState>(
                 buildWhen: (a, b) =>
-                    a.submitting != b.submitting || a.error != b.error,
+                    a.submitting != b.submitting ||
+                    a.error != b.error ||
+                    a.failure != b.failure,
                 builder: (context, state) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (state.error != null) ...[
                         Text(
-                          state.error!,
+                          _failureText(l10n, state),
                           style: textTheme.bodyMedium?.copyWith(color: p.live),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          l10n.importErrorDetails,
+                          style: textTheme.bodySmall?.copyWith(color: p.dim),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 16),
@@ -465,3 +473,17 @@ class _TabSelector extends StatelessWidget {
     );
   }
 }
+
+/// Turns the classified failure into something that tells the user what to do.
+/// The raw message was always "Failed to import playlist", which explained
+/// nothing — the most common cause by far is an `https://` address against a
+/// provider that only serves plain HTTP.
+String _failureText(AppLocalizations l10n, ImportState state) =>
+    switch (state.failure) {
+      ImportFailure.connectionRefused => l10n.importErrorRefused,
+      ImportFailure.dns => l10n.importErrorDns,
+      ImportFailure.timeout => l10n.importErrorTimeout,
+      ImportFailure.credentials => l10n.importErrorCredentials,
+      ImportFailure.unknown => l10n.importErrorUnknown,
+      null => state.error ?? l10n.importErrorUnknown,
+    };

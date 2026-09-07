@@ -19,6 +19,7 @@ import '../../features/player/video_controller.dart';
 import '../../features/playlists/playlists_screen.dart';
 import '../../features/search/cubit/search_cubit.dart';
 import '../../features/search/search_screen.dart';
+import '../../features/logs/logs_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../di/injection.dart';
@@ -335,6 +336,10 @@ GoRouter buildRouter() {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/logs',
+        builder: (context, state) => const LogsScreen(),
       ),
       GoRoute(
         path: '/playlists',

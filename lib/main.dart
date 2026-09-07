@@ -45,6 +45,14 @@ Future<void> main() async {
     ),
   );
   await configureProductionDependencies();
+  // Android kills backgrounded apps without a clean shutdown, so this is the
+  // last dependable chance to get buffered log lines onto disk — the whole
+  // reason the file sink exists is to still be there afterwards.
+  AppLifecycleListener(
+    onPause: flushAppLog,
+    onDetach: flushAppLog,
+  );
+
   runApp(const NoorApp());
 
   // Refresh the active playlist's content in the background on launch so

@@ -5,6 +5,25 @@ All notable changes to IPTV Player are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2026-09-07
+
+### Added
+- **View logs** under Settings → Troubleshooting. When something fails on a TV
+  or phone there is now somewhere to see why, and to copy or share it, instead
+  of needing a computer and a cable.
+
+### Fixed
+- **The dead space above the title on phones is gone.** Every section — Live TV,
+  Movies, Series, Favorites, Search — had an empty band between the app bar and
+  its heading.
+- **Failed imports now say what went wrong.** "Failed to import playlist" was
+  all you ever got, whatever the cause. It now tells you if the server could not
+  be reached, was not found, timed out, or rejected your username and password —
+  and for the most common case, that a `https://` address often needs to be
+  `http://` instead.
+- **Logs are actually saved now.** They were being buffered and never written to
+  disk, so the log file was empty exactly when it was needed.
+
 ## [1.0.2] - 2026-09-07
 
 ### Fixed

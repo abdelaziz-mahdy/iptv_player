@@ -601,6 +601,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Audio track'**
   String get audioTrack;
+
+  /// No description provided for @logs.
+  ///
+  /// In en, this message translates to:
+  /// **'Logs'**
+  String get logs;
+
+  /// No description provided for @troubleshooting.
+  ///
+  /// In en, this message translates to:
+  /// **'Troubleshooting'**
+  String get troubleshooting;
+
+  /// No description provided for @viewLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'View logs'**
+  String get viewLogs;
+
+  /// No description provided for @importErrorRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach the server. If the address starts with https://, try http:// instead — many providers do not support HTTPS.'**
+  String get importErrorRefused;
+
+  /// No description provided for @importErrorDns.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not find that server. Check the address for a typo.'**
+  String get importErrorDns;
+
+  /// No description provided for @importErrorTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The server took too long to respond. Check your connection and try again.'**
+  String get importErrorTimeout;
+
+  /// No description provided for @importErrorCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'The server rejected your username or password.'**
+  String get importErrorCredentials;
+
+  /// No description provided for @importErrorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not import the playlist.'**
+  String get importErrorUnknown;
+
+  /// No description provided for @importErrorDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details are in Settings → View logs.'**
+  String get importErrorDetails;
 }
 
 class _AppLocalizationsDelegate

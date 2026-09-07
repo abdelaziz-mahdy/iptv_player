@@ -271,4 +271,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get audioTrack => 'Audio track';
+
+  @override
+  String get logs => 'Logs';
+
+  @override
+  String get troubleshooting => 'Troubleshooting';
+
+  @override
+  String get viewLogs => 'View logs';
+
+  @override
+  String get importErrorRefused =>
+      'Could not reach the server. If the address starts with https://, try http:// instead — many providers do not support HTTPS.';
+
+  @override
+  String get importErrorDns =>
+      'Could not find that server. Check the address for a typo.';
+
+  @override
+  String get importErrorTimeout =>
+      'The server took too long to respond. Check your connection and try again.';
+
+  @override
+  String get importErrorCredentials =>
+      'The server rejected your username or password.';
+
+  @override
+  String get importErrorUnknown => 'Could not import the playlist.';
+
+  @override
+  String get importErrorDetails => 'Details are in Settings → View logs.';
 }

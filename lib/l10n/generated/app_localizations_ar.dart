@@ -270,4 +270,34 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get audioTrack => 'المسار الصوتي';
+
+  @override
+  String get logs => 'السجلات';
+
+  @override
+  String get troubleshooting => 'استكشاف الأخطاء';
+
+  @override
+  String get viewLogs => 'عرض السجلات';
+
+  @override
+  String get importErrorRefused =>
+      'تعذّر الوصول إلى الخادم. إذا كان العنوان يبدأ بـ https:// فجرّب http:// — كثير من المزوّدين لا يدعمون HTTPS.';
+
+  @override
+  String get importErrorDns => 'تعذّر العثور على هذا الخادم. تحقق من العنوان.';
+
+  @override
+  String get importErrorTimeout =>
+      'استغرق الخادم وقتًا طويلاً للرد. تحقق من اتصالك وحاول مجددًا.';
+
+  @override
+  String get importErrorCredentials =>
+      'رفض الخادم اسم المستخدم أو كلمة المرور.';
+
+  @override
+  String get importErrorUnknown => 'تعذّر استيراد قائمة التشغيل.';
+
+  @override
+  String get importErrorDetails => 'التفاصيل في الإعدادات ← عرض السجلات.';
 }

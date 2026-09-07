@@ -72,4 +72,41 @@ void main() {
       );
     });
   });
+
+  group('failure classification', () {
+    test('connection refused — the https-against-an-http-panel case', () {
+      // Verbatim shape of what the device produced: an https:// address
+      // against a provider serving only plain HTTP.
+      expect(
+        ImportCubit.classify(
+          'ClientException with SocketException: Connection refused '
+          '(OS Error: Connection refused, errno = 111), address = example.com',
+        ),
+        ImportFailure.connectionRefused,
+      );
+    });
+
+    test('bad hostname', () {
+      expect(
+        ImportCubit.classify('SocketException: Failed host lookup: nope.invalid'),
+        ImportFailure.dns,
+      );
+    });
+
+    test('timeout', () {
+      expect(ImportCubit.classify('TimeoutException after 0:00:30.000000'),
+          ImportFailure.timeout);
+    });
+
+    test('rejected credentials', () {
+      expect(ImportCubit.classify('HTTP 401 Unauthorized'),
+          ImportFailure.credentials);
+    });
+
+    test('anything else falls back to unknown', () {
+      expect(ImportCubit.classify('some parser blew up'),
+          ImportFailure.unknown);
+      expect(ImportCubit.classify(null), ImportFailure.unknown);
+    });
+  });
 }

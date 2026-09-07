@@ -1,3 +1,4 @@
+import '../../core/logging/app_logger.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart' show debugPrint;
@@ -447,7 +448,13 @@ class DriftContentRepository implements ContentRepository {
           return const Ok(null);
       }
       return const Ok(null);
-    } catch (e) {
+    } catch (e, st) {
+      // The cause is carried on the Failure but nothing surfaces it — the user
+      // only ever sees "Failed to import playlist", which says nothing about
+      // whether the server was unreachable, the credentials were rejected or
+      // the response would not parse. Log it so the reason is recoverable.
+      appLog.handle(e, st, 'importPlaylist failed type=${p.type.name} '
+          'server=${scrubUrl(p.serverUrl ?? '-')}');
       return Err(Failure('Failed to import playlist', cause: e));
     }
   }

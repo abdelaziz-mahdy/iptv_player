@@ -384,7 +384,17 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                 ),
               ),
             ),
-          Expanded(child: widget.body),
+          // The top bar above already sat inside a SafeArea, so the status-bar
+          // inset is spent. Section screens build their own Scaffold + AppBar,
+          // and without this they read the untouched MediaQuery and inset a
+          // second time — a dead band above every section title on a phone.
+          Expanded(
+            child: MediaQuery.removePadding(
+              context: context,
+              removeTop: true,
+              child: widget.body,
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: NavigationBar(

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
@@ -36,10 +37,50 @@ String scrubUrl(String url) => url
 /// still running, without letting MDK's output pile up.
 Future<void> initAppLogging({int keepDays = 3}) => _fileObserver.open(keepDays);
 
+/// Flush buffered log lines to disk now. Call when the app is backgrounded.
+Future<void> flushAppLog() => _fileObserver.flush();
+
+/// Path of the log directory, for the in-app viewer's share action.
+Future<String?> appLogDirPath() async {
+  try {
+    final base = Platform.isAndroid
+        ? (await getExternalStorageDirectory() ??
+            await getApplicationSupportDirectory())
+        : await getApplicationSupportDirectory();
+    return '${base.path}/logs';
+  } catch (_) {
+    return null;
+  }
+}
+
 class _FileLogObserver extends TalkerObserver {
   IOSink? _sink;
   final List<String> _buffer = [];
   static const _bufferCap = 200;
+
+  /// IOSink buffers, and Android rarely gives the app a clean shutdown to
+  /// close it — so without an explicit flush the file stays empty and the
+  /// whole point of the sink is lost (verified on device: 0 bytes after a
+  /// reproduced failure). Flush on a short timer rather than per line, so a
+  /// chatty run does not turn into one write syscall per log entry.
+  Timer? _flushTimer;
+
+  void _scheduleFlush() {
+    if (_flushTimer?.isActive ?? false) return;
+    _flushTimer = Timer(const Duration(seconds: 2), flush);
+  }
+
+  /// Force pending lines to disk. Called on a timer and when the app is
+  /// backgrounded, which on Android is the last reliable moment before it is
+  /// killed.
+  Future<void> flush() async {
+    _flushTimer?.cancel();
+    try {
+      await _sink?.flush();
+    } catch (_) {
+      // Never let logging break the app.
+    }
+  }
 
   Future<void> open(int keepDays) async {
     try {
@@ -67,6 +108,7 @@ class _FileLogObserver extends TalkerObserver {
         _sink!.writeln(line);
       }
       _buffer.clear();
+      await _sink!.flush();
     } catch (_) {
       // Logging must never break the app; console output still works.
     }
@@ -78,6 +120,7 @@ class _FileLogObserver extends TalkerObserver {
     final sink = _sink;
     if (sink != null) {
       sink.writeln(line);
+      _scheduleFlush();
     } else if (_buffer.length < _bufferCap) {
       _buffer.add(line);
     }

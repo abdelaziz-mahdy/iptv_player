@@ -120,5 +120,14 @@
   },
   "skipBackward": "Skip back 10 seconds",
   "skipForward": "Skip forward 10 seconds",
-  "audioTrack": "Audio track"
+  "audioTrack": "Audio track",
+  "logs": "Logs",
+  "troubleshooting": "Troubleshooting",
+  "viewLogs": "View logs",
+  "importErrorRefused": "Could not reach the server. If the address starts with https://, try http:// instead — many providers do not support HTTPS.",
+  "importErrorDns": "Could not find that server. Check the address for a typo.",
+  "importErrorTimeout": "The server took too long to respond. Check your connection and try again.",
+  "importErrorCredentials": "The server rejected your username or password.",
+  "importErrorUnknown": "Could not import the playlist.",
+  "importErrorDetails": "Details are in Settings → View logs."
 }

@@ -83,5 +83,14 @@
   "resumeSeasonEpisode": "متابعة م{season}ح{episode}",
   "skipBackward": "إرجاع ١٠ ثوانٍ",
   "skipForward": "تقديم ١٠ ثوانٍ",
-  "audioTrack": "المسار الصوتي"
+  "audioTrack": "المسار الصوتي",
+  "logs": "السجلات",
+  "troubleshooting": "استكشاف الأخطاء",
+  "viewLogs": "عرض السجلات",
+  "importErrorRefused": "تعذّر الوصول إلى الخادم. إذا كان العنوان يبدأ بـ https:// فجرّب http:// — كثير من المزوّدين لا يدعمون HTTPS.",
+  "importErrorDns": "تعذّر العثور على هذا الخادم. تحقق من العنوان.",
+  "importErrorTimeout": "استغرق الخادم وقتًا طويلاً للرد. تحقق من اتصالك وحاول مجددًا.",
+  "importErrorCredentials": "رفض الخادم اسم المستخدم أو كلمة المرور.",
+  "importErrorUnknown": "تعذّر استيراد قائمة التشغيل.",
+  "importErrorDetails": "التفاصيل في الإعدادات ← عرض السجلات."
 }

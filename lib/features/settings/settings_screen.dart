@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:iptv_player/core/a11y/accessibility_cubit.dart';
 import 'package:iptv_player/core/a11y/accessibility_settings.dart';
 import 'package:iptv_player/core/i18n/locale_cubit.dart';
+import 'package:iptv_player/core/theme/app_sizes.dart';
 import 'package:iptv_player/core/theme/app_theme.dart';
 import 'package:iptv_player/core/widgets/focusable_button.dart';
 import 'package:iptv_player/l10n/generated/app_localizations.dart';
@@ -47,6 +49,10 @@ class SettingsScreen extends StatelessWidget {
           _SectionHeader(title: l10n.captionsLabel),
           const SizedBox(height: 8),
           const _CaptionsSection(),
+          const SizedBox(height: 24),
+          _SectionHeader(title: l10n.troubleshooting),
+          const SizedBox(height: 8),
+          const _LogsEntry(),
           const SizedBox(height: 32),
           const _ComplianceNote(),
           const SizedBox(height: 16),
@@ -59,6 +65,42 @@ class SettingsScreen extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Section header
 // ---------------------------------------------------------------------------
+
+/// Opens the in-app log viewer. Reaching the logs otherwise means a computer
+/// and a USB cable, which is not an option for someone hitting an import
+/// failure on a TV.
+class _LogsEntry extends StatelessWidget {
+  const _LogsEntry();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final p = context.palette;
+    return FocusableButton(
+      semanticLabel: l10n.viewLogs,
+      onPressed: () => context.push('/logs'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: p.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: p.border),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.description_outlined, color: p.fg, size: IconSize.sm),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(l10n.viewLogs,
+                  style: Theme.of(context).textTheme.bodyLarge),
+            ),
+            Icon(Icons.chevron_right, color: p.dim, size: IconSize.sm),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _SectionHeader extends StatelessWidget {
   final String title;
