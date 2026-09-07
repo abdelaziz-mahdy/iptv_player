@@ -15,12 +15,6 @@ Xtream Codes • M3U / M3U8 • XMLTV EPG • real playback via MDK (fvp)
 
 ## Screenshots
 
-The app adapts its chrome to the screen: a navigation rail on TV and desktop, a
-bottom bar on phones.
-
-> Everything shown is demo data — invented titles and generated artwork, not a
-> real provider's catalogue. Regenerate with `tools/screenshot_tour.sh`.
-
 ### Android TV / desktop
 
 | Home | Live TV |
