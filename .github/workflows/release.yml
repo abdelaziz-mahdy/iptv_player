@@ -44,7 +44,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y ninja-build libgtk-3-dev
+      # libsecret/jsoncpp are required by flutter_secure_storage_linux; without
+      # them the CMake configure step fails before anything is compiled.
+      - run: >
+          sudo apt-get update && sudo apt-get install -y
+          ninja-build libgtk-3-dev libsecret-1-dev libjsoncpp-dev
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -95,7 +99,17 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
+      # No signing identity or provisioning profile exists on the runner, so
+      # automatic signing fails the build. Flutter forwards FLUTTER_XCODE_* as
+      # xcodebuild build settings, which turns signing off for this build only
+      # and leaves the checked-in Xcode project untouched. The artifact is an
+      # unsigned .app; Gatekeeper will need the usual right-click-Open.
       - run: flutter build macos --release
+        env:
+          FLUTTER_XCODE_CODE_SIGNING_ALLOWED: 'NO'
+          FLUTTER_XCODE_CODE_SIGNING_REQUIRED: 'NO'
+          FLUTTER_XCODE_CODE_SIGN_IDENTITY: ''
+          FLUTTER_XCODE_CODE_SIGN_ENTITLEMENTS: ''
       - name: Package
         run: |
           mkdir -p dist
