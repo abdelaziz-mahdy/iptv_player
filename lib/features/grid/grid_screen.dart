@@ -29,7 +29,12 @@ const double _kWideBreakpoint = 700.0;
 /// Poster metrics — shared by the grid delegate and the letter jump, which
 /// computes a scroll offset from them.
 const double _kPosterWidth = 150.0;
-const double _kPosterAspect = 2 / 3.4;
+
+/// Fixed tile height rather than an aspect ratio. [PosterCard] is a fixed-width
+/// column whose height does not shrink with the tile, so deriving height from
+/// width overflows whenever the columns pack tighter than the card needs —
+/// 15 px at a 1600 px window, and it moves with every resize.
+const double _kPosterExtent = 260.0;
 const double _kPosterSpacing = 10.0;
 
 class GridScreen extends StatelessWidget {
@@ -133,9 +138,8 @@ class _WideLayoutState extends State<_WideLayout> {
 
     final width = MediaQuery.sizeOf(context).width - CategorySidebar.width - 25;
     final columns = (width / _kPosterWidth).ceil().clamp(1, 100);
-    final tileWidth = (width - (columns - 1) * _kPosterSpacing) / columns;
     final row = target ~/ columns;
-    final offset = row * (tileWidth / _kPosterAspect + _kPosterSpacing);
+    final offset = row * (_kPosterExtent + _kPosterSpacing);
     _gridController.jumpTo(
       offset.clamp(0.0, _gridController.position.maxScrollExtent),
     );
@@ -208,7 +212,7 @@ class _WideLayoutState extends State<_WideLayout> {
                           maxCrossAxisExtent: _kPosterWidth,
                           mainAxisSpacing: _kPosterSpacing,
                           crossAxisSpacing: _kPosterSpacing,
-                          childAspectRatio: _kPosterAspect,
+                          mainAxisExtent: _kPosterExtent,
                         ),
                         itemCount: displayed.length,
                         itemBuilder: (context, index) {
@@ -375,10 +379,13 @@ class CategoryResultsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               gridDelegate:
                   const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 150,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                childAspectRatio: 2 / 3.4,
+                maxCrossAxisExtent: _kPosterWidth,
+                mainAxisSpacing: _kPosterSpacing,
+                crossAxisSpacing: _kPosterSpacing,
+                // Fixed height, same reason as the main grid: PosterCard's
+                // height does not follow the tile width, so a ratio overflows
+                // at narrow widths (17 px on a 412 px phone).
+                mainAxisExtent: _kPosterExtent,
               ),
               itemCount: items.length,
               itemBuilder: (context, index) {

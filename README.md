@@ -13,6 +13,30 @@ Xtream Codes • M3U / M3U8 • XMLTV EPG • real playback via MDK (fvp)
 > **Status:** early development. This app hosts **no content** — all channels and
 > media come from playlists **you** provide.
 
+## Screenshots
+
+The app adapts its chrome to the screen: a navigation rail on TV and desktop, a
+bottom bar on phones.
+
+> Everything shown is demo data — invented titles and generated artwork, not a
+> real provider's catalogue. Regenerate with `tools/screenshot_tour.sh`.
+
+### Android TV / desktop
+
+| Home | Live TV |
+|---|---|
+| ![Home on TV](docs/screenshots/tv/01-home.jpg) | ![Live TV](docs/screenshots/tv/02-live.jpg) |
+
+| Movies | Series |
+|---|---|
+| ![Movies](docs/screenshots/tv/03-movies.jpg) | ![Series](docs/screenshots/tv/04-series.jpg) |
+
+### Phone
+
+| Home | Movies | Search |
+|---|---|---|
+| ![Home on phone](docs/screenshots/phone/01-home.jpg) | ![Movies on phone](docs/screenshots/phone/03-movies.jpg) | ![Search on phone](docs/screenshots/phone/06-search.jpg) |
+
 ## Features
 
 - **Sources**

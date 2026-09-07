@@ -5,6 +5,16 @@ All notable changes to IPTV Player are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **Poster grids no longer clip the bottom of a tile.** At some window and
+  screen widths the last line of a poster's title was cut off — 15 px on a
+  desktop window, 17 px on a phone — because the tile height was derived from
+  its width. Movies, Series and the phone category pages are all affected.
+- The **"IPTV Player" wordmark** beside the navigation rail was cut off at the
+  left edge on TV and desktop; it now fits the rail.
+
 ## [1.0.1] - 2026-09-07
 
 ### Changed

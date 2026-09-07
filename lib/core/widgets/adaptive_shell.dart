@@ -266,8 +266,18 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                   labelType: NavigationRailLabelType.all,
                   leading: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(widget.brand,
-                        style: Theme.of(context).textTheme.titleLarge),
+                    // The rail is a fixed 80 px, and an unconstrained Text
+                    // wider than that is clipped at the screen edge rather
+                    // than wrapped — the wordmark lost its first letters on
+                    // TV. Scale it down to whatever the rail actually has.
+                    child: SizedBox(
+                      width: 72,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(widget.brand,
+                            style: Theme.of(context).textTheme.titleLarge),
+                      ),
+                    ),
                   ),
                   trailing: (widget.onOpenSettings != null ||
                           widget.onOpenPlaylists != null)
