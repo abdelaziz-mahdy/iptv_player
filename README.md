@@ -2,16 +2,19 @@
 
 # IPTV Player
 
-A real IPTV client for **Android (phone + TV)** and **desktop (macOS / Windows / Linux)**, built with Flutter.
+Watch your IPTV subscription on the TV, phone or computer — with a proper
+remote-friendly interface.
 
-Xtream Codes • M3U / M3U8 • XMLTV EPG • real playback via MDK (fvp)
+**Android TV • Android phone • macOS • Windows • Linux**
+
+[**Download the latest release →**](https://github.com/abdelaziz-mahdy/iptv_player/releases/latest)
 
 </div>
 
 ---
 
-> **Status:** early development. This app hosts **no content** — all channels and
-> media come from playlists **you** provide.
+> This app comes with **no channels and no content**. You bring your own
+> playlist from whichever provider you already subscribe to.
 
 ## Screenshots
 
@@ -31,173 +34,76 @@ Xtream Codes • M3U / M3U8 • XMLTV EPG • real playback via MDK (fvp)
 |---|---|---|
 | ![Home on phone](docs/screenshots/phone/01-home.jpg) | ![Movies on phone](docs/screenshots/phone/03-movies.jpg) | ![Search on phone](docs/screenshots/phone/06-search.jpg) |
 
-## Features
+## Getting set up
 
-- **Sources**
-  - **Xtream Codes** portals (live, VOD, series, categories, EPG)
-  - **M3U / M3U8** playlists (URL or file)
-  - **XMLTV** EPG parsing
-- **Playback** via [`fvp`](https://pub.dev/packages/fvp) (MDK) backing
-  `video_player` — handling the wide range of codecs/containers IPTV streams
-  use that native players often can't, with hardware decoding. On Android TV
-  the decoder writes straight into a SurfaceView, so 4K plays at the panel's
-  resolution rather than the UI layer's. Live/VOD aware, real-time bitrate
-  badge, auto-hiding controls.
-- **Continue Watching** — VOD resumes where you left off. The position is saved
-  continuously during playback and when the app is backgrounded, so it survives
-  the app being closed from the Home button or killed by the TV.
-- **TV-first UX** — full D-pad navigation, on-screen focus rings, native TV text
-  entry, a side rail reachable with LEFT, and a leanback launcher banner.
-- **Library** — Home rails, Live TV (groups → channels → player), Movies & Series
-  grids (on-demand seasons/episodes) with real category names, Favorites, Search.
-- **Accessibility** — text scaling, reduce-motion, high-contrast palette, captions,
-  RTL + Arabic-Indic numerals, screen-reader semantics.
+1. **Install it.** Grab the file for your device from the
+   [latest release](https://github.com/abdelaziz-mahdy/iptv_player/releases/latest):
 
-## Platforms
+   | Your device | File |
+   |---|---|
+   | Android phone or TV | `.apk` |
+   | macOS | `-macos.zip` |
+   | Windows | `-windows-x64.zip` |
+   | Linux | `-linux-x64.tar.gz` |
 
-| Platform | Status | Notes |
-|---|---|---|
-| Android phone | ✅ | |
-| Android TV | ✅ | leanback launcher + D-pad; see renderer note below |
-| macOS | ✅ | |
-| Windows | ✅ | |
-| Linux | ✅ | |
-| iOS / Web | ❌ | not targeted |
+2. **Add your playlist.** Open the app and go to **Playlists → Add**. You can use
+   either:
+   - **Xtream Codes** — the server address, username and password your provider
+     gave you. This gets you live TV, movies, series and the TV guide.
+   - **M3U / M3U8** — a playlist link or a file, optionally with an XMLTV guide
+     URL.
 
-## Tech stack
+3. **That's it.** Your channels, movies and series appear under their own tabs.
 
-- **State:** `flutter_bloc` / Cubit, `hydrated_bloc`, `equatable`
-- **Navigation:** `go_router` (`StatefulShellRoute.indexedStack`)
-- **DI:** `get_it` + `injectable`
-- **Persistence:** `drift` (SQLite) with schema migrations
-- **Models/codegen:** `freezed` + `json_serializable` + `build_runner`
-- **Data:** `xtream_code_client`, `m3u_nullsafe`, `xml` (XMLTV), `dio`
-- **Video:** `fvp` (MDK) backing `video_player` on every platform
-- **Fonts:** bundled Hanken Grotesk (variable), IBM Plex Sans Arabic, Atkinson Hyperlegible
+### Installing on an Android TV
 
-## Android TV renderer & video notes
+TVs have no browser for downloading files, so either install the free
+**Downloader** app from the Play Store and enter the release link, or copy the
+`.apk` across on a USB stick.
 
-On some Android TV GPUs (notably **PowerVR**) two *separate* rendering problems
-appear; both are worked around here:
+### First launch on macOS
 
-- **UI flicker** under Flutter's default **Impeller (Vulkan)** backend. The app
-  forces **Skia** via `AndroidManifest.xml` (confirmed stable on TCL/PowerVR).
-  Impeller's OpenGLES backend is **not** an escape hatch — Flutter 3.44.2 ignores
-  `ImpellerBackend=opengles` and still uses Vulkan. Helper:
-  `scripts/set_impeller.py {vulkan|opengles|skia}`.
+The macOS build isn't signed with an Apple developer certificate, so macOS will
+refuse to open it on the first try. Right-click the app and choose **Open**, then
+confirm — you only need to do this once.
 
-  ```xml
-  <meta-data android:name="io.flutter.embedding.android.EnableImpeller" android:value="false" />
-  ```
+## What it does
 
-- **Video corruption** with `fvp`/MDK's GL renderer on PowerVR: the driver
-  advertises RGBA_1010102 window configs but marks them all non-conformant, and
-  rendering into one corrupts the picture (reproduces with every decoder, even
-  software — decoding is fine, the renderer isn't). Fixed by falling back to an
-  8-bit render target. Upstream: wang-bin/fvp#374, PR #385.
+- **Live TV, movies and series**, organised by your provider's own categories,
+  with a TV guide where your playlist supplies one.
+- **Picks up where you left off.** Movies and episodes remember your position,
+  even if the app is closed or the TV kills it in the background. Finished items
+  drop out of Continue Watching on their own.
+- **Finds things fast.** Search across everything, jump to a letter in long
+  channel lists, and the categories you actually use float to the top.
+- **Favourites** for the channels and titles you keep coming back to.
+- **Built for a remote.** Every screen is navigable with a D-pad, with a clear
+  focus outline so you always know where you are, and TV-native text entry for
+  search and login boxes.
+- **Plays what other apps choke on.** A wide range of stream formats and codecs,
+  with hardware decoding, and 4K on Android TV at the panel's full resolution.
+- **Readable for everyone.** Larger text, reduced motion, a high-contrast theme,
+  subtitle styling, and full right-to-left support with Arabic.
 
-- **4K on TV** needs the decoder to bypass the GL renderer entirely
-  (`tunnel: true` + `VideoViewType.platformView`): MediaCodec writes into the
-  SurfaceView's buffer queue, so the video scans out at panel resolution while
-  the UI layer stays at 1080p. Measured on a Realtek TV: 24.0 fps at 4K24 and
-  56.3 fps at 4K60, against ~22 through the GL platform view and 10.9 through
-  the Flutter texture. Upstream: wang-bin/fvp#379.
+## Where it runs
 
-- **Audio backend drives frame pacing.** MDK slaves video timing to the audio
-  clock; this TV's AAudio reported positions too coarsely and frames presented
-  in bursts at ~10 fps. The app asks for OpenSL (`audio.renderer`) until the
-  AAudio fixes reach a released SDK. Upstream: wang-bin/fvp#384.
+| | |
+|---|---|
+| Android phone | ✅ |
+| Android TV | ✅ |
+| macOS | ✅ |
+| Windows | ✅ |
+| Linux | ✅ |
+| iOS / Web | ❌ not planned |
 
-Related upstream issues: flutter#177319, flutter#165983, flutter#161316.
+## Contributing
 
-## Getting started
-
-```bash
-flutter pub get
-dart run build_runner build --delete-conflicting-outputs   # generated code
-flutter run            # pick a device
-```
-
-Requirements: Flutter **3.44.2** (stable), Dart 3.12+, JDK 17, Android SDK 36.
-
-### Build release artifacts
-
-```bash
-flutter build apk --release        # Android (build/app/outputs/flutter-apk/)
-flutter build appbundle --release  # Android App Bundle
-flutter build macos --release
-flutter build windows --release
-flutter build linux --release
-```
-
-> Release APKs are currently **debug-signed** for easy sideloading. Wire a real
-> signing config before publishing.
-
-### App icon
-
-Sources live in `assets/icon/`. Regenerate launcher icons with:
-
-```bash
-dart run flutter_launcher_icons
-```
-
-## Deploying to an Android TV on your LAN
-
-No store needed — sideload over the local network:
-
-```bash
-flutter build apk --release
-cd build/app/outputs/flutter-apk && python3 -m http.server 8000 --bind 0.0.0.0
-```
-
-On the TV, open the URL (e.g. `http://<your-ip>:8000/app-release.apk`) with the
-**Downloader** app, or push directly over ADB:
-
-```bash
-adb connect <tv-ip>:5555
-adb install -r build/app/outputs/flutter-apk/app-release.apk
-```
-
-Diagnostics/automation helpers for TV debugging live in `scripts/` and `docs/TV_DEBUG.md`.
-
-## Testing
-
-```bash
-flutter analyze
-flutter test
-```
-
-## Project layout
-
-```
-lib/
-  core/        theme, router, DI, widgets (AdaptiveShell, FocusableButton, PosterCard), a11y
-  data/        sources (xtream/m3u/xmltv), drift db, repositories, models
-  features/    home, live, grid, details, player, search, favorites, settings, import, ...
-  l10n/        ARB + generated localizations
-packages/
-  flutter_android_tv_text_field/   vendored MIT fork — native TV D-pad text input
-docs/          specs, plans, TV debug guide
-scripts/       TV diagnostics / render-config helpers
-```
-
-### Vendored fork
-
-`packages/flutter_android_tv_text_field` is a vendored, MIT-licensed fork (© Talha
-Yasir) that fixes the build against current toolchains and makes the focus border
-themable. It works around Flutter's Android-TV `TextField` D-pad bug (flutter#147772).
-
-## Releases / CI
-
-Pushing a `v*` tag (e.g. `v1.0.0`) triggers GitHub Actions to build and attach
-artifacts to a GitHub Release. See `.github/workflows/`.
-
-```bash
-git tag -a v1.0.0 -m "Release 1.0.0"
-git push origin v1.0.0
-```
+Bug reports and pull requests are welcome — see
+[docs/DEVELOPING.md](docs/DEVELOPING.md) to build and run it locally.
 
 ## License & disclaimer
+
+Released under the [MIT License](LICENSE).
 
 This application does not provide, host, or distribute any media. It is a player
 for playlists supplied by the user. Ensure you have the right to access any content

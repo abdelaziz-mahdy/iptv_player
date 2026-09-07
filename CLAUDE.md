@@ -21,6 +21,9 @@ detail for that area — read the relevant one before working there.
 | Scripts | [scripts/CLAUDE.md](scripts/CLAUDE.md) | TV install/diagnostic helpers |
 | Vendored pkgs | [packages/CLAUDE.md](packages/CLAUDE.md) | native TV text-field fork |
 
+Contributor-facing build, renderer and CI notes live in
+[docs/DEVELOPING.md](docs/DEVELOPING.md); README.md is for people using the app.
+
 ## Commands
 
 ```bash
