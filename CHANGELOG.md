@@ -5,6 +5,15 @@ All notable changes to IPTV Player are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **The remote no longer gets stuck in the player on the first or last episode.**
+  With no previous (or next) button, pressing right or left from play/pause made
+  the highlight vanish and every button stop responding until the controls
+  faded out. The same happened on the first and last channel of a group, and
+  when pressing up from the seek bar.
+
 ## [1.0.3] - 2026-09-07
 
 ### Added

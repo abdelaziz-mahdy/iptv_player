@@ -18,6 +18,8 @@ Widget _buildPlayer({
   VoidCallback? onBack,
   MediaKind kind = MediaKind.movie,
   FakePlayerController? controller,
+  VoidCallback? onPlayPrevious,
+  VoidCallback? onPlayNext,
 }) => MaterialApp(
       theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -33,6 +35,8 @@ Widget _buildPlayer({
           playbackRepository: FakePlaybackRepository(),
           kind: kind,
           playlistId: 'p1',
+          onPlayPrevious: onPlayPrevious,
+          onPlayNext: onPlayNext,
         ),
       ),
     );
@@ -298,5 +302,62 @@ void main() {
       FocusManager.instance.primaryFocus?.debugLabel,
       isNot('player-seek-slider'),
     );
+  });
+
+  // The root anchor spans the screen, so its centre is a directional-traversal
+  // candidate whenever play/pause sits off-centre — an odd number of buttons
+  // on one side, i.e. the first or last entry of a queue. Nothing is reachable
+  // from the anchor, so landing there strands the remote.
+  group('queue ends keep the D-pad on real controls', () {
+    Future<void> walk(WidgetTester tester, List<LogicalKeyboardKey> keys) async {
+      for (final key in keys) {
+        await tester.sendKeyEvent(key);
+        await tester.pump();
+        expect(
+          FocusManager.instance.primaryFocus?.debugLabel,
+          isNot('player-root'),
+          reason: '${key.keyLabel} stranded focus on the root anchor',
+        );
+      }
+    }
+
+    Future<void> pumpTv(WidgetTester tester, Widget player) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(player);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    testWidgets('first episode: right from play/pause', (tester) async {
+      await pumpTv(
+        tester,
+        _buildPlayer(kind: MediaKind.episode, onPlayNext: () {}),
+      );
+      await walk(tester, [
+        LogicalKeyboardKey.arrowRight,
+        LogicalKeyboardKey.arrowRight,
+      ]);
+    });
+
+    testWidgets('last episode: left from play/pause', (tester) async {
+      await pumpTv(
+        tester,
+        _buildPlayer(kind: MediaKind.episode, onPlayPrevious: () {}),
+      );
+      await walk(tester, [
+        LogicalKeyboardKey.arrowLeft,
+        LogicalKeyboardKey.arrowLeft,
+      ]);
+    });
+
+    testWidgets('up from the scrubber', (tester) async {
+      await pumpTv(tester, _buildPlayer(kind: MediaKind.episode));
+      await walk(tester, [
+        LogicalKeyboardKey.arrowUp,
+        LogicalKeyboardKey.arrowUp,
+      ]);
+    });
   });
 }
