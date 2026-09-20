@@ -400,6 +400,9 @@ class _PlayerScreenState extends State<PlayerScreen>
         backgroundColor: Colors.black,
         body: Focus(
           focusNode: _rootFocus,
+          // Full-screen rect: its centre outranks the real buttons in
+          // directional traversal, and nothing is reachable from it.
+          skipTraversal: true,
           child: Listener(
             behavior: HitTestBehavior.translucent,
             // Pointer activity reveals controls and resets the idle timer.
