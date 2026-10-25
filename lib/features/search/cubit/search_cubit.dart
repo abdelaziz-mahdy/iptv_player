@@ -18,7 +18,9 @@ class SearchCubit extends Cubit<SearchState> {
   List<SearchEntry> _allEntries = const [];
   List<VodItem> _movies = const [];
   List<Series> _series = const [];
+  List<Channel> _channels = const [];
   StreamSubscription<Playlist?>? _activeSub;
+  StreamSubscription<List<Channel>>? _channelsSub;
   StreamSubscription<List<VodItem>>? _moviesSub;
   StreamSubscription<List<Series>>? _seriesSub;
   StreamSubscription<List<Favorite>>? _favoritesSub;
@@ -41,13 +43,20 @@ class SearchCubit extends Cubit<SearchState> {
     _moviesSub?.cancel();
     _seriesSub?.cancel();
     _favoritesSub?.cancel();
+    _channelsSub?.cancel();
     _movies = const [];
     _series = const [];
+    _channels = const [];
     _allEntries = const [];
 
     if (pid == null) {
-      emit(state.copyWith(
-          loading: false, results: const [], favoriteKeys: const {}));
+      emit(
+        state.copyWith(
+          loading: false,
+          results: const [],
+          favoriteKeys: const {},
+        ),
+      );
       return;
     }
 
@@ -59,11 +68,17 @@ class SearchCubit extends Cubit<SearchState> {
       _series = s;
       _rebuildEntries();
     });
-    _favoritesSub = _content.favorites(pid).listen(
-      (favs) => emit(
-        state.copyWith(favoriteKeys: favs.map((f) => f.itemKey).toSet()),
-      ),
-    );
+    _channelsSub = _content.channels(pid).listen((c) {
+      _channels = c;
+      _rebuildEntries();
+    });
+    _favoritesSub = _content
+        .favorites(pid)
+        .listen(
+          (favs) => emit(
+            state.copyWith(favoriteKeys: favs.map((f) => f.itemKey).toSet()),
+          ),
+        );
   }
 
   void _rebuildEntries() {
@@ -90,7 +105,17 @@ class SearchCubit extends Cubit<SearchState> {
           streamUrl: null,
         ),
       ),
-      // Live channels are excluded from VOD/series search results.
+      ..._channels.map(
+        (c) => SearchEntry(
+          id: c.id,
+          playlistId: c.playlistId,
+          title: c.name,
+          subtitle: c.number,
+          posterUrl: c.logoUrl,
+          kind: SearchEntryKind.channel,
+          streamUrl: c.streamUrl,
+        ),
+      ),
     ];
     emit(state.copyWith(loading: false));
     // Re-apply the current query against the refreshed catalog.
@@ -114,6 +139,7 @@ class SearchCubit extends Cubit<SearchState> {
     await _moviesSub?.cancel();
     await _seriesSub?.cancel();
     await _favoritesSub?.cancel();
+    await _channelsSub?.cancel();
     return super.close();
   }
 
@@ -121,8 +147,7 @@ class SearchCubit extends Cubit<SearchState> {
   static List<SearchEntry> byKind(
     List<SearchEntry> results,
     SearchEntryKind kind,
-  ) =>
-      results.where((e) => e.kind == kind).toList();
+  ) => results.where((e) => e.kind == kind).toList();
 
   void setQuery(String q) {
     if (q.isEmpty) {
@@ -131,9 +156,7 @@ class SearchCubit extends Cubit<SearchState> {
     }
     final lower = q.toLowerCase();
     final filtered = _allEntries
-        .where(
-          (e) => e.title.toLowerCase().contains(lower),
-        )
+        .where((e) => e.title.toLowerCase().contains(lower))
         .toList();
     emit(state.copyWith(query: q, results: filtered));
   }

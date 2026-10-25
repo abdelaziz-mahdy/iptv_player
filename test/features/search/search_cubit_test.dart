@@ -40,9 +40,7 @@ void main() {
 
       expect(cubit.state.query, 'dune');
       expect(
-        cubit.state.results.any(
-          (e) => e.title.toLowerCase().contains('dune'),
-        ),
+        cubit.state.results.any((e) => e.title.toLowerCase().contains('dune')),
         isTrue,
       );
     });
@@ -72,12 +70,7 @@ void main() {
 
       cubit.setQuery('DUNE');
 
-      expect(
-        cubit.state.results.any(
-          (e) => e.title == 'Dune',
-        ),
-        isTrue,
-      );
+      expect(cubit.state.results.any((e) => e.title == 'Dune'), isTrue);
     });
 
     test('setQuery("horizon") returns series result', () async {
@@ -158,7 +151,7 @@ void main() {
       expect(movies.every((e) => e.kind == SearchEntryKind.movie), isTrue);
     });
 
-    test('channels are excluded from search results', () async {
+    test('channels are searchable and open as live channels', () async {
       final cubit = SearchCubit(
         FakeContentRepository(),
         FakePlaylistRepository(),
@@ -166,13 +159,19 @@ void main() {
       await cubit.load();
       await Future<void>.delayed(Duration.zero);
 
-      // Search for 'noor' — matches channel names but channels should be
-      // excluded from VOD search.
-      cubit.setQuery('noor');
+      // The fake seeds 'NOOR One', 'NOOR Sports' and 'NOOR News'.
+      cubit.setQuery('sports');
 
+      final channels = SearchCubit.byKind(
+        cubit.state.results,
+        SearchEntryKind.channel,
+      );
+      expect(channels.map((e) => e.title), ['NOOR Sports']);
+      expect(channels.single.subtitle, '102', reason: 'channel number');
       expect(
-        cubit.state.results.any((e) => e.kind == SearchEntryKind.channel),
-        isFalse,
+        channels.single.streamUrl,
+        isNotEmpty,
+        reason: 'opening a channel result goes straight to the player',
       );
     });
   });
@@ -186,23 +185,28 @@ void main() {
       expect(cubit.state.favoriteKeys, isEmpty);
     });
 
-    test('favoriteKeys updates when toggleFavorite is called on a movie entry', () async {
-      final contentRepo = FakeContentRepository();
-      final cubit = SearchCubit(contentRepo, FakePlaylistRepository());
+    test(
+      'favoriteKeys updates when toggleFavorite is called on a movie entry',
+      () async {
+        final contentRepo = FakeContentRepository();
+        final cubit = SearchCubit(contentRepo, FakePlaylistRepository());
 
-      await cubit.load();
-      await Future<void>.delayed(Duration.zero);
+        await cubit.load();
+        await Future<void>.delayed(Duration.zero);
 
-      cubit.setQuery('dune');
-      final duneEntry = cubit.state.results.firstWhere((e) => e.title == 'Dune');
+        cubit.setQuery('dune');
+        final duneEntry = cubit.state.results.firstWhere(
+          (e) => e.title == 'Dune',
+        );
 
-      await cubit.toggleFavorite(duneEntry);
-      await Future<void>.delayed(Duration.zero);
+        await cubit.toggleFavorite(duneEntry);
+        await Future<void>.delayed(Duration.zero);
 
-      expect(cubit.state.favoriteKeys, contains('movie:${duneEntry.id}'));
+        expect(cubit.state.favoriteKeys, contains('movie:${duneEntry.id}'));
 
-      await cubit.close();
-    });
+        await cubit.close();
+      },
+    );
 
     test('toggleFavorite keys series entry as episode:<id>', () async {
       final contentRepo = FakeContentRepository();

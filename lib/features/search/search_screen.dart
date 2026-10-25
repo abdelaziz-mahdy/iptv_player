@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/di/injection.dart';
 import '../../core/theme/app_sizes.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/channel_tile.dart';
 import '../../core/widgets/poster_card.dart';
 import '../../core/widgets/section_app_bar.dart';
 import '../../core/widgets/status_views.dart';
@@ -26,10 +27,9 @@ class SearchScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => SearchCubit(
-        sl<ContentRepository>(),
-        sl<PlaylistRepository>(),
-      )..load(),
+      create: (_) =>
+          SearchCubit(sl<ContentRepository>(), sl<PlaylistRepository>())
+            ..load(),
       child: _SearchView(onOpen: onOpen),
     );
   }
@@ -185,7 +185,11 @@ class _SearchBar extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Icon(Icons.search_rounded, color: p.dim, size: IconSize.sm),
+              child: Icon(
+                Icons.search_rounded,
+                color: p.dim,
+                size: IconSize.sm,
+              ),
             ),
             Expanded(
               child: TextField(
@@ -212,8 +216,8 @@ class _SearchBar extends StatelessWidget {
 }
 
 /// Displays search results grouped by type as horizontal rails.
-/// Movies appear in a "Movies" rail; Series in a "Series" rail.
-/// Live channels are excluded. Only renders a rail when it has entries.
+/// Live channels, then Movies, then Series. Only renders a rail when it has
+/// entries.
 class _ResultsRails extends StatelessWidget {
   const _ResultsRails({
     required this.results,
@@ -244,20 +248,26 @@ class _ResultsRails extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final channels = SearchCubit.byKind(results, SearchEntryKind.channel);
     final movies = SearchCubit.byKind(results, SearchEntryKind.movie);
     final series = SearchCubit.byKind(results, SearchEntryKind.series);
-    final hasResults = movies.isNotEmpty || series.isNotEmpty;
+    final hasResults =
+        channels.isNotEmpty || movies.isNotEmpty || series.isNotEmpty;
 
     if (!hasResults) {
-      return EmptyState(
-        icon: Icons.search_off,
-        message: l10n.noResults,
-      );
+      return EmptyState(icon: Icons.search_off, message: l10n.noResults);
     }
 
     return ListView(
       padding: const EdgeInsets.only(top: 8, bottom: 16),
       children: [
+        if (channels.isNotEmpty)
+          _ChannelRail(
+            label: l10n.live,
+            entries: channels,
+            onOpen: onOpen,
+            textTheme: textTheme,
+          ),
         if (movies.isNotEmpty)
           _SectionRail(
             label: l10n.movies,
@@ -327,6 +337,57 @@ class _SectionRail extends StatelessWidget {
                   isFavorite: favoriteKeys.contains(itemKey),
                   onTap: () => onOpen(entry),
                   onToggleFavorite: () => cubit.toggleFavorite(entry),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Channel results, drawn with the same logo tile as the Live TV grid rather
+/// than a 2:3 poster — a channel logo is square and has no poster art.
+class _ChannelRail extends StatelessWidget {
+  const _ChannelRail({
+    required this.label,
+    required this.entries,
+    required this.onOpen,
+    required this.textTheme,
+  });
+
+  final String label;
+  final List<SearchEntry> entries;
+  final void Function(SearchEntry) onOpen;
+  final TextTheme textTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Text(label, style: textTheme.titleLarge),
+        ),
+        SizedBox(
+          height: ChannelTile.height,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: entries.length,
+            separatorBuilder: (_, _) =>
+                const SizedBox(width: ChannelTile.spacing),
+            itemBuilder: (context, index) {
+              final entry = entries[index];
+              return SizedBox(
+                width: ChannelTile.width,
+                child: ChannelTile(
+                  name: entry.title,
+                  number: entry.subtitle ?? '',
+                  logoUrl: entry.posterUrl,
+                  onPlay: () => onOpen(entry),
                 ),
               );
             },

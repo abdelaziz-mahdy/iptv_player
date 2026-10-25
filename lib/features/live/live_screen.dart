@@ -6,10 +6,10 @@ import '../../core/di/injection.dart';
 import '../../core/theme/app_sizes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/category_sidebar.dart';
+import '../../core/widgets/channel_tile.dart';
 import '../../core/widgets/focusable_button.dart';
 import '../../core/widgets/jump_to_letter.dart';
 import '../../core/widgets/live_badge.dart';
-import '../../core/widgets/remote_image.dart';
 import '../../core/widgets/section_app_bar.dart';
 import '../../core/widgets/status_views.dart';
 import '../../data/models/models.dart';
@@ -21,20 +21,17 @@ import 'cubit/live_cubit.dart';
 /// Display label for a group: the synthetic ones are localized here, since the
 /// cubit has no BuildContext.
 String _groupLabel(AppLocalizations l10n, ChannelGroup g) => switch (g.id) {
-      kRecentGroupId => l10n.recentlyViewed,
-      kAllGroupId => l10n.allCategory,
-      kOtherGroupId => l10n.otherCategory,
-      _ => g.name,
-    };
+  kRecentGroupId => l10n.recentlyViewed,
+  kAllGroupId => l10n.allCategory,
+  kOtherGroupId => l10n.otherCategory,
+  _ => g.name,
+};
 
 /// Minimum width (logical pixels) for the wide (sidebar + grid) layout.
 const double _kWideBreakpoint = 700.0;
 
 /// Channel tile metrics — shared by the grid delegate and the letter jump,
 /// which computes a scroll offset from them.
-const double _kChannelTileWidth = 190.0;
-const double _kChannelTileHeight = 152.0;
-const double _kChannelTileSpacing = 8.0;
 
 class LiveScreen extends StatelessWidget {
   const LiveScreen({super.key, required this.onPlayChannel});
@@ -87,9 +84,9 @@ class _LiveViewState extends State<_LiveView> {
     if (target == null || !mounted || !_gridController.hasClients) return;
 
     final width = MediaQuery.sizeOf(context).width - CategorySidebar.width - 25;
-    final columns = (width / _kChannelTileWidth).ceil().clamp(1, 100);
+    final columns = (width / ChannelTile.width).ceil().clamp(1, 100);
     final row = target ~/ columns;
-    final offset = row * (_kChannelTileHeight + _kChannelTileSpacing);
+    final offset = row * (ChannelTile.height + ChannelTile.spacing);
     _gridController.jumpTo(
       offset.clamp(0.0, _gridController.position.maxScrollExtent),
     );
@@ -113,8 +110,11 @@ class _LiveViewState extends State<_LiveView> {
                 onPressed: () => _jumpToLetter(state.channelsInGroup),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Icon(Icons.sort_by_alpha,
-                      color: context.palette.fg, size: IconSize.md),
+                  child: Icon(
+                    Icons.sort_by_alpha,
+                    color: context.palette.fg,
+                    size: IconSize.md,
+                  ),
                 ),
               );
             },
@@ -123,8 +123,10 @@ class _LiveViewState extends State<_LiveView> {
             padding: const EdgeInsets.only(right: 16),
             child: LiveBadge(
               label: 'LIVE',
-              reduceMotion:
-                  context.watch<AccessibilityCubit>().state.reduceMotion,
+              reduceMotion: context
+                  .watch<AccessibilityCubit>()
+                  .state
+                  .reduceMotion,
             ),
           ),
         ],
@@ -161,7 +163,10 @@ class _LiveViewState extends State<_LiveView> {
 // ---------------------------------------------------------------------------
 
 class _WideLayout extends StatelessWidget {
-  const _WideLayout({required this.onPlayChannel, required this.gridController});
+  const _WideLayout({
+    required this.onPlayChannel,
+    required this.gridController,
+  });
 
   final void Function(List<Channel> channels, int index) onPlayChannel;
   final ScrollController gridController;
@@ -241,7 +246,9 @@ class _NarrowLayout extends StatelessWidget {
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 14),
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   border: Border(bottom: BorderSide(color: p.border)),
                 ),
@@ -250,21 +257,17 @@ class _NarrowLayout extends StatelessWidget {
                     Expanded(
                       child: Text(
                         label,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(
-                              color: p.fg,
-                              fontWeight: FontWeight.w600,
-                            ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: p.fg,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     Text(
                       '${group.count}',
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.copyWith(color: p.dim),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(color: p.dim),
                     ),
                     const SizedBox(width: 8),
                     Icon(Icons.chevron_right, color: p.dim, size: IconSize.sm),
@@ -302,10 +305,7 @@ class _ChannelGrid extends StatelessWidget {
       return Center(
         child: Text(
           AppLocalizations.of(context)!.noChannels,
-          style: Theme.of(context)
-              .textTheme
-              .bodyLarge
-              ?.copyWith(color: p.dim),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: p.dim),
         ),
       );
     }
@@ -313,116 +313,21 @@ class _ChannelGrid extends StatelessWidget {
       controller: controller,
       padding: const EdgeInsets.all(12),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: _kChannelTileWidth,
-        mainAxisExtent: _kChannelTileHeight,
-        crossAxisSpacing: _kChannelTileSpacing,
-        mainAxisSpacing: _kChannelTileSpacing,
+        maxCrossAxisExtent: ChannelTile.width,
+        mainAxisExtent: ChannelTile.height,
+        crossAxisSpacing: ChannelTile.spacing,
+        mainAxisSpacing: ChannelTile.spacing,
       ),
       itemCount: channels.length,
       itemBuilder: (context, index) {
         final channel = channels[index];
-        return _ChannelTile(
-          channel: channel,
+        return ChannelTile(
+          name: channel.name,
+          number: channel.number,
+          logoUrl: channel.logoUrl,
           onPlay: () => onPlayChannel(channels, index),
         );
       },
-    );
-  }
-}
-
-/// A single channel tile in the grid.
-class _ChannelTile extends StatelessWidget {
-  const _ChannelTile({
-    required this.channel,
-    required this.onPlay,
-  });
-
-  final Channel channel;
-  final VoidCallback onPlay;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return FocusableButton(
-      semanticLabel: channel.name,
-      onPressed: onPlay,
-      child: Container(
-        decoration: BoxDecoration(
-          color: p.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: p.border),
-        ),
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Logo circle / abbreviation
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: p.surface2,
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: channel.logoUrl != null
-                  ? ClipOval(
-                      child: RemoteImage(
-                        url: channel.logoUrl!,
-                        width: 48,
-                        height: 48,
-                        memWidth: 144,
-                        fallback: _Abbr(name: channel.name),
-                      ),
-                    )
-                  : _Abbr(name: channel.name),
-            ),
-            const SizedBox(height: 6),
-            // Flexible so the tile tolerates a few px less height (e.g. the
-            // focus ring's inner padding) by ellipsizing instead of overflowing.
-            Flexible(
-              child: Text(
-                channel.name,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: p.fg,
-                      fontWeight: FontWeight.w600,
-                    ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              ),
-            ),
-            Text(
-              channel.number,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: p.dim,
-                  ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Abbr extends StatelessWidget {
-  const _Abbr({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    final abbr = name.isNotEmpty
-        ? name.trim().split(RegExp(r'\s+')).take(2).map((w) => w[0]).join()
-        : '?';
-    return Text(
-      abbr.toUpperCase(),
-      style: TextStyle(
-        color: p.accent,
-        fontSize: 16,
-        fontWeight: FontWeight.w800,
-      ),
     );
   }
 }

@@ -22,8 +22,15 @@ class SearchEntry extends Equatable {
   final String? streamUrl;
 
   @override
-  List<Object?> get props =>
-      [id, playlistId, title, subtitle, posterUrl, kind, streamUrl];
+  List<Object?> get props => [
+    id,
+    playlistId,
+    title,
+    subtitle,
+    posterUrl,
+    kind,
+    streamUrl,
+  ];
 }
 
 class SearchState extends Equatable {
