@@ -216,8 +216,8 @@ class _SearchBar extends StatelessWidget {
 }
 
 /// Displays search results grouped by type as horizontal rails.
-/// Live channels, then Movies, then Series. Only renders a rail when it has
-/// entries.
+/// Movies, then Series, then Live TV, each in its own row. Only renders a
+/// rail when it has entries.
 class _ResultsRails extends StatelessWidget {
   const _ResultsRails({
     required this.results,
@@ -261,13 +261,6 @@ class _ResultsRails extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.only(top: 8, bottom: 16),
       children: [
-        if (channels.isNotEmpty)
-          _ChannelRail(
-            label: l10n.live,
-            entries: channels,
-            onOpen: onOpen,
-            textTheme: textTheme,
-          ),
         if (movies.isNotEmpty)
           _SectionRail(
             label: l10n.movies,
@@ -283,6 +276,13 @@ class _ResultsRails extends StatelessWidget {
             onOpen: onOpen,
             textTheme: textTheme,
             favoriteKeys: favoriteKeys,
+          ),
+        if (channels.isNotEmpty)
+          _ChannelRail(
+            label: l10n.live,
+            entries: channels,
+            onOpen: onOpen,
+            textTheme: textTheme,
           ),
       ],
     );
