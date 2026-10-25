@@ -23,6 +23,10 @@ class PosterCard extends StatelessWidget {
   final bool isFavorite;
   final bool autofocus;
   final VoidCallback? onToggleFavorite;
+
+  /// Widest the card draws; narrower when its grid tile is narrower.
+  static const double width = 130;
+
   const PosterCard({
     super.key,
     required this.title,
@@ -45,7 +49,7 @@ class PosterCard extends StatelessWidget {
       autofocus: autofocus,
       onPressed: onTap ?? () {},
       child: SizedBox(
-        width: 130,
+        width: PosterCard.width,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -71,14 +75,18 @@ class PosterCard extends StatelessWidget {
                       top: 8,
                       right: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: p.scrim,
                           borderRadius: BorderRadius.circular(5),
                         ),
                         child: Text(
                           badge!,
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
                                 color: p.onScrim,
                                 fontWeight: FontWeight.w700,
                               ),

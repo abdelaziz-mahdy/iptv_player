@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/di/injection.dart';
@@ -18,10 +21,10 @@ import 'cubit/grid_cubit.dart';
 /// Display label for a category: the synthetic ones are localized here, since
 /// the cubit has no BuildContext.
 String _categoryLabel(AppLocalizations l10n, CategoryRef c) => switch (c.id) {
-      kRecentCategoryId => l10n.recentlyViewed,
-      '' => l10n.allCategory,
-      _ => c.name,
-    };
+  kRecentCategoryId => l10n.recentlyViewed,
+  '' => l10n.allCategory,
+  _ => c.name,
+};
 
 /// Minimum width (logical pixels) for the wide (sidebar + grid) layout.
 const double _kWideBreakpoint = 700.0;
@@ -29,20 +32,72 @@ const double _kWideBreakpoint = 700.0;
 /// Poster metrics — shared by the grid delegate and the letter jump, which
 /// computes a scroll offset from them.
 const double _kPosterWidth = 150.0;
-
-/// Fixed tile height rather than an aspect ratio. [PosterCard] is a fixed-width
-/// column whose height does not shrink with the tile, so deriving height from
-/// width overflows whenever the columns pack tighter than the card needs —
-/// 15 px at a 1600 px window, and it moves with every resize.
-const double _kPosterExtent = 260.0;
 const double _kPosterSpacing = 10.0;
 
+/// Tile height has to follow the tile width. A plain aspect ratio clipped the
+/// title (PosterCard adds a fixed-height text block under a 2:3 poster), and a
+/// fixed 260 px height fit the widest tiles but left a ~50 px gap under every
+/// title on a TV, where tiles are only ~120 px wide.
+({int columns, double extent}) _posterLayout(
+  double crossExtent,
+  double textBlock,
+) {
+  final columns = math.max(
+    1,
+    (crossExtent / (_kPosterWidth + _kPosterSpacing)).ceil(),
+  );
+  final tileWidth = (crossExtent - _kPosterSpacing * (columns - 1)) / columns;
+  // FocusableButton keeps a 3 px gutter around the card for its focus ring.
+  final posterWidth = math.min(tileWidth - 6, PosterCard.width);
+  return (columns: columns, extent: posterWidth * 1.5 + 6 + textBlock);
+}
+
+/// Height PosterCard's title and subtitle lines take at the current text
+/// scale, measured rather than guessed so larger text sizes still fit.
+double _posterTextBlock(BuildContext context) {
+  final tt = Theme.of(context).textTheme;
+  final scaler = MediaQuery.textScalerOf(context);
+  // Merge with the inherited default style: a Text widget does, and without
+  // it the font family (and so the line metrics) differ from what renders.
+  final base = DefaultTextStyle.of(context).style;
+  double line(TextStyle? style) => (TextPainter(
+    text: TextSpan(text: 'Ag', style: base.merge(style)),
+    textDirection: TextDirection.ltr,
+    textScaler: scaler,
+    maxLines: 1,
+  )..layout()).height;
+  // 6 px gap above the title (see PosterCard), plus slack: measured lines
+  // still come out ~3 px under what the card renders, cause not pinned down.
+  return 6 + line(tt.labelLarge) + line(tt.bodyMedium) + 6;
+}
+
+class _PosterGridDelegate extends SliverGridDelegate {
+  const _PosterGridDelegate(this.textBlock);
+
+  final double textBlock;
+
+  @override
+  SliverGridLayout getLayout(SliverConstraints constraints) {
+    final cross = constraints.crossAxisExtent;
+    final l = _posterLayout(cross, textBlock);
+    final tileWidth = (cross - _kPosterSpacing * (l.columns - 1)) / l.columns;
+    return SliverGridRegularTileLayout(
+      crossAxisCount: l.columns,
+      mainAxisStride: l.extent + _kPosterSpacing,
+      crossAxisStride: tileWidth + _kPosterSpacing,
+      childMainAxisExtent: l.extent,
+      childCrossAxisExtent: tileWidth,
+      reverseCrossAxis: axisDirectionIsReversed(constraints.crossAxisDirection),
+    );
+  }
+
+  @override
+  bool shouldRelayout(_PosterGridDelegate oldDelegate) =>
+      oldDelegate.textBlock != textBlock;
+}
+
 class GridScreen extends StatelessWidget {
-  const GridScreen({
-    super.key,
-    required this.kind,
-    required this.onOpen,
-  });
+  const GridScreen({super.key, required this.kind, required this.onOpen});
 
   final GridKind kind;
   final void Function(GridEntry entry) onOpen;
@@ -78,22 +133,13 @@ class _GridView extends StatelessWidget {
     return BlocBuilder<GridCubit, GridState>(
       builder: (ctx, state) {
         if (state.loading) {
-          return Scaffold(
-            backgroundColor: p.bg,
-            body: const LoadingState(),
-          );
+          return Scaffold(backgroundColor: p.bg, body: const LoadingState());
         }
 
         if (isWide) {
-          return _WideLayout(
-            title: title,
-            onOpen: onOpen,
-          );
+          return _WideLayout(title: title, onOpen: onOpen);
         } else {
-          return _NarrowLayout(
-            title: title,
-            onOpen: onOpen,
-          );
+          return _NarrowLayout(title: title, onOpen: onOpen);
         }
       },
     );
@@ -137,9 +183,9 @@ class _WideLayoutState extends State<_WideLayout> {
     if (target == null || !mounted || !_gridController.hasClients) return;
 
     final width = MediaQuery.sizeOf(context).width - CategorySidebar.width - 25;
-    final columns = (width / _kPosterWidth).ceil().clamp(1, 100);
-    final row = target ~/ columns;
-    final offset = row * (_kPosterExtent + _kPosterSpacing);
+    final l = _posterLayout(width - 24, _posterTextBlock(context));
+    final row = target ~/ l.columns;
+    final offset = row * (l.extent + _kPosterSpacing);
     _gridController.jumpTo(
       offset.clamp(0.0, _gridController.position.maxScrollExtent),
     );
@@ -166,7 +212,11 @@ class _WideLayoutState extends State<_WideLayout> {
                   onPressed: () => _jumpToLetter(displayed),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Icon(Icons.sort_by_alpha, color: p.fg, size: IconSize.md),
+                    child: Icon(
+                      Icons.sort_by_alpha,
+                      color: p.fg,
+                      size: IconSize.md,
+                    ),
                   ),
                 ),
             ],
@@ -186,9 +236,9 @@ class _WideLayoutState extends State<_WideLayout> {
                 // "All" is the empty id; the cubit models that selection as null.
                 selectedId: state.selectedCategoryId ?? '',
                 pinnedCount: state.pinnedCategoryCount,
-                onSelect: (id) => ctx
-                    .read<GridCubit>()
-                    .selectCategory(id.isEmpty ? null : id),
+                onSelect: (id) => ctx.read<GridCubit>().selectCategory(
+                  id.isEmpty ? null : id,
+                ),
               ),
               // Divider
               Container(width: 1, color: p.border),
@@ -198,21 +248,16 @@ class _WideLayoutState extends State<_WideLayout> {
                     ? Center(
                         child: Text(
                           AppLocalizations.of(context)!.noItemsFound,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyLarge
-                              ?.copyWith(color: p.dim),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyLarge?.copyWith(color: p.dim),
                         ),
                       )
                     : GridView.builder(
                         controller: _gridController,
                         padding: const EdgeInsets.all(12),
-                        gridDelegate:
-                            const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: _kPosterWidth,
-                          mainAxisSpacing: _kPosterSpacing,
-                          crossAxisSpacing: _kPosterSpacing,
-                          mainAxisExtent: _kPosterExtent,
+                        gridDelegate: _PosterGridDelegate(
+                          _posterTextBlock(context),
                         ),
                         itemCount: displayed.length,
                         itemBuilder: (context, index) {
@@ -297,7 +342,9 @@ class _NarrowLayout extends StatelessWidget {
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: p.border)),
                   ),
@@ -320,7 +367,11 @@ class _NarrowLayout extends StatelessWidget {
                             style: tt.labelSmall?.copyWith(color: p.dim),
                           ),
                         ),
-                      Icon(Icons.chevron_right, color: p.dim, size: IconSize.sm),
+                      Icon(
+                        Icons.chevron_right,
+                        color: p.dim,
+                        size: IconSize.sm,
+                      ),
                     ],
                   ),
                 ),
@@ -377,16 +428,7 @@ class CategoryResultsScreen extends StatelessWidget {
             )
           : GridView.builder(
               padding: const EdgeInsets.all(12),
-              gridDelegate:
-                  const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: _kPosterWidth,
-                mainAxisSpacing: _kPosterSpacing,
-                crossAxisSpacing: _kPosterSpacing,
-                // Fixed height, same reason as the main grid: PosterCard's
-                // height does not follow the tile width, so a ratio overflows
-                // at narrow widths (17 px on a 412 px phone).
-                mainAxisExtent: _kPosterExtent,
-              ),
+              gridDelegate: _PosterGridDelegate(_posterTextBlock(context)),
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final entry = items[index];
@@ -406,4 +448,3 @@ class CategoryResultsScreen extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Shared sidebar tile widget (wide layout)
 // ---------------------------------------------------------------------------
-
