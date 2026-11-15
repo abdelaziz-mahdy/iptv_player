@@ -3,6 +3,18 @@ import 'package:iptv_player/data/models/models.dart';
 import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
 import 'package:iptv_player/features/live/cubit/live_cubit.dart';
 
+/// Channels spread over the fake's two channel categories (cat3 Sports,
+/// cat4 News), so groups — and their order — exist.
+class _CategorisedContent extends FakeContentRepository {
+  @override
+  Stream<List<Channel>> channels(String playlistId) => Stream.value(const [
+        Channel(id: 'c1', playlistId: 'p1', name: 'One', number: '1',
+            streamUrl: 'http://x/1', categoryId: 'cat3'),
+        Channel(id: 'c2', playlistId: 'p1', name: 'Two', number: '2',
+            streamUrl: 'http://x/2', categoryId: 'cat4'),
+      ]);
+}
+
 void main() {
   group('LiveCubit', () {
     test('initial state has loading=false with empty collections', () {
@@ -175,6 +187,25 @@ void main() {
   });
 
   group('LiveCubit — group recency', () {
+    test('selecting a group does not move it until the section is left',
+        () async {
+      final cubit = LiveCubit(_CategorisedContent(), FakePlaylistRepository());
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.groups.map((g) => g.id), [kAllGroupId, 'cat3', 'cat4']);
+
+      cubit.selectGroup('cat4');
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.groups.map((g) => g.id), [kAllGroupId, 'cat3', 'cat4'],
+          reason: 'the clicked row must stay where the user clicked it');
+      expect(cubit.state.selectedGroupId, 'cat4');
+
+      cubit.applyRecentCategoryOrder();
+      expect(cubit.state.groups.map((g) => g.id), [kAllGroupId, 'cat4', 'cat3']);
+
+      await cubit.close();
+    });
+
     test('selecting a real group records it; synthetic groups do not',
         () async {
       final content = FakeContentRepository();

@@ -153,6 +153,11 @@ class GridCubit extends Cubit<GridState> {
   List<String> _recentKeys = const [];
   List<String> _recentCategoryIds = const [];
 
+  /// Recency changes from the user opening categories wait here until the
+  /// section is left ([applyRecentCategoryOrder]): re-sorting the sidebar
+  /// under the user's focus moved the row they had just clicked out of view.
+  List<String>? _pendingRecentCategoryIds;
+
   /// Set once per playlist: the category the user was last in becomes the
   /// initial selection.
   bool _restoredSelection = false;
@@ -189,6 +194,7 @@ class GridCubit extends Cubit<GridState> {
     _rawItems = const [];
     _recentKeys = const [];
     _recentCategoryIds = const [];
+    _pendingRecentCategoryIds = null;
     _restoredSelection = false;
 
     if (pid == null) {
@@ -220,12 +226,14 @@ class GridCubit extends Cubit<GridState> {
     });
 
     _recentCatSub = _content.recentCategoryIds(pid, _mediaKind).listen((ids) {
+      if (_restoredSelection) {
+        _pendingRecentCategoryIds = ids;
+        return;
+      }
+      _restoredSelection = true;
       _recentCategoryIds = ids;
-      if (!_restoredSelection) {
-        _restoredSelection = true;
-        if (ids.isNotEmpty && state.selectedCategoryId == null) {
-          emit(state.copyWith(selectedCategoryId: ids.first));
-        }
+      if (ids.isNotEmpty && state.selectedCategoryId == null) {
+        emit(state.copyWith(selectedCategoryId: ids.first));
       }
       _recompute();
     });
@@ -350,6 +358,16 @@ class GridCubit extends Cubit<GridState> {
       recentItems: recent,
       clearCategory: missing,
     ));
+  }
+
+  /// Moves recently opened categories into the pinned block. Called when the
+  /// section is left, so the list never re-sorts while it is on screen.
+  void applyRecentCategoryOrder() {
+    final pending = _pendingRecentCategoryIds;
+    if (pending == null) return;
+    _pendingRecentCategoryIds = null;
+    _recentCategoryIds = pending;
+    _recompute();
   }
 
   /// Select a category by its id.

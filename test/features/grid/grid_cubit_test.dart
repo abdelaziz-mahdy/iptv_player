@@ -351,7 +351,7 @@ void main() {
   });
 
   group('GridCubit — recent categories', () {
-    test('a used category is pinned under All and not repeated below',
+    test('selecting a category does not move it while the list is shown',
         () async {
       final content = FakeContentRepository();
       final cubit = GridCubit(content, FakePlaylistRepository(), GridKind.movies);
@@ -362,6 +362,25 @@ void main() {
       // cat2 (Drama) sits after cat1 (Action) in the provider's order.
       cubit.selectCategory('cat2');
       await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.categories.map((c) => c.id), ['', 'cat1', 'cat2'],
+          reason: 'the clicked row must stay where the user clicked it');
+      expect(cubit.state.selectedCategoryId, 'cat2');
+
+      await cubit.close();
+    });
+
+    test('a used category is pinned under All once the section is left',
+        () async {
+      final content = FakeContentRepository();
+      final cubit = GridCubit(content, FakePlaylistRepository(), GridKind.movies);
+
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+      cubit.selectCategory('cat2');
+      await Future<void>.delayed(Duration.zero);
+
+      cubit.applyRecentCategoryOrder();
 
       final ids = cubit.state.categories.map((c) => c.id).toList();
       expect(ids, ['', 'cat2', 'cat1'],
