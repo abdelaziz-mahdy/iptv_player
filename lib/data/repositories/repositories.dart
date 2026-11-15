@@ -5,7 +5,7 @@ import '../models/models.dart';
 const int kRecentlyViewedLimit = 20;
 
 /// How many recently-opened categories are pinned above the provider's list.
-const int kRecentCategoryLimit = 15;
+const int kRecentCategoryLimit = 5;
 
 /// Manages the set of user playlists and which one is active.
 abstract class PlaylistRepository {

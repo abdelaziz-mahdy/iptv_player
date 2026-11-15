@@ -321,4 +321,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String durationMinutes(int minutes) {
     return '${minutes}m';
   }
+
+  @override
+  String get recentGroups => 'Recent';
 }
