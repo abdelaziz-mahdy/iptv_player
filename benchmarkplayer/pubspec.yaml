@@ -15,7 +15,7 @@ dependencies:
 
   # fvp/MDK backend (via the video_player interface).
   video_player: ^2.11.1
-  fvp: ^0.37.2
+  fvp: ^0.40.0
 
   # media_kit/libmpv backend.
   media_kit: ^1.1.11
@@ -26,16 +26,15 @@ dependencies:
   logging: ^1.3.0
 
 dependency_overrides:
-  # PR #379 as merged upstream: the SurfaceView platform view, with direct
-  # MediaCodec-to-surface output now carried by the `tunnel` option (the fork's
-  # separate `directSurface` option and its FVP_DIRECT_SURFACE env gate were
-  # dropped at wang-bin's request). Audio backend selection needs no fork:
-  # stock fvp forwards options['player'] -> setProperty, and MDK's
-  # "audio.renderer" property == setAudioBackends.
+  # The SurfaceView platform view and its `tunnel` direct output shipped in
+  # fvp 0.38 (PR #379). Audio backend selection needs no fork: stock fvp
+  # forwards options['player'] -> setProperty, and MDK's "audio.renderer"
+  # property == setAudioBackends.
+  # Same fvp as the app: 0.40.0 plus the fvp#412 dispose fix.
   fvp:
     git:
       url: https://github.com/abdelaziz-mahdy/fvp.git
-      ref: 70806fb58dcaf0635a21acd648cb76d8a3d2f0f0
+      ref: 8a53084e4be37b30c22d7519641a141e67138eb8
 
 dev_dependencies:
   flutter_lints: ^5.0.0

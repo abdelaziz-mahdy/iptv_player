@@ -83,6 +83,28 @@ without losing HDR elsewhere. If configs match (and rendering still
 corrupts), caveat filtering is not the discriminator. Every variant's
 `egl_probe.txt` carries the answer.
 
+## Player teardown repro (fvp#412)
+
+Closing a player is where the TV froze (ANR in `mdkPlayerAPI_reset`). Two
+modes exercise it in one process, logging how long each close held the main
+thread (a 50 ms heartbeat, so a block anywhere in `dispose()` is caught; a
+close that never logs is a freeze):
+
+- `BENCH_CYCLES=N` (fvp, with `BENCH_VIEW=platform FVP_TUNNEL=true` for the
+  IPTV app's path): open, play `BENCH_CYCLE_PLAY` s, remove the view, wait
+  `BENCH_CYCLE_GAP_MS`, dispose. `BENCH_CYCLE_OVERLAP=true` opens the next
+  player before disposing the previous one, like next/previous episode.
+  Lines: `[BENCH_CYCLE] n=3 closed dispose=118ms main_held_max=99ms`.
+- `BENCH_MODE=teardown`: `BENCH_TEARDOWN_PLAYERS` texture players per round,
+  textures released, `BENCH_TEARDOWN_GAP_MS` later disposed
+  (`lib/teardown_repro.dart`, after the emulator repro on fvp#412).
+  `BENCH_URL` may list several comma-separated clips.
+
+On an Android emulator with fvp 0.40.0: `BENCH_CYCLE_GAP_MS=0` crashes on the
+first close (SIGSEGV in `surfaceDestroyed`), and teardown rounds hold the main
+thread 0.9-2.7 s. Both are fixed by the pinned fork commit. The emulator
+reaches the clip server as `http://10.0.2.2:8000/`.
+
 ## Dart-defines the app understands
 
 | define | values | meaning |
