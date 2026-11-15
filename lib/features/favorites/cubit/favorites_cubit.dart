@@ -14,27 +14,38 @@ import '../../grid/cubit/grid_cubit.dart' show GridEntry;
 
 class FavoritesState extends Equatable {
   final bool loading;
+
+  /// Newest favorite first.
   final List<GridEntry> entries;
+
+  /// Watch progress of favorite movies, keyed by entry id. Series have no
+  /// single position and channels are live, so neither has an entry.
+  final Map<String, WatchProgress> movieProgress;
 
   const FavoritesState({
     this.loading = false,
     this.entries = const [],
+    this.movieProgress = const {},
   });
 
   bool get isEmpty => entries.isEmpty;
 
+  WatchProgress? progressFor(GridEntry entry) => movieProgress[entry.id];
+
   FavoritesState copyWith({
     bool? loading,
     List<GridEntry>? entries,
+    Map<String, WatchProgress>? movieProgress,
   }) {
     return FavoritesState(
       loading: loading ?? this.loading,
       entries: entries ?? this.entries,
+      movieProgress: movieProgress ?? this.movieProgress,
     );
   }
 
   @override
-  List<Object?> get props => [loading, entries];
+  List<Object?> get props => [loading, entries, movieProgress];
 }
 
 // ---------------------------------------------------------------------------
@@ -42,11 +53,16 @@ class FavoritesState extends Equatable {
 // ---------------------------------------------------------------------------
 
 class FavoritesCubit extends Cubit<FavoritesState> {
-  FavoritesCubit(this._content, this._playlists)
+  FavoritesCubit(this._content, this._playlists, {this._playback})
       : super(const FavoritesState());
 
   final ContentRepository _content;
   final PlaylistRepository _playlists;
+
+  /// Optional: powers the watched/progress look on favorite movies.
+  final PlaybackRepository? _playback;
+  StreamSubscription<List<WatchProgress>>? _progressSub;
+  Map<String, WatchProgress> _progress = const {};
 
   StreamSubscription<Playlist?>? _activeSub;
   StreamSubscription<List<Favorite>>? _favsSub;
@@ -79,6 +95,8 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     _moviesSub?.cancel();
     _seriesSub?.cancel();
     _channelsSub?.cancel();
+    _progressSub?.cancel();
+    _progress = const {};
     _favorites = [];
     _movies = [];
     _series = [];
@@ -108,6 +126,11 @@ class FavoritesCubit extends Cubit<FavoritesState> {
       _channels = channels;
       _rebuild();
     });
+
+    _progressSub = _playback?.progressForPlaylist(pid).listen((rows) {
+      _progress = {for (final r in rows) r.itemKey: r};
+      _rebuild();
+    });
   }
 
   /// Unresolvable favorites already logged this session (avoid re-logging on
@@ -116,16 +139,24 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 
   void _rebuild() {
     final entries = <GridEntry>[];
-    for (final fav in _favorites) {
+    final movieProgress = <String, WatchProgress>{};
+    final newestFirst = [..._favorites]
+      ..sort((a, b) => b.addedAt.compareTo(a.addedAt));
+    for (final fav in newestFirst) {
       final entry = _resolve(fav);
       if (entry != null) {
         entries.add(entry);
+        if (fav.kind == MediaKind.movie) {
+          final p = _progress['movie:${entry.id}'];
+          if (p != null) movieProgress[entry.id] = p;
+        }
       } else if (_loggedMissing.add(fav.itemKey)) {
         appLog.warning(
             'favorites: ${fav.itemKey} title="${fav.title}" unresolvable — hidden');
       }
     }
-    emit(state.copyWith(loading: false, entries: entries));
+    emit(state.copyWith(
+        loading: false, entries: entries, movieProgress: movieProgress));
   }
 
   /// Finds the favorited item among [items].
@@ -253,6 +284,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     await _moviesSub?.cancel();
     await _seriesSub?.cancel();
     await _channelsSub?.cancel();
+    await _progressSub?.cancel();
     return super.close();
   }
 }

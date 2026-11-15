@@ -96,6 +96,45 @@ void main() {
       await cubit.close();
     });
 
+
+    test('newest favorite comes first', () async {
+      final contentRepo = FakeContentRepository();
+      await contentRepo.toggleFavorite('movie:m1', 'p1', MediaKind.movie,
+          title: 'The Signal');
+      await contentRepo.toggleFavorite('movie:m2', 'p1', MediaKind.movie,
+          title: 'Dune');
+
+      final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository());
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.entries.map((e) => e.id), ['m2', 'm1']);
+      await cubit.close();
+    });
+
+    test('favorite movies carry their watch progress', () async {
+      final contentRepo = FakeContentRepository();
+      final playback = FakePlaybackRepository();
+      await contentRepo.toggleFavorite('movie:m1', 'p1', MediaKind.movie,
+          title: 'The Signal');
+      await playback.saveProgress(WatchProgress(
+        itemKey: 'movie:m1',
+        playlistId: 'p1',
+        kind: MediaKind.movie,
+        positionSec: 5900,
+        durationSec: 6000,
+        updatedAt: DateTime.utc(2026),
+      ));
+
+      final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository(),
+          playback: playback);
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      final entry = cubit.state.entries.single;
+      expect(cubit.state.progressFor(entry)?.isWatched, isTrue);
+      await cubit.close();
+    });
     // Provider stream ids embedded in favorite keys are not stable across
     // re-imports — these cover the self-healing resolution (title snapshot).
     group('id renumbering', () {

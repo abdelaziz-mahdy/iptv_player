@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/poster_card.dart';
 import '../../core/widgets/section_app_bar.dart';
 import '../../core/widgets/status_views.dart';
+import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../grid/cubit/grid_cubit.dart' show GridEntry;
@@ -25,6 +26,7 @@ class FavoritesScreen extends StatelessWidget {
       create: (_) => FavoritesCubit(
         sl<ContentRepository>(),
         sl<PlaylistRepository>(),
+        playback: sl<PlaybackRepository>(),
       )..load(),
       child: _FavoritesView(onOpen: onOpen),
     );
@@ -80,7 +82,11 @@ class _FavoritesView extends StatelessWidget {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final entry = state.entries[index];
+                        final watch = state.progressFor(entry);
                         return PosterCard(
+                          progress: watch?.fraction,
+                          remainingSec: watch?.remainingSec,
+                          watched: watch?.isWatched ?? false,
                           autofocus: index == 0,
                           title: entry.title,
                           subtitle: entry.subtitle,

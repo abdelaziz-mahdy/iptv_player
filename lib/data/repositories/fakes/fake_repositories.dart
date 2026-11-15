@@ -172,6 +172,8 @@ class FakeContentRepository implements ContentRepository {
   @override
   Stream<List<Favorite>> favorites(String playlistId) => _favorites.stream;
 
+  int _favoriteClock = 0;
+
   @override
   Future<void> toggleFavorite(String itemKey, String playlistId, MediaKind kind,
       {String title = ''}) async {
@@ -183,7 +185,8 @@ class FakeContentRepository implements ContentRepository {
             itemKey: itemKey,
             playlistId: playlistId,
             kind: kind,
-            addedAt: DateTime.utc(2026),
+            // Later additions are newer, as with the real clock.
+            addedAt: DateTime.utc(2026).add(Duration(seconds: _favoriteClock++)),
             title: title),
       ];
     } else {
