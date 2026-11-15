@@ -354,7 +354,7 @@ class _ImportViewState extends State<_ImportView> {
     return FocusableButton(
       semanticLabel: l10n.importAction,
       onPressed:
-          state.submitting ? () {} : () => _handleSubmit(context, state),
+          state.submitting ? () {} : () => _handleSubmit(context),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         decoration: BoxDecoration(
@@ -385,11 +385,14 @@ class _ImportViewState extends State<_ImportView> {
     );
   }
 
-  void _handleSubmit(BuildContext context, ImportState state) {
+  void _handleSubmit(BuildContext context) {
     final cubit = context.read<ImportCubit>();
     final name = _nameController.text.trim();
 
-    switch (state.tab) {
+    // The current tab, not the builder's: the button's BlocBuilder does not
+    // rebuild on tab changes, so its `state` kept the first tab (Xtream) and
+    // an M3U import submitted the empty Xtream server field.
+    switch (cubit.state.tab) {
       case ImportTab.xtream:
         cubit.submit(
           name: name.isEmpty ? _xtreamServerController.text.trim() : name,
