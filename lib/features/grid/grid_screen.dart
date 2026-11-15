@@ -242,7 +242,6 @@ class _WideLayoutState extends State<_WideLayout> {
                 // "All" is the empty id; the cubit models that selection as null.
                 selectedId: state.selectedCategoryId ?? '',
                 pinnedCount: state.pinnedCategoryCount,
-                recentCount: state.recentCategoryCount,
                 onSelect: (id) => ctx.read<GridCubit>().selectCategory(
                   id.isEmpty ? null : id,
                 ),

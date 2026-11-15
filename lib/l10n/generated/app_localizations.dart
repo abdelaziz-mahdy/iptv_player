@@ -679,12 +679,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{minutes}m'**
   String durationMinutes(int minutes);
-
-  /// Heading over the categories the user opened most recently, in the category sidebar.
-  ///
-  /// In en, this message translates to:
-  /// **'Recent'**
-  String get recentGroups;
 }
 
 class _AppLocalizationsDelegate

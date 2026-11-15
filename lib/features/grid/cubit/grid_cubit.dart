@@ -78,10 +78,6 @@ class GridState extends Equatable {
   /// its separator here.
   final int pinnedCategoryCount;
 
-  /// How many of the pinned entries are recently opened categories (the
-  /// sidebar heads them "Recent"); they sit just above [pinnedCategoryCount].
-  final int recentCategoryCount;
-
   const GridState({
     this.loading = false,
     this.items = const [],
@@ -91,7 +87,6 @@ class GridState extends Equatable {
     this.favoriteKeys = const {},
     this.progressByKey = const {},
     this.pinnedCategoryCount = 0,
-    this.recentCategoryCount = 0,
   });
 
   GridState copyWith({
@@ -104,7 +99,6 @@ class GridState extends Equatable {
     Set<String>? favoriteKeys,
     Map<String, WatchProgress>? progressByKey,
     int? pinnedCategoryCount,
-    int? recentCategoryCount,
   }) {
     return GridState(
       loading: loading ?? this.loading,
@@ -116,7 +110,6 @@ class GridState extends Equatable {
       favoriteKeys: favoriteKeys ?? this.favoriteKeys,
       progressByKey: progressByKey ?? this.progressByKey,
       pinnedCategoryCount: pinnedCategoryCount ?? this.pinnedCategoryCount,
-      recentCategoryCount: recentCategoryCount ?? this.recentCategoryCount,
     );
   }
 
@@ -136,7 +129,6 @@ class GridState extends Equatable {
         favoriteKeys,
         progressByKey,
         pinnedCategoryCount,
-        recentCategoryCount,
       ];
 }
 
@@ -341,9 +333,9 @@ class GridCubit extends Cubit<GridState> {
 
     final catById = {for (final c in _resolvedCats) c.id: c};
 
-    // Categories the user has opened come first, most recent first and
-    // capped. Each one ALSO stays in its place in the provider block below:
-    // removing it there moved the row the user had just clicked.
+    // Categories the user has opened come first, most recent first and capped;
+    // each one is then skipped in the provider block below so nothing is
+    // listed twice.
     final pinnedIds = <String>{};
     final pinnedCats = <CategoryRef>[];
     for (final id in _recentCategoryIds) {
@@ -362,6 +354,7 @@ class GridCubit extends Cubit<GridState> {
     ];
     final pinnedCount = cats.length;
     for (final c in _resolvedCats) {
+      if (pinnedIds.contains(c.id)) continue;
       cats.add(c.copyWith(count: counts[c.id] ?? 0));
     }
 
@@ -377,7 +370,6 @@ class GridCubit extends Cubit<GridState> {
       items: _rawItems,
       categories: cats,
       pinnedCategoryCount: pinnedCount,
-      recentCategoryCount: pinnedCats.length,
       recentItems: recent,
       clearCategory: missing,
     ));

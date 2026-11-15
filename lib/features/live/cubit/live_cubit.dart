@@ -144,7 +144,6 @@ class LiveCubit extends Cubit<LiveState> {
       loading: false,
       groups: built.groups,
       pinnedGroupCount: built.pinned,
-      recentGroupCount: built.recent,
       selectedGroupId: selectedId,
       channelsInGroup: _filterChannels(_allChannels, selectedId),
     ));
@@ -175,14 +174,13 @@ class LiveCubit extends Cubit<LiveState> {
   ///
   /// Order: "Recently Viewed" (channels), "All", the groups the user has
   /// opened — most recent first, capped at [kRecentCategoryLimit] — then the
-  /// rest in the provider's own order. A group in the recency block ALSO
-  /// stays in its place below: removing it there moved the row the user had
-  /// just clicked.
+  /// rest in the provider's own order. A group in the recency block is
+  /// *removed* from the block below, so nothing is listed twice.
   ///
   /// Channels with null or unknown categoryId are grouped under "Other" (only
   /// when at least one named category exists; otherwise they all go into
   /// "All" only).
-  ({List<ChannelGroup> groups, int pinned, int recent}) _buildGroups(
+  ({List<ChannelGroup> groups, int pinned}) _buildGroups(
       List<Channel> channels) {
     // Build per-category counts.
     final counts = <String, int>{}; // categoryId → count
@@ -222,12 +220,12 @@ class LiveCubit extends Cubit<LiveState> {
     final pinnedCount = groups.length;
 
     for (final id in _categoryOrder) {
-      if (!counts.containsKey(id)) continue;
+      if (pinned.contains(id) || !counts.containsKey(id)) continue;
       groups.add(group(id));
     }
     // Categories present on channels but absent from the provider's list.
     for (final id in counts.keys) {
-      if (_categoryOrder.contains(id)) continue;
+      if (pinned.contains(id) || _categoryOrder.contains(id)) continue;
       groups.add(group(id));
     }
 
@@ -235,7 +233,7 @@ class LiveCubit extends Cubit<LiveState> {
       groups.add((id: kOtherGroupId, name: '', count: uncategorised));
     }
 
-    return (groups: groups, pinned: pinnedCount, recent: pinned.length);
+    return (groups: groups, pinned: pinnedCount);
   }
 
   /// Returns channels belonging to the group identified by [groupId].

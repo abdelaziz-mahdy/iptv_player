@@ -193,34 +193,6 @@ void main() {
       await cubit.close();
     });
 
-    test(
-      'a used group is pinned at once and stays in its place below',
-      () async {
-        final content = _GroupedChannels();
-        final cubit = LiveCubit(content, FakePlaylistRepository());
-        await cubit.load();
-        await Future<void>.delayed(Duration.zero);
-        final before = cubit.state.groups.map((g) => g.id).toList();
-
-        cubit.selectGroup('cat3');
-        // Recorded, then emitted back by the recency stream.
-        await Future<void>.delayed(Duration.zero);
-        await Future<void>.delayed(Duration.zero);
-
-        final ids = cubit.state.groups.map((g) => g.id).toList();
-        final pinned = cubit.state.pinnedGroupCount;
-        expect(cubit.state.recentGroupCount, 1);
-        expect(ids[pinned - 1], 'cat3', reason: 'pinned as recent right away');
-        expect(
-          ids.sublist(pinned),
-          before.sublist(before.indexOf(kAllGroupId) + 1),
-          reason: 'the full list below is unchanged, cat3 included',
-        );
-
-        await cubit.close();
-      },
-    );
-
     test('the last used group is restored on the next load', () async {
       final content = FakeContentRepository();
       final playlists = FakePlaylistRepository();
@@ -242,35 +214,4 @@ void main() {
       await second.close();
     });
   });
-}
-
-/// Fake channels spread over the fake's channel categories (Sports, News).
-class _GroupedChannels extends FakeContentRepository {
-  @override
-  Stream<List<Channel>> channels(String playlistId) => Stream.value(const [
-    Channel(
-      id: 'a',
-      playlistId: 'p1',
-      name: 'A',
-      number: '1',
-      streamUrl: 'u1',
-      categoryId: 'cat4',
-    ),
-    Channel(
-      id: 'b',
-      playlistId: 'p1',
-      name: 'B',
-      number: '2',
-      streamUrl: 'u2',
-      categoryId: 'cat3',
-    ),
-    Channel(
-      id: 'c',
-      playlistId: 'p1',
-      name: 'C',
-      number: '3',
-      streamUrl: 'u3',
-      categoryId: 'cat3',
-    ),
-  ]);
 }

@@ -10,7 +10,6 @@ class LiveState extends Equatable {
     this.selectedGroupId,
     this.channelsInGroup = const [],
     this.pinnedGroupCount = 0,
-    this.recentGroupCount = 0,
   });
 
   final bool loading;
@@ -23,17 +22,12 @@ class LiveState extends Equatable {
   /// separator here.
   final int pinnedGroupCount;
 
-  /// How many of the pinned entries are recently opened groups (the sidebar
-  /// heads them "Recent"); they sit just above [pinnedGroupCount].
-  final int recentGroupCount;
-
   LiveState copyWith({
     bool? loading,
     List<ChannelGroup>? groups,
     String? selectedGroupId,
     List<Channel>? channelsInGroup,
     int? pinnedGroupCount,
-    int? recentGroupCount,
   }) {
     return LiveState(
       loading: loading ?? this.loading,
@@ -41,17 +35,10 @@ class LiveState extends Equatable {
       selectedGroupId: selectedGroupId ?? this.selectedGroupId,
       channelsInGroup: channelsInGroup ?? this.channelsInGroup,
       pinnedGroupCount: pinnedGroupCount ?? this.pinnedGroupCount,
-      recentGroupCount: recentGroupCount ?? this.recentGroupCount,
     );
   }
 
   @override
-  List<Object?> get props => [
-        loading,
-        groups,
-        selectedGroupId,
-        channelsInGroup,
-        pinnedGroupCount,
-        recentGroupCount,
-      ];
+  List<Object?> get props =>
+      [loading, groups, selectedGroupId, channelsInGroup, pinnedGroupCount];
 }

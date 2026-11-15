@@ -319,7 +319,4 @@ class AppLocalizationsAr extends AppLocalizations {
   String durationMinutes(int minutes) {
     return '$minutes د';
   }
-
-  @override
-  String get recentGroups => 'الأخيرة';
 }
