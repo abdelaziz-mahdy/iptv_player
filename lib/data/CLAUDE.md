@@ -43,7 +43,7 @@ are both query arguments — each section gets its own budget
 provider's order; `getCategories` orders by it with `name` as the tie-break
 (rows imported before v6 all carry 0). `CategoryUsageRows` records when the user
 last opened each category, which drives the recency block pinned above the
-provider's list (`kRecentCategoryLimit`).
+provider's list under a "RECENT" heading (`kRecentCategoryLimit`, 5).
 
 **GOTCHA: `database.g.dart` is generated** (not committed). After changing `tables.dart` or `database.dart`, run:
 ```
