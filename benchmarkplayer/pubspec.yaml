@@ -30,11 +30,12 @@ dependency_overrides:
   # fvp 0.38 (PR #379). Audio backend selection needs no fork: stock fvp
   # forwards options['player'] -> setProperty, and MDK's "audio.renderer"
   # property == setAudioBackends.
-  # Same fvp as the app: 0.40.0 plus the fvp#412 dispose fix.
+  # Same fvp as the app: 0.40.0 plus wang-bin/fvp#413 and the platform-view
+  # dispose crash fix.
   fvp:
     git:
       url: https://github.com/abdelaziz-mahdy/fvp.git
-      ref: 8a53084e4be37b30c22d7519641a141e67138eb8
+      ref: 9283bcf936241518a4802a9d4890f794f927bbe9
 
 dev_dependencies:
   flutter_lints: ^5.0.0

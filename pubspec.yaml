@@ -131,11 +131,11 @@ flutter:
           weight: 700
 
 
-# fvp pinned to abdelaziz-mahdy/fvp `fix/dispose-off-platform-thread`: stock
-# fvp 0.40.0 plus one fix for wang-bin/fvp#412. Disposing a player ran MDK's
-# teardown on Android's main thread (the TV froze into an ANR when the
-# decoder was stuck), and disposing before the SurfaceView went away crashed
-# in surfaceDestroyed. Drop the override once that fix is released upstream.
+# fvp pinned to abdelaziz-mahdy/fvp `app/dispose-fixes`: fvp 0.40.0 plus two
+# open upstream PRs. wang-bin/fvp#413 deletes the player off Android's main
+# thread (closing a player whose decoder was stuck froze the TV into an ANR,
+# #412); the platform-view PR stops surfaceDestroyed from touching a player
+# that was already deleted (SIGSEGV). Drop the override once both ship.
 # NOTE: tunnel output has no HDR-to-GL fallback, so HDR titles stall until
 # wang-bin/mdk-sdk#361 is fixed. The audio backend needs no fork: stock fvp
 # forwards options['player'] via setProperty, and MDK's "audio.renderer"
@@ -144,4 +144,4 @@ dependency_overrides:
   fvp:
     git:
       url: https://github.com/abdelaziz-mahdy/fvp.git
-      ref: 8a53084e4be37b30c22d7519641a141e67138eb8
+      ref: 9283bcf936241518a4802a9d4890f794f927bbe9
