@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:iptv_player/core/logging/app_logger.dart';
 import 'package:iptv_player/data/models/models.dart';
 import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
 import 'package:iptv_player/features/details/cubit/details_cubit.dart';
@@ -99,6 +100,25 @@ void main() {
         expect(cubit.allEpisodes.map((e) => e.title),
             ['S1E1', 'S1E2', 'S2E1', 'S2E2']);
         expect(cubit.indexInSeries(cubit.allEpisodes[2]), 2);
+      });
+
+      test('playTarget logs its decision once, not on every rebuild',
+          () async {
+        await playback.saveProgress(_progress('s3-1-e1', 2700));
+        final cubit = makeCubit();
+        await cubit.loadSeries(_series('s3'));
+        await Future<void>.delayed(Duration.zero);
+        appLog.cleanHistory();
+
+        // The details screen calls this from build, and playback saves
+        // progress every 10 s, so it runs many times with the same answer.
+        for (var i = 0; i < 5; i++) {
+          cubit.playTarget();
+        }
+
+        final lines = appLog.history
+            .where((l) => (l.message ?? '').startsWith('playTarget '));
+        expect(lines, hasLength(1));
       });
 
       test('playTarget indexes into the whole series, not the season',

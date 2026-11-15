@@ -136,6 +136,8 @@ class DetailsCubit extends Cubit<DetailsState> {
   int indexInSeries(Episode episode) =>
       allEpisodes.indexWhere((e) => e.id == episode.id);
 
+  String? _lastPlayTargetLog;
+
   /// Where the header Play button should start, based on watch progress:
   /// the most recently played unfinished episode; else the episode after the
   /// last finished one (crossing into the next season if needed); else the
@@ -198,10 +200,16 @@ class DetailsCubit extends Cubit<DetailsState> {
         .expand((s) => _episodesBySeason[s.id] ?? const <Episode>[])
         .where((e) => state.progressByKey.containsKey('episode:${e.id}'))
         .length;
-    appLog.info('playTarget seasons=${state.seasons.length} '
+    final decision = 'playTarget seasons=${state.seasons.length} '
         'progressRows=${state.progressByKey.length} matchedEpisodes=$known '
         'resumeAt=$resumeAt lastWatchedAt=$lastWatchedAt -> '
-        'season=${target.$1} episode=${target.$2}');
+        'season=${target.$1} episode=${target.$2}';
+    // Called from build, and progress is saved every 10 s during playback:
+    // log the decision when it changes, not on every rebuild.
+    if (decision != _lastPlayTargetLog) {
+      _lastPlayTargetLog = decision;
+      appLog.info(decision);
+    }
     if (seasonEpisodes.isEmpty || target.$2 >= seasonEpisodes.length) {
       return null;
     }
