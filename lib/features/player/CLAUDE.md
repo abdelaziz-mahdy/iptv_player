@@ -32,12 +32,18 @@ until the decoder-to-SurfaceView path landed; it is gone (removed with its
   starved on burst-serving IPTV providers.
 - `initialize(startAt:)` seeks after init (video_player has no start option).
 
-**Pinned to a fork** (`pubspec.yaml` `dependency_overrides`): the branch of
-upstream PR wang-bin/fvp#379. Drop the override once it merges and ships.
+**Pinned to a fork** (`pubspec.yaml` `dependency_overrides`):
+abdelaziz-mahdy/fvp `fix/dispose-off-platform-thread`, which is stock fvp
+0.40.0 (the SurfaceView/tunnel work of PR #379 shipped in 0.38) plus one fix
+for wang-bin/fvp#412: `dispose()` deleted the MDK player on Android's main
+thread, so a stuck decoder froze the TV into an ANR, and disposing before the
+SurfaceView went away crashed in `surfaceDestroyed`. Drop the override once
+that fix ships upstream. Repro: `benchmarkplayer` cycle/teardown modes
+(`BENCH_CYCLES`, `BENCH_MODE=teardown`).
 
 **HDR caveat:** direct-to-surface output wedges the Realtek decoder on HDR
 content (mdk-sdk#361 — h264 + PQ/BT.2020 VUI stalls, HEVC 10-bit HDR10 plays).
-The PR branch has no HDR-to-GL fallback, so HDR titles stall until that is
+Tunnel output has no HDR-to-GL fallback, so HDR titles stall until that is
 fixed in MDK.
 
 ## `kFvpCaptureBuild` (`core/debug_flags.dart`)

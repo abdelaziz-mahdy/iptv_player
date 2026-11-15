@@ -86,10 +86,9 @@ class VideoPlayerControllerAdapter implements PlayerController {
       // SurfaceView, no GL — 4K scans out at native resolution (24fps at
       // 4K24, 56fps at 4K60 benchmarked), so maxWidth/maxHeight (a GL-path
       // clamp) do not apply.
-      // HDR CAVEAT: this pin is the upstream PR branch (fvp#379), which does
-      // NOT carry the fork's per-video HDR-to-GL routing — non-tunneled HDR
-      // wedges the Realtek decoder (mdk-sdk#361), so HDR titles are expected
-      // to stall on this build.
+      // HDR CAVEAT: tunnel output has no per-video HDR-to-GL routing, and
+      // HDR wedges the Realtek decoder (mdk-sdk#361), so HDR titles are
+      // expected to stall.
       // Audio backend: MDK's default. It was pinned to OpenSL while AAudio
       // reported positions too coarsely here (fvp#384, fixed upstream), but
       // OpenSL zeroes the audio clock on live streams whose timestamps start
