@@ -196,6 +196,7 @@ class _WideLayout extends StatelessWidget {
               ],
               selectedId: state.selectedGroupId,
               pinnedCount: state.pinnedGroupCount,
+              recentCount: state.recentGroupCount,
               onSelect: (id) => context.read<LiveCubit>().selectGroup(id),
             ),
             // Divider

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_player/data/models/models.dart';
 import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
+import 'package:iptv_player/data/repositories/repositories.dart';
 import 'package:iptv_player/features/grid/cubit/grid_cubit.dart';
 
 void main() {
@@ -378,7 +379,7 @@ void main() {
   });
 
   group('GridCubit — recent categories', () {
-    test('a used category is pinned under All and not repeated below',
+    test('a used category is pinned under All and stays in its place below',
         () async {
       final content = FakeContentRepository();
       final cubit = GridCubit(content, FakePlaylistRepository(), GridKind.movies);
@@ -391,10 +392,30 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       final ids = cubit.state.categories.map((c) => c.id).toList();
-      expect(ids, ['', 'cat2', 'cat1'],
-          reason: 'used category moves up; it must not appear twice');
+      expect(ids, ['', 'cat2', 'cat1', 'cat2'],
+          reason: 'pinned as recent, and still listed where it was clicked');
       expect(cubit.state.pinnedCategoryCount, 2,
-          reason: 'All + one pinned category');
+          reason: 'All + one recent category');
+      expect(cubit.state.recentCategoryCount, 1);
+
+      await cubit.close();
+    });
+
+    test('recent categories are capped at five', () async {
+      final content = FakeContentRepository();
+      for (var i = 0; i < 7; i++) {
+        await content.recordCategoryUse('p1', MediaKind.movie, 'x$i');
+      }
+      await content.recordCategoryUse('p1', MediaKind.movie, 'cat1');
+      await content.recordCategoryUse('p1', MediaKind.movie, 'cat2');
+      final cubit = GridCubit(content, FakePlaylistRepository(), GridKind.movies);
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      // Unknown ids are skipped; the two real ones are pinned, newest first.
+      expect(cubit.state.recentCategoryCount, 2);
+      expect(cubit.state.categories.take(3).map((c) => c.id), ['', 'cat2', 'cat1']);
+      expect(kRecentCategoryLimit, 5);
 
       await cubit.close();
     });
