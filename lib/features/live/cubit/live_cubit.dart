@@ -40,11 +40,6 @@ class LiveCubit extends Cubit<LiveState> {
   /// Category ids the user has opened, most-recent first.
   List<String> _recentGroupIds = const [];
 
-  /// Recency changes from the user opening groups wait here until the
-  /// section is left ([applyRecentCategoryOrder]): re-sorting the sidebar
-  /// under the user's focus moved the row they had just clicked out of view.
-  List<String>? _pendingRecentGroupIds;
-
   /// Category ids in the provider's own order.
   List<String> _categoryOrder = const [];
 
@@ -78,7 +73,6 @@ class LiveCubit extends Cubit<LiveState> {
     _recentGroupSub = null;
     _recentKeys = const [];
     _recentGroupIds = const [];
-    _pendingRecentGroupIds = null;
     _restoredSelection = false;
 
     if (pid == null) {
@@ -108,14 +102,12 @@ class LiveCubit extends Cubit<LiveState> {
 
     _recentGroupSub =
         _content.recentCategoryIds(pid, MediaKind.channel).listen((ids) {
-      if (_restoredSelection) {
-        _pendingRecentGroupIds = ids;
-        return;
-      }
-      _restoredSelection = true;
       _recentGroupIds = ids;
-      if (ids.isNotEmpty && state.selectedGroupId == null) {
-        _selectedGroupId = ids.first;
+      if (!_restoredSelection) {
+        _restoredSelection = true;
+        if (ids.isNotEmpty && state.selectedGroupId == null) {
+          _selectedGroupId = ids.first;
+        }
       }
       _recompute();
     });
@@ -124,16 +116,6 @@ class LiveCubit extends Cubit<LiveState> {
       _allChannels = channels;
       _recompute();
     });
-  }
-
-  /// Moves recently opened groups into the pinned block. Called when the
-  /// section is left, so the list never re-sorts while it is on screen.
-  void applyRecentCategoryOrder() {
-    final pending = _pendingRecentGroupIds;
-    if (pending == null) return;
-    _pendingRecentGroupIds = null;
-    _recentGroupIds = pending;
-    _recompute();
   }
 
   /// Changes the active group and filters [channelsInGroup] accordingly.
