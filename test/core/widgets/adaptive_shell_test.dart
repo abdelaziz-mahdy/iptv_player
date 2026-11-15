@@ -81,4 +81,35 @@ void main() {
     expect(compactBoxes, isNotEmpty,
         reason: 'narrow top bar must be capped to ≤56px height');
   });
+
+  testWidgets('rail fits all six destinations plus Playlists and Settings on '
+      'a 1080p TV (960x540 logical)', (tester) async {
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(MaterialApp(
+      theme: buildTheme(
+          palette: AppPalette.standard, hyperlegible: false, rtl: false),
+      home: AdaptiveShell(
+        brand: 'IPTV Player',
+        currentIndex: 0,
+        onSelect: (_) {},
+        destinations: const [
+          NavDestinationData(Icons.home_outlined, 'Home'),
+          NavDestinationData(Icons.favorite_border, 'Favorites'),
+          NavDestinationData(Icons.live_tv_outlined, 'Live TV'),
+          NavDestinationData(Icons.movie_outlined, 'Movies'),
+          NavDestinationData(Icons.video_library_outlined, 'Series'),
+          NavDestinationData(Icons.search, 'Search'),
+        ],
+        body: const Text('BODY'),
+        onOpenSettings: () {},
+        onOpenPlaylists: () {},
+      ),
+    ));
+    // An overflow here clipped the Settings gear on the TV.
+    expect(tester.takeException(), isNull);
+    final gear = tester.getRect(find.byIcon(Icons.settings));
+    expect(gear.bottom, lessThanOrEqualTo(540));
+  });
 }

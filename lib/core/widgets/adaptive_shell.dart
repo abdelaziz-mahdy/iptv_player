@@ -284,8 +284,12 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                       ? Expanded(
                           child: Align(
                             alignment: Alignment.bottomCenter,
+                            // Compact buttons and a slim bottom pad: a
+                            // 1080p TV is 540 logical px tall, and at full
+                            // size this block overflowed it and clipped the
+                            // Settings gear under the screen edge.
                             child: Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.only(bottom: 8),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -296,6 +300,7 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                                         label: 'Playlists',
                                         button: true,
                                         child: IconButton(
+                                          visualDensity: VisualDensity.compact,
                                           icon: const Icon(Icons.playlist_play),
                                           onPressed: widget.onOpenPlaylists,
                                         ),
@@ -308,6 +313,7 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                                         label: 'Settings',
                                         button: true,
                                         child: IconButton(
+                                          visualDensity: VisualDensity.compact,
                                           icon: const Icon(Icons.settings),
                                           onPressed: widget.onOpenSettings,
                                         ),
