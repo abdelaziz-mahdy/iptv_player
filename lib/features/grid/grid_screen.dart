@@ -8,7 +8,6 @@ import '../../core/di/injection.dart';
 import '../../core/theme/app_sizes.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/category_sidebar.dart';
-import '../../core/widgets/section_visibility.dart';
 import '../../core/widgets/focusable_button.dart';
 import '../../core/widgets/jump_to_letter.dart';
 import '../../core/widgets/poster_card.dart';
@@ -112,12 +111,7 @@ class GridScreen extends StatelessWidget {
         kind,
         playback: sl<PlaybackRepository>(),
       )..load(),
-      child: Builder(
-        builder: (context) => OnSectionHidden(
-          onHidden: context.read<GridCubit>().applyRecentCategoryOrder,
-          child: _GridView(kind: kind, onOpen: onOpen),
-        ),
-      ),
+      child: _GridView(kind: kind, onOpen: onOpen),
     );
   }
 }
