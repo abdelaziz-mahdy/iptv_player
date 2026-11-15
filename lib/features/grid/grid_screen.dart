@@ -203,7 +203,13 @@ class _WideLayoutState extends State<_WideLayout> {
     final title = widget.title;
     final onOpen = widget.onOpen;
 
-    return BlocBuilder<GridCubit, GridState>(
+    return BlocConsumer<GridCubit, GridState>(
+      // A new category starts at its first row: keeping the old offset left
+      // the user mid-list, as if they had reached the end.
+      listenWhen: (a, b) => a.selectedCategoryId != b.selectedCategoryId,
+      listener: (_, _) {
+        if (_gridController.hasClients) _gridController.jumpTo(0);
+      },
       builder: (ctx, state) {
         final displayed = state.filteredItems;
 

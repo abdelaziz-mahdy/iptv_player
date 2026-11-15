@@ -137,7 +137,13 @@ class _LiveViewState extends State<_LiveView> {
           ),
         ],
       ),
-      body: BlocBuilder<LiveCubit, LiveState>(
+      body: BlocConsumer<LiveCubit, LiveState>(
+        // A new group starts at its first row: keeping the old offset left
+        // the user mid-list, as if they had reached the end.
+        listenWhen: (a, b) => a.selectedGroupId != b.selectedGroupId,
+        listener: (_, _) {
+          if (_gridController.hasClients) _gridController.jumpTo(0);
+        },
         builder: (context, state) {
           if (state.loading) {
             return const LoadingState();

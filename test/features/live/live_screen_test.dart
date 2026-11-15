@@ -57,6 +57,22 @@ class _CategorisedContentRepository extends FakeContentRepository {
   }
 }
 
+/// Enough channels in two categories for the wide grid to scroll.
+class _ManyChannels extends _CategorisedContentRepository {
+  @override
+  Stream<List<Channel>> channels(String playlistId) => Stream.value([
+        for (var i = 0; i < 300; i++)
+          Channel(
+            id: 'ch$i',
+            playlistId: 'p1',
+            name: 'Channel $i',
+            number: '$i',
+            streamUrl: 'http://x/$i',
+            categoryId: i.isEven ? 'cat-sports' : 'cat-news',
+          ),
+      ]);
+}
+
 /// Builds a narrow (phone) app that creates a [LiveCubit] backed by the
 /// supplied [contentRepo], so we can inject a custom content repository.
 Widget _buildNarrowAppWithRepo(
@@ -372,5 +388,32 @@ void main() {
       skipOffstage: false,
     );
     expect(autofocused, findsAtLeastNWidgets(1));
+  });
+
+  testWidgets('switching group scrolls the channel grid back to the top',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    sl.unregister<ContentRepository>();
+    sl.registerLazySingleton<ContentRepository>(_ManyChannels.new);
+
+    await _pumpLive(tester, _buildTestApp());
+
+    ScrollPosition grid() => tester
+        .state<ScrollableState>(find.descendant(
+            of: find.byType(GridView), matching: find.byType(Scrollable)))
+        .position;
+    grid().jumpTo(2000);
+    await tester.pump();
+    expect(grid().pixels, greaterThan(0));
+
+    await tester.tap(find.text('News').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(grid().pixels, 0,
+        reason: 'a new group must start at its first row, not mid-list');
   });
 }
