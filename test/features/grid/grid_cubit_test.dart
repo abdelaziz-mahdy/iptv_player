@@ -230,6 +230,33 @@ void main() {
       await cubit.close();
     });
 
+    test('movies grid exposes watch progress keyed by movie', () async {
+      final playback = FakePlaybackRepository();
+      final cubit = GridCubit(
+        FakeContentRepository(),
+        FakePlaylistRepository(),
+        GridKind.movies,
+        playback: playback,
+      );
+      await cubit.load();
+      await Future<void>.delayed(Duration.zero);
+
+      final dune = cubit.state.items.firstWhere((e) => e.title == 'Dune');
+      await playback.saveProgress(WatchProgress(
+        itemKey: 'movie:${dune.id}',
+        playlistId: 'p1',
+        kind: MediaKind.movie,
+        positionSec: 600,
+        durationSec: 6000,
+        updatedAt: DateTime.utc(2026, 1, 1),
+      ));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.progressByKey['movie:${dune.id}']?.positionSec, 600);
+
+      await cubit.close();
+    });
+
     test('"All" category count equals total item count', () async {
       final cubit = GridCubit(
         FakeContentRepository(),

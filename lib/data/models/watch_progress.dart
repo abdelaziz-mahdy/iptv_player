@@ -34,6 +34,13 @@ extension WatchProgressX on WatchProgress {
     return f > 1 ? 1.0 : f;
   }
 
+  /// Seconds still to watch, or null when the duration is unknown.
+  int? get remainingSec {
+    if (durationSec <= 0) return null;
+    final left = durationSec - positionSec;
+    return left < 0 ? 0 : left;
+  }
+
   /// Whether the item counts as finished. Finished items replay from the
   /// start and leave Continue Watching (the row is kept for indicators).
   bool get isWatched => (fraction ?? 0) >= kWatchedFraction;

@@ -5,9 +5,15 @@ import '../theme/app_sizes.dart';
 import '../theme/app_theme.dart';
 import 'focusable_button.dart';
 import 'remote_image.dart';
+import 'watch_labels.dart';
 
 /// A 2:3 poster tile used across Home rails and grids: artwork with a gradient
-/// scrim, optional badge and progress bar, and a title/subtitle beneath.
+/// scrim, optional badge and watch state, and a title/subtitle beneath.
+///
+/// Watch state is drawn to be read from across a room: a partly watched item
+/// gets an 8 px bar along the poster's bottom edge with the time left above
+/// it ([progress], [remainingSec]); a [watched] item is dimmed under a large
+/// check and its subtitle reads "Watched".
 ///
 /// When [onToggleFavorite] is provided, a small heart button is overlaid at the
 /// top-start corner of the poster. [isFavorite] controls whether it appears
@@ -18,7 +24,15 @@ class PosterCard extends StatelessWidget {
   final String? subtitle;
   final String? imageUrl;
   final String? badge;
+
+  /// How far through the item the viewer is (0..1); null or 0 hides the bar.
   final double? progress;
+
+  /// Seconds left to watch; shown as "38m left" above the bar when known.
+  final int? remainingSec;
+
+  /// Finished items get the dimmed poster and check instead of a bar.
+  final bool watched;
   final VoidCallback? onTap;
   final bool isFavorite;
   final bool autofocus;
@@ -34,6 +48,8 @@ class PosterCard extends StatelessWidget {
     this.imageUrl,
     this.badge,
     this.progress,
+    this.remainingSec,
+    this.watched = false,
     this.onTap,
     this.isFavorite = false,
     this.autofocus = false,
@@ -44,6 +60,9 @@ class PosterCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final l10n = AppLocalizations.of(context)!;
+    final fraction = progress ?? 0;
+    final showBar = !watched && fraction > 0;
+    final radius = BorderRadius.circular(10);
     return FocusableButton(
       semanticLabel: title,
       autofocus: autofocus,
@@ -93,21 +112,46 @@ class PosterCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  if (progress != null)
-                    Positioned(
-                      left: 8,
-                      right: 8,
-                      bottom: 8,
+                  if (showBar)
+                    Positioned.fill(
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(3),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          minHeight: 4,
-                          backgroundColor: p.onScrim.withValues(alpha: 0.24),
-                          valueColor: AlwaysStoppedAnimation(p.accent),
+                        key: const Key('poster-progress'),
+                        borderRadius: radius,
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: _ProgressFooter(
+                            fraction: fraction.clamp(0.0, 1.0),
+                            label: remainingSec == null
+                                ? null
+                                : timeLeftLabel(l10n, remainingSec!),
+                          ),
                         ),
                       ),
                     ),
+                  if (watched) ...[
+                    Positioned.fill(
+                      child: ClipRRect(
+                        borderRadius: radius,
+                        child: ColoredBox(color: p.bg.withValues(alpha: 0.55)),
+                      ),
+                    ),
+                    Center(
+                      child: Container(
+                        key: const Key('poster-watched'),
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: p.accent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check_rounded,
+                          color: p.onAccent,
+                          size: 34,
+                        ),
+                      ),
+                    ),
+                  ],
                   // Heart favorite indicator — only rendered when wired up.
                   // Deliberately NOT a focus stop: D-pad grid navigation skips
                   // over it (toggled by touch/mouse, or via the details screen
@@ -160,7 +204,15 @@ class PosterCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelLarge,
             ),
-            if (subtitle != null)
+            if (watched)
+              Text(
+                l10n.watched,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: p.accent, fontWeight: FontWeight.w600),
+              )
+            else if (subtitle != null)
               Text(
                 subtitle!,
                 maxLines: 1,
@@ -169,6 +221,60 @@ class PosterCard extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The bottom of an in-progress poster: "38m left" on a scrim that fades up
+/// into the artwork, over a full-width 8 px bar flush with the poster edge.
+class _ProgressFooter extends StatelessWidget {
+  const _ProgressFooter({required this.fraction, required this.label});
+
+  final double fraction;
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [p.scrim.withValues(alpha: 0), p.scrim],
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (label != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 18, 8, 6),
+              child: Text(
+                label!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(color: p.onScrim, fontWeight: FontWeight.w700),
+              ),
+            ),
+          SizedBox(
+            height: 8,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ColoredBox(color: p.onScrim.withValues(alpha: 0.35)),
+                FractionallySizedBox(
+                  alignment: AlignmentDirectional.centerStart,
+                  widthFactor: fraction,
+                  child: ColoredBox(color: p.accent),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

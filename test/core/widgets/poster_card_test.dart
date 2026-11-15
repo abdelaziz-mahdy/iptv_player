@@ -19,7 +19,6 @@ void main() {
           subtitle: '2021',
           badge: 'HD',
           imageUrl: null,
-          progress: 0.4,
           onTap: () => tapped = true,
         ),
       ),
@@ -184,5 +183,50 @@ void main() {
     await tester.pump();
     expect(heartActivated, isTrue);
     expect(cardTapped, isFalse);
+  });
+
+  Widget wrapCard(PosterCard card) => MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: buildTheme(
+            palette: AppPalette.standard, hyperlegible: false, rtl: false),
+        home: Scaffold(body: card),
+      );
+
+  testWidgets('in-progress poster shows a bar and the time left',
+      (tester) async {
+    await tester.pumpWidget(wrapCard(const PosterCard(
+      title: 'Dune',
+      progress: 0.62,
+      remainingSec: 38 * 60,
+    )));
+    expect(find.byKey(const Key('poster-progress')), findsOneWidget);
+    expect(find.text('38m left'), findsOneWidget);
+    expect(find.byKey(const Key('poster-watched')), findsNothing);
+  });
+
+  testWidgets('time left over an hour reads hours and minutes',
+      (tester) async {
+    await tester.pumpWidget(wrapCard(const PosterCard(
+      title: 'Dune',
+      progress: 0.15,
+      remainingSec: 92 * 60,
+    )));
+    expect(find.text('1h 32m left'), findsOneWidget);
+  });
+
+  testWidgets('watched poster shows a check and "Watched", no bar',
+      (tester) async {
+    await tester.pumpWidget(wrapCard(const PosterCard(
+      title: 'Dune',
+      subtitle: '2021',
+      progress: 0.98,
+      remainingSec: 60,
+      watched: true,
+    )));
+    expect(find.byKey(const Key('poster-watched')), findsOneWidget);
+    expect(find.text('Watched'), findsOneWidget);
+    expect(find.byKey(const Key('poster-progress')), findsNothing);
+    expect(find.textContaining('left'), findsNothing);
   });
 }

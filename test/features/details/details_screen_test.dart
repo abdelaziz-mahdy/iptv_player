@@ -259,6 +259,10 @@ void main() {
         find.byKey(const Key('episode-watched-episode:s1-1-e1'),
             skipOffstage: false),
         findsNothing);
+    // At TV distance the state is spelled out: time left on the partial
+    // row, a "Watched" label on the finished one.
+    expect(find.text('30m left', skipOffstage: false), findsOneWidget);
+    expect(find.text('Watched', skipOffstage: false), findsOneWidget);
   });
 
   testWidgets('DetailsScreen.movie Play button has autofocus: true',

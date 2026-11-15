@@ -68,6 +68,11 @@ class GridState extends Equatable {
   /// The set of favorited itemKeys (e.g. "movie:m1") for this grid.
   final Set<String> favoriteKeys;
 
+  /// Watch progress for this grid's movies, keyed `movie:<id>`; drives the
+  /// poster's time-left bar and watched check. Empty for the series grid: a
+  /// series has no single position to show.
+  final Map<String, WatchProgress> progressByKey;
+
   /// How many leading entries of [categories] sit above the provider's own
   /// list: "Recently Viewed"/"All" plus the recency block. The sidebar draws
   /// its separator here.
@@ -80,6 +85,7 @@ class GridState extends Equatable {
     this.selectedCategoryId,
     this.recentItems = const [],
     this.favoriteKeys = const {},
+    this.progressByKey = const {},
     this.pinnedCategoryCount = 0,
   });
 
@@ -91,6 +97,7 @@ class GridState extends Equatable {
     bool clearCategory = false,
     List<GridEntry>? recentItems,
     Set<String>? favoriteKeys,
+    Map<String, WatchProgress>? progressByKey,
     int? pinnedCategoryCount,
   }) {
     return GridState(
@@ -101,6 +108,7 @@ class GridState extends Equatable {
           clearCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
       recentItems: recentItems ?? this.recentItems,
       favoriteKeys: favoriteKeys ?? this.favoriteKeys,
+      progressByKey: progressByKey ?? this.progressByKey,
       pinnedCategoryCount: pinnedCategoryCount ?? this.pinnedCategoryCount,
     );
   }
@@ -119,6 +127,7 @@ class GridState extends Equatable {
         selectedCategoryId,
         recentItems,
         favoriteKeys,
+        progressByKey,
         pinnedCategoryCount,
       ];
 }
@@ -144,6 +153,7 @@ class GridCubit extends Cubit<GridState> {
   StreamSubscription<List<Favorite>>? _favoritesSub;
   StreamSubscription<List<String>>? _recentSub;
   StreamSubscription<List<String>>? _recentCatSub;
+  StreamSubscription<List<WatchProgress>>? _progressSub;
   String? _playlistId;
   bool _hasBound = false;
 
@@ -191,6 +201,8 @@ class GridCubit extends Cubit<GridState> {
     _recentSub = null;
     await _recentCatSub?.cancel();
     _recentCatSub = null;
+    await _progressSub?.cancel();
+    _progressSub = null;
     _rawItems = const [];
     _recentKeys = const [];
     _recentCategoryIds = const [];
@@ -204,6 +216,7 @@ class GridCubit extends Cubit<GridState> {
         categories: const [],
         recentItems: const [],
         favoriteKeys: const {},
+        progressByKey: const {},
       ));
       return;
     }
@@ -217,6 +230,16 @@ class GridCubit extends Cubit<GridState> {
         state.copyWith(favoriteKeys: favs.map((f) => f.itemKey).toSet()),
       ),
     );
+
+    // Movie progress for the poster indicators (optional dependency).
+    if (kind == GridKind.movies) {
+      _progressSub = _playback?.progressForPlaylist(pid).listen((rows) {
+        emit(state.copyWith(progressByKey: {
+          for (final r in rows)
+            if (r.itemKey.startsWith('movie:')) r.itemKey: r,
+        }));
+      });
+    }
 
     // Subscribe to recently-viewed (optional dependency).
     _recentSub =
@@ -392,6 +415,7 @@ class GridCubit extends Cubit<GridState> {
     await _favoritesSub?.cancel();
     await _recentSub?.cancel();
     await _recentCatSub?.cancel();
+    await _progressSub?.cancel();
     return super.close();
   }
 }

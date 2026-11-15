@@ -92,5 +92,9 @@
   "importErrorTimeout": "استغرق الخادم وقتًا طويلاً للرد. تحقق من اتصالك وحاول مجددًا.",
   "importErrorCredentials": "رفض الخادم اسم المستخدم أو كلمة المرور.",
   "importErrorUnknown": "تعذّر استيراد قائمة التشغيل.",
-  "importErrorDetails": "التفاصيل في الإعدادات ← عرض السجلات."
+  "importErrorDetails": "التفاصيل في الإعدادات ← عرض السجلات.",
+  "watched": "تمت المشاهدة",
+  "timeLeft": "متبقٍ {time}",
+  "durationHoursMinutes": "{hours} س {minutes} د",
+  "durationMinutes": "{minutes} د"
 }

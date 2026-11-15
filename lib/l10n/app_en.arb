@@ -129,5 +129,34 @@
   "importErrorTimeout": "The server took too long to respond. Check your connection and try again.",
   "importErrorCredentials": "The server rejected your username or password.",
   "importErrorUnknown": "Could not import the playlist.",
-  "importErrorDetails": "Details are in Settings → View logs."
+  "importErrorDetails": "Details are in Settings → View logs.",
+  "watched": "Watched",
+  "timeLeft": "{time} left",
+  "@timeLeft": {
+    "description": "Time remaining in a partly watched item, e.g. '38m left'.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "durationHoursMinutes": "{hours}h {minutes}m",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutes": "{minutes}m",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  }
 }

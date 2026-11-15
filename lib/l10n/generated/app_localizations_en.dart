@@ -303,4 +303,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importErrorDetails => 'Details are in Settings → View logs.';
+
+  @override
+  String get watched => 'Watched';
+
+  @override
+  String timeLeft(String time) {
+    return '$time left';
+  }
+
+  @override
+  String durationHoursMinutes(int hours, int minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String durationMinutes(int minutes) {
+    return '${minutes}m';
+  }
 }

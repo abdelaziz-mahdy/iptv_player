@@ -277,10 +277,14 @@ class _WideLayoutState extends State<_WideLayout> {
                           final itemKey = entry.isSeries
                               ? 'episode:${entry.id}'
                               : 'movie:${entry.id}';
+                          final watch = state.progressByKey[itemKey];
                           return PosterCard(
                             title: entry.title,
                             subtitle: entry.subtitle,
                             imageUrl: entry.posterUrl,
+                            progress: watch?.fraction,
+                            remainingSec: watch?.remainingSec,
+                            watched: watch?.isWatched ?? false,
                             isFavorite: state.favoriteKeys.contains(itemKey),
                             onTap: () => onOpen(entry),
                             onToggleFavorite: () =>
@@ -347,6 +351,7 @@ class _NarrowLayout extends StatelessWidget {
                       builder: (_) => CategoryResultsScreen(
                         categoryName: label,
                         items: items,
+                        progressByKey: cubit.state.progressByKey,
                         onOpen: onOpen,
                       ),
                     ),
@@ -407,11 +412,15 @@ class CategoryResultsScreen extends StatelessWidget {
     super.key,
     required this.categoryName,
     required this.items,
+    this.progressByKey = const {},
     required this.onOpen,
   });
 
   final String categoryName;
   final List<GridEntry> items;
+
+  /// Watch progress keyed `movie:<id>`, snapshotted with [items].
+  final Map<String, WatchProgress> progressByKey;
   final void Function(GridEntry entry) onOpen;
 
   @override
@@ -444,11 +453,16 @@ class CategoryResultsScreen extends StatelessWidget {
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final entry = items[index];
+                final watch =
+                    entry.isSeries ? null : progressByKey['movie:${entry.id}'];
                 return PosterCard(
                   autofocus: index == 0,
                   title: entry.title,
                   subtitle: entry.subtitle,
                   imageUrl: entry.posterUrl,
+                  progress: watch?.fraction,
+                  remainingSec: watch?.remainingSec,
+                  watched: watch?.isWatched ?? false,
                   onTap: () => onOpen(entry),
                 );
               },

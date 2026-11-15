@@ -354,6 +354,7 @@ class _ContinueWatchingRail extends StatelessWidget {
           subtitle: movie.year,
           imageUrl: movie.posterUrl,
           progress: progress0.clamp(0.0, 1.0),
+          remainingSec: progress.remainingSec,
           onTap: () => onOpenMovie(movie),
         );
       } else {
@@ -390,12 +391,14 @@ class _ContinueWatchingRail extends StatelessWidget {
             subtitle: subtitle,
             imageUrl: show.posterUrl,
             progress: progress0.clamp(0.0, 1.0),
+            remainingSec: progress.remainingSec,
             onTap: () => onOpenSeries(show),
           );
         } else {
           card = PosterCard(
             title: progress.itemKey,
             progress: progress0.clamp(0.0, 1.0),
+            remainingSec: progress.remainingSec,
             onTap: () {},
           );
         }

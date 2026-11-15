@@ -301,4 +301,22 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get importErrorDetails => 'التفاصيل في الإعدادات ← عرض السجلات.';
+
+  @override
+  String get watched => 'تمت المشاهدة';
+
+  @override
+  String timeLeft(String time) {
+    return 'متبقٍ $time';
+  }
+
+  @override
+  String durationHoursMinutes(int hours, int minutes) {
+    return '$hours س $minutes د';
+  }
+
+  @override
+  String durationMinutes(int minutes) {
+    return '$minutes د';
+  }
 }
