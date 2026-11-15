@@ -10,6 +10,7 @@ import '../../core/widgets/channel_tile.dart';
 import '../../core/widgets/focusable_button.dart';
 import '../../core/widgets/jump_to_letter.dart';
 import '../../core/widgets/live_badge.dart';
+import '../../core/widgets/section_visibility.dart';
 import '../../core/widgets/section_app_bar.dart';
 import '../../core/widgets/status_views.dart';
 import '../../data/models/models.dart';
@@ -46,7 +47,12 @@ class LiveScreen extends StatelessWidget {
         sl<PlaylistRepository>(),
         playback: sl<PlaybackRepository>(),
       )..load(),
-      child: _LiveView(onPlayChannel: onPlayChannel),
+      child: Builder(
+        builder: (context) => OnSectionHidden(
+          onHidden: context.read<LiveCubit>().applyRecentCategoryOrder,
+          child: _LiveView(onPlayChannel: onPlayChannel),
+        ),
+      ),
     );
   }
 }
