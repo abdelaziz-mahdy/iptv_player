@@ -148,7 +148,11 @@ class PlayerCubit extends Cubit<PlayerUiState> {
     required this.kind,
     required this.playlistId,
     this.recentKey,
+    this.seekSettle = const Duration(milliseconds: 600),
   }) : super(const PlayerUiState());
+
+  /// How long skip presses must pause before the seek is sent.
+  final Duration seekSettle;
 
   /// Browsable key recorded in "recently viewed" (e.g. `series:<id>` for an
   /// episode). Falls back to [itemKey] when null (movies/channels).
@@ -284,7 +288,7 @@ class PlayerCubit extends Cubit<PlayerUiState> {
       emit(
         state.copyWith(
           isPlaying: s.isPlaying,
-          position: s.position,
+          position: _seekTarget ?? s.position,
           duration: s.duration,
           // Spinner while the backend re-buffers, and until playback has
           // actually begun — opening a stream can take seconds on a TV, and a
@@ -402,20 +406,39 @@ class PlayerCubit extends Cubit<PlayerUiState> {
   }
 
   /// Skips forward 10 seconds, clamped to duration.
-  Future<void> skipForward() async {
-    final target = _controller.position + const Duration(seconds: 10);
-    final clamped =
-        _controller.duration > Duration.zero && target > _controller.duration
-        ? _controller.duration
-        : target;
-    await _controller.seek(clamped);
-  }
+  void skipForward() => _queueSkip(const Duration(seconds: 10));
 
   /// Skips backward 10 seconds, clamped to zero.
-  Future<void> skipBackward() async {
-    final target = _controller.position - const Duration(seconds: 10);
-    final clamped = target < Duration.zero ? Duration.zero : target;
-    await _controller.seek(clamped);
+  void skipBackward() => _queueSkip(const Duration(seconds: -10));
+
+  Duration? _seekTarget;
+  Timer? _seekTimer;
+
+  /// Presses add up into one target, shown at once, and a single seek goes
+  /// out once they pause for [seekSettle]. Five quick presses used to be five
+  /// overlapping seeks, after which the TV's decoder delivered no frames
+  /// while audio played on (Nov 14 2026).
+  void _queueSkip(Duration delta) {
+    var target = (_seekTarget ?? _controller.position) + delta;
+    final duration = _controller.duration;
+    if (target < Duration.zero) target = Duration.zero;
+    if (duration > Duration.zero && target > duration) target = duration;
+    _seekTarget = target;
+    emit(state.copyWith(position: target));
+    _seekTimer?.cancel();
+    _seekTimer = Timer(seekSettle, _commitSkip);
+  }
+
+  Future<void> _commitSkip() async {
+    final target = _seekTarget;
+    if (target == null || isClosed) return;
+    try {
+      await _controller.seek(target);
+    } catch (e) {
+      appLog.error('seek to ${target.inSeconds}s failed: $e');
+    } finally {
+      if (_seekTarget == target) _seekTarget = null;
+    }
   }
 
   /// Toggles caption display on/off.
@@ -450,6 +473,8 @@ class PlayerCubit extends Cubit<PlayerUiState> {
 
   /// Seeks to the given position.
   Future<void> seekTo(Duration position) async {
+    _seekTimer?.cancel();
+    _seekTarget = null;
     await _controller.seek(position);
   }
 
@@ -485,6 +510,7 @@ class PlayerCubit extends Cubit<PlayerUiState> {
 
   @override
   Future<void> close() async {
+    _seekTimer?.cancel();
     _bitrateTimer?.cancel();
     _bitrateTimer = null;
     _controlsTimer?.cancel();

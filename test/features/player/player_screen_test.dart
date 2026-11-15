@@ -181,12 +181,12 @@ void main() {
 
       // Right skips forward 10s (so a regression to -10s is observable).
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 700));
       expect(controller.position, const Duration(seconds: 10));
 
       // Down must ONLY move focus — the position must not change.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 700));
       expect(controller.position, const Duration(seconds: 10),
           reason: 'Down on the seek bar must not seek');
       expect(sliderFocus.hasPrimaryFocus, isFalse,
@@ -196,7 +196,7 @@ void main() {
       sliderFocus.requestFocus();
       await tester.pump();
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 700));
       expect(controller.position, Duration.zero);
     });
   });

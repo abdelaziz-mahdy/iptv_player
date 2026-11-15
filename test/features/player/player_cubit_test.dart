@@ -308,8 +308,66 @@ void main() {
 
     test('skipForward() advances position by 10s', () async {
       await cubit.start();
-      await cubit.skipForward();
-      expect(cubit.state.position, const Duration(seconds: 10));
+      cubit.skipForward();
+      expect(cubit.state.position, const Duration(seconds: 10),
+          reason: 'the target shows at once');
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      expect(controller.position, const Duration(seconds: 10));
+    });
+
+    group('skip presses', () {
+      late PlayerCubit quick;
+
+      setUp(() {
+        quick = PlayerCubit(
+          controller,
+          playback,
+          itemKey: 'movie:m1',
+          url: 'http://x',
+          title: 'Dune',
+          kind: MediaKind.movie,
+          playlistId: 'p1',
+          seekSettle: const Duration(milliseconds: 20),
+        );
+      });
+
+      tearDown(() => quick.close());
+
+      test('rapid presses become one seek to the summed target', () async {
+        await quick.start();
+        quick.skipForward();
+        quick.skipForward();
+        quick.skipForward();
+        expect(quick.state.position, const Duration(seconds: 30));
+        expect(controller.seekCount, 0,
+            reason: 'nothing reaches the backend while presses keep coming');
+
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+        expect(controller.seekCount, 1);
+        expect(controller.position, const Duration(seconds: 30));
+      });
+
+      test('backward presses add up and stop at zero', () async {
+        await quick.start();
+        await quick.seekTo(const Duration(seconds: 15));
+        controller.seekCount = 0;
+
+        quick.skipBackward();
+        quick.skipBackward();
+        expect(quick.state.position, Duration.zero);
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+        expect(controller.seekCount, 1);
+        expect(controller.position, Duration.zero);
+      });
+
+      test('playback ticks do not pull the shown time back mid-skip',
+          () async {
+        await quick.start();
+        quick.skipForward();
+        controller.emitStatusForTesting();
+        await Future<void>.delayed(Duration.zero);
+        expect(quick.state.position, const Duration(seconds: 10));
+      });
     });
 
     test('toggleCaptions() flips captionsOn', () async {
