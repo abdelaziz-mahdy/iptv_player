@@ -144,8 +144,6 @@ class VideoPlayerControllerAdapter implements PlayerController {
     // frozen picture, audio playing (froze 7-10 of 20 opens in the fvp repro,
     // 0 of 20 this way). seek() reopens through here too, so playback never
     // seeks in place on Android — that froze 10 of 10 in the same repro.
-    // WORKAROUND: remove once wang-bin/fvp#420 is fixed in MDK. Then go back
-    // to seekTo() here and in seek(), and drop the fvp pin's `#t=` support.
     final openAt = Platform.isAndroid && startAt != null && startAt > Duration.zero
         ? startAt
         : null;
@@ -216,8 +214,6 @@ class VideoPlayerControllerAdapter implements PlayerController {
     // decoder delivering no frames while audio played on, and closing that
     // player then hung the app (every ANR in the Nov 2026 TV logs followed
     // one). Opening at a position never stalled there, so seek by reopening.
-    // WORKAROUND (~2-3 s per skip): remove once wang-bin/fvp#420 is fixed in
-    // MDK; see initialize().
     appLog.info('seek ${position.inSeconds}s: reopening the stream');
     final wasPlaying = ctrl.value.isPlaying;
     final duration = ctrl.value.duration;
