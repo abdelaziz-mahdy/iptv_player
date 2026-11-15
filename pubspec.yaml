@@ -136,10 +136,7 @@ flutter:
 # open upstream PRs. wang-bin/fvp#413 deletes the player off Android's main
 # thread (closing a player whose decoder was stuck froze the TV into an ANR,
 # #412); the platform-view PR stops surfaceDestroyed from touching a player
-# that was already deleted (SIGSEGV). It also opens at a `#t=` media
-# fragment, which video_controller.dart uses on Android so a resume never
-# seeks while the tunnel surface attaches (that froze the picture). Drop the
-# override once all three ship.
+# that was already deleted (SIGSEGV). Drop the override once both ship.
 # NOTE: tunnel output has no HDR-to-GL fallback, so HDR titles stall until
 # wang-bin/mdk-sdk#361 is fixed. The audio backend needs no fork: stock fvp
 # forwards options['player'] via setProperty, and MDK's "audio.renderer"
@@ -148,4 +145,4 @@ dependency_overrides:
   fvp:
     git:
       url: https://github.com/abdelaziz-mahdy/fvp.git
-      ref: 6935268493faf1d682db7fb108f4fb8065fa9675
+      ref: 9283bcf936241518a4802a9d4890f794f927bbe9

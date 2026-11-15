@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:fvp/fvp.dart' as fvp;
 import 'package:video_player/video_player.dart';
 
@@ -137,25 +136,15 @@ class VideoPlayerControllerAdapter implements PlayerController {
     // SurfaceView platform view on Android: own display layer, and with
     // 'tunnel' the decoder fills it directly — the only path that sustains 4K
     // on this TV. Texture path on desktop.
-    // Android opens AT the resume point (a `#t=` media fragment, which the
-    // fvp pin hands to MDK's prepare) instead of seeking after initialize().
-    // With 'tunnel' a seek in flight when the platform view's surface arrives
-    // restarts the decoder mid-seek, and MDK can then discard every frame:
-    // frozen picture, audio playing (froze 7-10 of 20 opens in the fvp repro,
-    // 0 of 20 this way). seek() reopens through here too, so playback never
-    // seeks in place on Android — that froze 10 of 10 in the same repro.
-    final openAt = Platform.isAndroid && startAt != null && startAt > Duration.zero
-        ? startAt
-        : null;
     _controller = VideoPlayerController.networkUrl(
-      Uri.parse(openAt == null ? url : withStartFragment(url, openAt)),
+      Uri.parse(url),
       viewType: Platform.isAndroid
           ? VideoViewType.platformView
           : VideoViewType.textureView,
     );
     await _controller!.initialize();
     _initialized = true;
-    if (openAt == null && startAt != null && startAt > Duration.zero) {
+    if (startAt != null && startAt > Duration.zero) {
       await _controller!.seekTo(startAt);
     }
 
@@ -286,12 +275,4 @@ class VideoPlayerControllerAdapter implements PlayerController {
     _controller = null;
     _initialized = false;
   }
-}
-
-/// [url] with a W3C media-fragment start time (`#t=104.250`) that fvp turns
-/// into the position MDK opens at. Appends to an existing fragment.
-@visibleForTesting
-String withStartFragment(String url, Duration at) {
-  final t = 't=${(at.inMilliseconds / 1000).toStringAsFixed(3)}';
-  return url.contains('#') ? '$url&$t' : '$url#$t';
 }
