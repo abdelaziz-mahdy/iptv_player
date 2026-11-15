@@ -78,7 +78,6 @@ class VideoPlayerControllerAdapter implements PlayerController {
 
   @override
   Future<void> initialize(String url, {Duration? startAt}) async {
-    _url = url;
     if (!_fvpRegistered) {
       // fvp/MDK is the player on every platform. On Android TV PowerVR GPUs
       // MDK's 10-bit EGLConfig corrupts video — MainActivity sets
@@ -185,45 +184,9 @@ class VideoPlayerControllerAdapter implements PlayerController {
     await _controller?.pause();
   }
 
-  String? _url;
-
-  /// Where a reopen-to-seek is going, while the stream is being reopened.
-  Duration? _reopenAt;
-
   @override
   Future<void> seek(Duration position) async {
-    final ctrl = _controller;
-    final url = _url;
-    if (ctrl == null) return;
-    if (!Platform.isAndroid || url == null) {
-      await ctrl.seekTo(position);
-      return;
-    }
-    // In tunnel mode a seek on a playing stream could leave the TV's hardware
-    // decoder delivering no frames while audio played on, and closing that
-    // player then hung the app (every ANR in the Nov 2026 TV logs followed
-    // one). Opening at a position never stalled there, so seek by reopening.
-    appLog.info('seek ${position.inSeconds}s: reopening the stream');
-    final wasPlaying = ctrl.value.isPlaying;
-    final duration = ctrl.value.duration;
-    _reopenAt = position;
-    _initialized = false;
-    if (!_statusCtrl.isClosed) {
-      // Lets the screen drop the old surface and show the spinner now.
-      _statusCtrl.add(PlayerStatus(
-        isPlaying: wasPlaying,
-        position: position,
-        duration: duration,
-        buffering: true,
-      ));
-    }
-    try {
-      await initialize(url, startAt: position);
-      await _controller?.setVolume(_volume);
-      if (wasPlaying) await _controller?.play();
-    } finally {
-      _reopenAt = null;
-    }
+    await _controller?.seekTo(position);
   }
 
   @override
@@ -239,8 +202,7 @@ class VideoPlayerControllerAdapter implements PlayerController {
   Stream<PlayerStatus> get status => _statusCtrl.stream;
 
   @override
-  Duration get position =>
-      _reopenAt ?? _controller?.value.position ?? Duration.zero;
+  Duration get position => _controller?.value.position ?? Duration.zero;
 
   @override
   Duration get duration => _controller?.value.duration ?? Duration.zero;
