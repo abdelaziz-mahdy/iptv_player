@@ -78,7 +78,7 @@ Diagnostics/automation helpers for TV debugging live in `scripts/` and
 
 - **State:** `flutter_bloc` / Cubit, `hydrated_bloc`, `equatable`
 - **Navigation:** `go_router` (`StatefulShellRoute.indexedStack`)
-- **DI:** `get_it` + `injectable`
+- **DI:** `get_it`, registered by hand
 - **Persistence:** `drift` (SQLite) with schema migrations
 - **Models/codegen:** `freezed` + `json_serializable` + `build_runner`
 - **Data:** `xtream_code_client`, `m3u_nullsafe`, `xml` (XMLTV), `dio`

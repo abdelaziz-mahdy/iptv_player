@@ -49,7 +49,7 @@ Requirements: Flutter **3.50.0** (stable), Dart 3.14+, JDK 17, Android SDK 36.
 - **Active playlist is a stream.** Feature cubits subscribe to
   `PlaylistRepository.active()` and re-bind on change — never read `.first` once
   (that caused "no content until restart"). See [lib/features/CLAUDE.md](lib/features/CLAUDE.md).
-- **DI is manual** (`get_it` in `core/di/injection.dart`); `injectable` is unused.
+- **DI is manual** (`get_it` in `core/di/injection.dart`), no codegen.
 - **Generated code is gitignored** (`*.g.dart`, `*.freezed.dart`) — run build_runner.
 - **Data ops return `Result<T>`** (`Ok`/`Err`/`Failure`), not thrown exceptions.
 
