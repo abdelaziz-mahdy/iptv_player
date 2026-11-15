@@ -111,7 +111,9 @@ appear; both are worked around here:
   SurfaceView's buffer queue, so the video scans out at panel resolution while
   the UI layer stays at 1080p. Measured on a Realtek TV: 24.0 fps at 4K24 and
   56.3 fps at 4K60, against ~22 through the GL platform view and 10.9 through
-  the Flutter texture. Upstream: wang-bin/fvp#379.
+  the Flutter texture. Upstream: wang-bin/fvp#379. **Currently off**: seeking
+  with `tunnel` freezes the picture (wang-bin/fvp#420), so the app renders
+  through GL and scales 4K to 1080p until that is fixed in MDK.
 
 - **Audio backend drives frame pacing.** MDK slaves video timing to the audio
   clock; this TV's AAudio reported positions too coarsely and frames presented

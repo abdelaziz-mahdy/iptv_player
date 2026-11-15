@@ -82,13 +82,12 @@ class VideoPlayerControllerAdapter implements PlayerController {
       // fvp/MDK is the player on every platform. On Android TV PowerVR GPUs
       // MDK's 10-bit EGLConfig corrupts video — MainActivity sets
       // EGL_SDR_DEPTH=8 (fvp#374).
-      // 'tunnel' makes MediaCodec output straight into the platform view's
-      // SurfaceView, no GL — 4K scans out at native resolution (24fps at
-      // 4K24, 56fps at 4K60 benchmarked), so maxWidth/maxHeight (a GL-path
-      // clamp) do not apply.
-      // HDR CAVEAT: tunnel output has no per-video HDR-to-GL routing, and
-      // HDR wedges the Realtek decoder (mdk-sdk#361), so HDR titles are
-      // expected to stall.
+      // 'tunnel' is OFF until wang-bin/fvp#420 is fixed in MDK. With it,
+      // MediaCodec writes straight into the platform view's SurfaceView (the
+      // only path that keeps 4K at full rate here: 24fps at 4K24, 56fps at
+      // 4K60, against ~22 through GL), but seeking froze the picture while
+      // audio played, and a frozen decoder is never released. Through GL,
+      // maxWidth/maxHeight scale 4K down to 1080p.
       // Audio backend: MDK's default. It was pinned to OpenSL while AAudio
       // reported positions too coarsely here (fvp#384, fixed upstream), but
       // OpenSL zeroes the audio clock on live streams whose timestamps start
@@ -98,9 +97,8 @@ class VideoPlayerControllerAdapter implements PlayerController {
               ? {
                   'maxWidth': 1920,
                   'maxHeight': 1088,
-                  // Decoder writes straight into the platform view's
-                  // SurfaceView — the only path that sustains 4K here.
-                  'tunnel': true,
+                  // Back to true once fvp#420 is fixed (see above).
+                  'tunnel': false,
                   'player': {
                     if (kAudioRenderer.isNotEmpty)
                       'audio.renderer': kAudioRenderer,
@@ -132,9 +130,8 @@ class VideoPlayerControllerAdapter implements PlayerController {
       unawaited(old.dispose());
     }
 
-    // SurfaceView platform view on Android: own display layer, and with
-    // 'tunnel' the decoder fills it directly — the only path that sustains 4K
-    // on this TV. Texture path on desktop.
+    // SurfaceView platform view on Android: its own display layer, which MDK
+    // renders into through GL. Texture path on desktop.
     _controller = VideoPlayerController.networkUrl(
       Uri.parse(url),
       viewType: Platform.isAndroid

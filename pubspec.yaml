@@ -137,8 +137,9 @@ flutter:
 # thread (closing a player whose decoder was stuck froze the TV into an ANR,
 # #412); the platform-view PR stops surfaceDestroyed from touching a player
 # that was already deleted (SIGSEGV). Drop the override once both ship.
-# NOTE: tunnel output has no HDR-to-GL fallback, so HDR titles stall until
-# wang-bin/mdk-sdk#361 is fixed. The audio backend needs no fork: stock fvp
+# NOTE: the app runs with `tunnel` off until wang-bin/fvp#420 (seek freeze)
+# is fixed; tunnel also stalls HDR titles (wang-bin/mdk-sdk#361). The audio
+# backend needs no fork: stock fvp
 # forwards options['player'] via setProperty, and MDK's "audio.renderer"
 # property == setAudioBackends (see video_controller.dart).
 dependency_overrides:
