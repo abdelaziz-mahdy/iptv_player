@@ -30,4 +30,21 @@ void main() {
       expect(scrubUrl(url), url);
     });
   });
+
+  group('isMdkProgressNoise', () {
+    test('drops the per-percent buffering lines', () {
+      expect(
+          isMdkProgressNoise(
+              'default FrameReader0xe9600b10 ***buffering progress 56%***'),
+          isTrue);
+    });
+
+    test('keeps the buffering start/end markers and everything else', () {
+      expect(isMdkProgressNoise('++++++++++++BUFFERING START++++++++++++'),
+          isFalse);
+      expect(isMdkProgressNoise('++++++++++++BUFFERING END++++++++++++'),
+          isFalse);
+      expect(isMdkProgressNoise('reader open error'), isFalse);
+    });
+  });
 }

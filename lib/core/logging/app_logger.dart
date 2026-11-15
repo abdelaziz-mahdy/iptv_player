@@ -135,3 +135,10 @@ class _FileLogObserver extends TalkerObserver {
   @override
   void onException(TalkerException err) => _write(err);
 }
+
+/// MDK reports buffering in 1% steps ("***buffering progress 56%***"): about
+/// 17,000 lines in four days of TV use, two thirds of the whole log. The
+/// BUFFERING START/END markers around them carry what a stall diagnosis
+/// needs, so the per-percent lines are left out of the shipped log.
+bool isMdkProgressNoise(String message) =>
+    message.contains('***buffering progress ');

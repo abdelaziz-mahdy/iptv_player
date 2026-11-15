@@ -25,6 +25,7 @@ Future<void> main() async {
   // pullable app log, everything under FVP_CAPTURE.
   Logger.root.level = kFvpCaptureBuild ? Level.ALL : Level.INFO;
   Logger.root.onRecord.listen((r) {
+    if (!kFvpCaptureBuild && isMdkProgressNoise(r.message)) return;
     final line = '[${r.loggerName}] ${r.message}';
     if (r.level >= Level.SEVERE) {
       appLog.error(line);
