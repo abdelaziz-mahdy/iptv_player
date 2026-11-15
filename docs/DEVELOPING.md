@@ -11,7 +11,7 @@ dart run build_runner build --delete-conflicting-outputs   # generated code
 flutter run            # pick a device
 ```
 
-Requirements: Flutter **3.44.2** (stable), Dart 3.12+, JDK 17, Android SDK 36.
+Requirements: Flutter **3.50.0** (stable), Dart 3.14+, JDK 17, Android SDK 36.
 
 ## Testing
 

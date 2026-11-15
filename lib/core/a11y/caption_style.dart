@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'accessibility_settings.dart';
 
 /// Resolved caption appearance derived from [AccessibilitySettings].

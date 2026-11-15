@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A titled horizontal scroller of [items] — the building block of the Home
 /// screen's content rows.

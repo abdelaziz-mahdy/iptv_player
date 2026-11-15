@@ -34,7 +34,7 @@ flutter analyze && flutter test                             # must both be clean
 flutter build apk --release                                 # Android (build/app/outputs/flutter-apk/)
 ```
 
-Requirements: Flutter **3.44.2** (stable), Dart 3.12+, JDK 17, Android SDK 36.
+Requirements: Flutter **3.50.0** (stable), Dart 3.14+, JDK 17, Android SDK 36.
 
 ## Project-wide things that bite
 

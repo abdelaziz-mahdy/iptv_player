@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Temporary screen shown for shell branches until the real feature screens
 /// (built in their own plans) replace it.

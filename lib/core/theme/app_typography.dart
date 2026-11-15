@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Bundled font family names (declared in pubspec.yaml `flutter > fonts`).
 const _hanken = 'HankenGrotesk';
