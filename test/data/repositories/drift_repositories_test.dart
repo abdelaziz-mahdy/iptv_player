@@ -462,6 +462,43 @@ void main() {
       expect(channelStream.map((c) => c.id),
           containsAll(['stub-c1', 'stub-c2']));
     });
+
+    test('group-title groups become Live categories, in playlist order',
+        () async {
+      final db = _makeDb();
+      addTearDown(db.close);
+      const p = Playlist(
+        id: _playlistId,
+        name: 'M3U Playlist',
+        type: PlaylistType.m3u,
+        serverUrl: 'http://example.com/playlist.m3u',
+        initial: 'M',
+      );
+      Channel ch(String id, String? group) => Channel(
+          id: id,
+          playlistId: _playlistId,
+          name: id,
+          number: id,
+          streamUrl: 'http://example.com/$id',
+          categoryId: group);
+      final repo = DriftContentRepository(
+        db,
+        dio: _FakeDio(''),
+        m3u: _StubM3uSource([
+          ch('a', 'News'),
+          ch('b', 'Sports'),
+          ch('c', 'News'),
+          ch('d', null),
+        ]),
+      );
+
+      await repo.importPlaylist(p);
+
+      final cats = await repo.categories(_playlistId, MediaKind.channel);
+      expect(cats.map((c) => (c.id, c.name)),
+          [('News', 'News'), ('Sports', 'Sports')],
+          reason: 'without category rows Live TV only ever shows "All"');
+    });
   });
 
   // -------------------------------------------------------------------------

@@ -397,8 +397,27 @@ class DriftContentRepository implements ContentRepository {
           final response = await _dio.get<String>(url);
           final body = response.data ?? '';
           final channels = await _m3u.parse(body, playlistId: p.id);
-          await _db.replaceChannels(
-              p.id, channels.map(_toChannelCompanion).toList());
+          // M3U has no category list of its own: each group-title is one.
+          // Without these rows Live TV treats every channel as
+          // uncategorised and shows only "All".
+          final groups = <String>{
+            for (final c in channels)
+              if (c.categoryId case final g? when g.isNotEmpty) g,
+          };
+          await Future.wait([
+            _db.replaceChannels(
+                p.id, channels.map(_toChannelCompanion).toList()),
+            _db.replaceCategories(p.id, _kindToType(MediaKind.channel), [
+              for (final (i, g) in groups.indexed)
+                CategoriesCompanion.insert(
+                  playlistId: p.id,
+                  type: _kindToType(MediaKind.channel),
+                  categoryId: g,
+                  name: g,
+                  position: Value(i),
+                ),
+            ]),
+          ]);
 
         case PlaylistType.xtream:
           final serverUrl = p.serverUrl;
