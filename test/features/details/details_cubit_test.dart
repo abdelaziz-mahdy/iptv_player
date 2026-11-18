@@ -142,6 +142,38 @@ void main() {
         expect((target.seasonNumber, target.episodeNumber), (2, 1));
       });
 
+      test('an older part-watched episode does not pull Play back', () async {
+        // TV log: E12 left at 0:01 on Nov 17, E13-E15 finished after it, and
+        // Play still offered E12.
+        await playback.saveProgress(
+            _progress('s3-1-e1', 30, at: DateTime.utc(2026, 1, 1)));
+        await playback.saveProgress(
+            _progress('s3-1-e2', 2700, at: DateTime.utc(2026, 1, 2)));
+
+        final cubit = makeCubit();
+        await cubit.loadSeries(_series('s3'));
+        await Future<void>.delayed(Duration.zero);
+
+        final target = cubit.playTarget()!;
+        expect(target.episodes[target.episodeIndex].title, 'S2E1');
+        expect(target.isResume, isFalse);
+      });
+
+      test('finishing the last episode starts the series over', () async {
+        await playback.saveProgress(
+            _progress('s3-1-e2', 900, at: DateTime.utc(2026, 1, 1)));
+        await playback.saveProgress(
+            _progress('s3-2-e2', 2700, at: DateTime.utc(2026, 1, 2)));
+
+        final cubit = makeCubit();
+        await cubit.loadSeries(_series('s3'));
+        await Future<void>.delayed(Duration.zero);
+
+        final target = cubit.playTarget()!;
+        expect(target.episodeIndex, 0);
+        expect(target.isResume, isFalse);
+      });
+
       test('rewatching an earlier episode makes Play continue that one',
           () async {
         // The reported confusion: finish S1E1 and S1E2, then go back and seek

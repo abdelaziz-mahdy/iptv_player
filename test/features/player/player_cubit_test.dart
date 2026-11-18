@@ -268,6 +268,24 @@ void main() {
                 'at the last seconds');
       });
 
+      test('a brief replay of a watched item keeps it watched', () async {
+        // TV log: Previous/Next hopping opened a finished episode for two
+        // seconds and saved 0:01 over its "watched" row.
+        await playback.saveProgress(progressAt(5300));
+        await cubit.start();
+        await controller.seek(const Duration(seconds: 2));
+        await cubit.saveProgressNow();
+        expect((await playback.progressFor('movie:m1'))!.isWatched, isTrue);
+      });
+
+      test('a real rewatch of a watched item saves its position', () async {
+        await playback.saveProgress(progressAt(5300));
+        await cubit.start();
+        await controller.seek(const Duration(minutes: 5));
+        await cubit.saveProgressNow();
+        expect((await playback.progressFor('movie:m1'))!.positionSec, 300);
+      });
+
       test('closing before playback begins keeps the existing resume point',
           () async {
         // User backs out while the stream is still buffering: the controller

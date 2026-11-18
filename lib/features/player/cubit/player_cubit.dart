@@ -138,6 +138,13 @@ class PlayerCubit extends Cubit<PlayerUiState> {
   /// alone loses the position — we checkpoint periodically instead.
   static const progressSaveInterval = Duration(seconds: 10);
 
+  /// A finished item replays from the start; its "watched" row is only
+  /// overwritten once the replay gets this far. Hopping through an episode
+  /// with Previous/Next otherwise turned it back into "unfinished at 0:01".
+  static const rewatchCommitAfter = Duration(minutes: 1);
+
+  bool _replayingWatched = false;
+
   PlayerCubit(
     this._controller,
     this._playback, {
@@ -244,6 +251,7 @@ class PlayerCubit extends Cubit<PlayerUiState> {
     Duration? startAt;
     if (!isLive) {
       final progress = await _playback.progressFor(itemKey);
+      _replayingWatched = progress?.isWatched ?? false;
       if (progress != null && !progress.isWatched && progress.positionSec > 0) {
         startAt = Duration(seconds: progress.positionSec);
       }
@@ -496,6 +504,7 @@ class PlayerCubit extends Cubit<PlayerUiState> {
     // buffering, before the resume seek has landed. Applies to the periodic
     // tick, the app-background save, and close() alike.
     if (_controller.position <= Duration.zero) return;
+    if (_replayingWatched && _controller.position < rewatchCommitAfter) return;
     await _playback.saveProgress(
       WatchProgress(
         itemKey: itemKey,

@@ -186,6 +186,26 @@ class DriftContentRepository implements ContentRepository {
   }
 
   @override
+  Future<Episode?> episodeAfter(String episodeId) async {
+    final current = (await _db.getEpisodesByIds([episodeId])).firstOrNull;
+    if (current == null) return null;
+    final season = await _db.getSeason(current.seasonId);
+    if (season == null) return null;
+    final seasons = (await _db.getSeasons(season.seriesId))
+        .where((s) => s.number >= season.number)
+        .toList()
+      ..sort((a, b) => a.number.compareTo(b.number));
+    for (final s in seasons) {
+      final eps = (await _db.getEpisodes(s.id))
+          .where((e) => s.id != season.id || e.number > current.number)
+          .toList()
+        ..sort((a, b) => a.number.compareTo(b.number));
+      if (eps.isNotEmpty) return _episodeFromRow(eps.first);
+    }
+    return null;
+  }
+
+  @override
   Future<Result<SeriesDetail>> loadSeriesDetail(Series series) async {
     debugPrint(
         '[series-detail] load id="${series.id}" pid="${series.playlistId}"');

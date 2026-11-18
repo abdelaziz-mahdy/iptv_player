@@ -138,17 +138,15 @@ class DetailsCubit extends Cubit<DetailsState> {
 
   String? _lastPlayTargetLog;
 
-  /// Where the header Play button should start, based on watch progress:
-  /// the most recently played unfinished episode; else the episode after the
-  /// last finished one (crossing into the next season if needed); else the
-  /// first episode. [episodes] is the whole series in order (see
-  /// [allEpisodes]), so Next keeps working across seasons. Returns null when
-  /// the series has no episodes.
+  /// Where the header Play button should start: decided by the episode
+  /// played most recently. Unfinished: resume it. Finished: the episode after
+  /// it (crossing into the next season), or the first episode when it was the
+  /// last one. No progress: the first episode. [episodes] is the whole series
+  /// in order (see [allEpisodes]), so Next keeps working across seasons.
+  /// Returns null when the series has no episodes.
   ///
-  /// Also reports which episode that is, so the button can name it. Without
-  /// that the choice is invisible and surprising: rewatching part of an
-  /// earlier episode makes it the newest unfinished one, so Play goes back to
-  /// it rather than on to the episode after the last one you finished.
+  /// Only the newest row counts: an older episode left part-watched must not
+  /// pull Play back once later episodes have been finished.
   ({
     List<Episode> episodes,
     int episodeIndex,
@@ -158,36 +156,36 @@ class DetailsCubit extends Cubit<DetailsState> {
   })? playTarget() {
     if (state.seasons.isEmpty) return null;
 
-    WatchProgress? resume;
-    (int, int)? resumeAt;
-    (int, int)? lastWatchedAt;
+    WatchProgress? newest;
+    (int, int)? newestAt;
     for (var s = 0; s < state.seasons.length; s++) {
       final eps = _episodesBySeason[state.seasons[s].id] ?? const [];
       for (var e = 0; e < eps.length; e++) {
         final p = state.progressByKey['episode:${eps[e].id}'];
-        if (p == null) continue;
-        if (p.isWatched) {
-          lastWatchedAt = (s, e);
-        } else if (p.positionSec > 0 &&
-            (resume == null || p.updatedAt.isAfter(resume.updatedAt))) {
-          resume = p;
-          resumeAt = (s, e);
+        if (p == null || (!p.isWatched && p.positionSec <= 0)) continue;
+        // Ties go to the later episode.
+        if (newest == null || !p.updatedAt.isBefore(newest.updatedAt)) {
+          newest = p;
+          newestAt = (s, e);
         }
       }
     }
 
     var target = (0, 0);
-    if (resumeAt != null) {
-      target = resumeAt;
-    } else if (lastWatchedAt != null) {
-      final (s, e) = lastWatchedAt;
-      final eps = _episodesBySeason[state.seasons[s].id] ?? const [];
-      if (e + 1 < eps.length) {
-        target = (s, e + 1);
-      } else if (s + 1 < state.seasons.length) {
-        target = (s + 1, 0);
+    final isResume = newest != null && !newest.isWatched;
+    if (newestAt != null) {
+      final (s, e) = newestAt;
+      if (isResume) {
+        target = newestAt;
+      } else {
+        final eps = _episodesBySeason[state.seasons[s].id] ?? const [];
+        if (e + 1 < eps.length) {
+          target = (s, e + 1);
+        } else if (s + 1 < state.seasons.length) {
+          target = (s + 1, 0);
+        }
+        // else: the last episode was finished — start over from the first.
       }
-      // else: everything watched — start over from the first episode.
     }
 
     final seasonEpisodes =
@@ -202,7 +200,7 @@ class DetailsCubit extends Cubit<DetailsState> {
         .length;
     final decision = 'playTarget seasons=${state.seasons.length} '
         'progressRows=${state.progressByKey.length} matchedEpisodes=$known '
-        'resumeAt=$resumeAt lastWatchedAt=$lastWatchedAt -> '
+        'newestAt=$newestAt watched=${newest?.isWatched} -> '
         'season=${target.$1} episode=${target.$2}';
     // Called from build, and progress is saved every 10 s during playback:
     // log the decision when it changes, not on every rebuild.
@@ -221,7 +219,7 @@ class DetailsCubit extends Cubit<DetailsState> {
       episodeIndex: index,
       seasonNumber: state.seasons[target.$1].number,
       episodeNumber: seasonEpisodes[target.$2].number,
-      isResume: resumeAt != null && target == resumeAt,
+      isResume: isResume,
     );
   }
 

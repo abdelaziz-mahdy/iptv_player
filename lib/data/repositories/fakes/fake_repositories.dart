@@ -92,6 +92,12 @@ class FakeContentRepository implements ContentRepository {
       Season(id: 's3-1', seriesId: 's3', number: 1),
       Season(id: 's3-2', seriesId: 's3', number: 2),
     ],
+    // Ids in the real `<playlist>:series:<sid>:season:<n>:ep:<id>` shape, which
+    // Continue Watching groups by.
+    'p1:series:s4': [
+      Season(id: 'p1:series:s4:season:1', seriesId: 'p1:series:s4', number: 1),
+      Season(id: 'p1:series:s4:season:2', seriesId: 'p1:series:s4', number: 2),
+    ],
   };
   static const _episodes = {
     's1-1': [
@@ -104,6 +110,13 @@ class FakeContentRepository implements ContentRepository {
     's3-1': [
       Episode(id: 's3-1-e1', seasonId: 's3-1', title: 'S1E1', number: 1, durationSec: 2700, streamUrl: 'http://x/s3e1'),
       Episode(id: 's3-1-e2', seasonId: 's3-1', title: 'S1E2', number: 2, durationSec: 2700, streamUrl: 'http://x/s3e2'),
+    ],
+    'p1:series:s4:season:1': [
+      Episode(id: 'p1:series:s4:season:1:ep:41', seasonId: 'p1:series:s4:season:1', title: 'S4 1x1', number: 1, durationSec: 2700, streamUrl: 'http://x/41'),
+      Episode(id: 'p1:series:s4:season:1:ep:42', seasonId: 'p1:series:s4:season:1', title: 'S4 1x2', number: 2, durationSec: 2700, streamUrl: 'http://x/42'),
+    ],
+    'p1:series:s4:season:2': [
+      Episode(id: 'p1:series:s4:season:2:ep:43', seasonId: 'p1:series:s4:season:2', title: 'S4 2x1', number: 1, durationSec: 2700, streamUrl: 'http://x/43'),
     ],
     's3-2': [
       Episode(id: 's3-2-e1', seasonId: 's3-2', title: 'S2E1', number: 1, durationSec: 2700, streamUrl: 'http://x/s3e3'),
@@ -136,6 +149,16 @@ class FakeContentRepository implements ContentRepository {
         for (final e in list)
           if (idSet.contains(e.id)) e,
     ];
+  }
+
+  @override
+  Future<Episode?> episodeAfter(String episodeId) async {
+    for (final seasons in _seasons.values) {
+      final all = [for (final s in seasons) ...?_episodes[s.id]];
+      final i = all.indexWhere((e) => e.id == episodeId);
+      if (i >= 0) return i + 1 < all.length ? all[i + 1] : null;
+    }
+    return null;
   }
 
   @override

@@ -37,6 +37,9 @@ String _continueGroupKey(String itemKey) {
   return itemKey;
 }
 
+/// Most cards Continue Watching shows.
+const int kContinueWatchingLimit = 20;
+
 class HomeCubit extends Cubit<HomeState> {
   HomeCubit(this._content, this._playback, this._playlists)
       : super(const HomeState());
@@ -90,7 +93,8 @@ class HomeCubit extends Cubit<HomeState> {
     _seriesSub = _content.series(pid).listen(
       (series) => emit(state.copyWith(series: series)),
     );
-    _continueSub = _playback.continueWatching(pid).listen(_onContinueWatching);
+    _continueSub =
+        _playback.progressForPlaylist(pid).listen(_onContinueWatching);
     _favoritesSub = _content.favorites(pid).listen(
       (favs) => emit(
         state.copyWith(favoriteKeys: favs.map((f) => f.itemKey).toSet()),
@@ -98,11 +102,51 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
+  /// Bumped per progress emission so a slow [_continueFrom] for an older
+  /// emission cannot overwrite a newer one.
+  int _continueGeneration = 0;
+
+  /// Builds Continue Watching from every progress row: one card per movie or
+  /// series, decided by its newest row. Unfinished: that row. A finished
+  /// episode: the next episode, or nothing after the series' last one. A
+  /// finished movie: nothing.
+  Future<List<WatchProgress>?> _continueFrom(
+    List<WatchProgress> rows,
+    int generation,
+  ) async {
+    final newestFirst = rows.where((p) => p.kind != MediaKind.channel).toList()
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final cards = <WatchProgress>[];
+    for (final p in collapseContinueWatching(newestFirst)) {
+      if (cards.length >= kContinueWatchingLimit) break;
+      if (!p.isWatched) {
+        cards.add(p);
+        continue;
+      }
+      if (!p.itemKey.startsWith('episode:')) continue;
+      final next =
+          await _content.episodeAfter(p.itemKey.substring('episode:'.length));
+      if (isClosed || generation != _continueGeneration) return null;
+      if (next == null) continue;
+      cards.add(WatchProgress(
+        itemKey: 'episode:${next.id}',
+        playlistId: p.playlistId,
+        kind: p.kind,
+        positionSec: 0,
+        durationSec: 0,
+        updatedAt: p.updatedAt,
+      ));
+    }
+    return cards;
+  }
+
   /// Emits Continue Watching, then enriches series-episode entries by fetching
   /// their cached [Episode] rows (for the "S{season} · E{number}" label).
   Future<void> _onContinueWatching(List<WatchProgress> rows) async {
     if (isClosed) return;
-    final cw = collapseContinueWatching(rows);
+    final generation = ++_continueGeneration;
+    final cw = await _continueFrom(rows, generation);
+    if (cw == null || isClosed) return;
     emit(state.copyWith(continueWatching: cw));
 
     final episodeIds = [
@@ -117,7 +161,7 @@ class HomeCubit extends Cubit<HomeState> {
       return;
     }
     final eps = await _content.episodesByIds(episodeIds);
-    if (isClosed) return;
+    if (isClosed || generation != _continueGeneration) return;
     emit(state.copyWith(episodesById: {for (final e in eps) e.id: e}));
   }
 

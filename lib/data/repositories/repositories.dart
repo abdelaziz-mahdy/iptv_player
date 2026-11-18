@@ -30,6 +30,10 @@ abstract class ContentRepository {
   /// locally; missing ids are simply omitted.
   Future<List<Episode>> episodesByIds(List<String> ids);
 
+  /// The cached episode that follows [episodeId] in the series (crossing into
+  /// the next season), or null when it is the last one or is not cached.
+  Future<Episode?> episodeAfter(String episodeId);
+
   /// Fetches a series' full detail (plot, seasons, episodes) from the provider
   /// on demand and caches it locally. Seasons/episodes are not fetched during
   /// the initial import (too expensive per-series), so this is called when a

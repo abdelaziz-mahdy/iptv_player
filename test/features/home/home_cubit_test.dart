@@ -112,6 +112,53 @@ void main() {
       await cubit.close();
     });
 
+    Future<HomeCubit> homeWith(List<WatchProgress> rows) async {
+      final playback = FakePlaybackRepository();
+      for (final r in rows) {
+        await playback.saveProgress(r);
+      }
+      final cubit = HomeCubit(
+        FakeContentRepository(),
+        playback,
+        FakePlaylistRepository(),
+      );
+      await cubit.load();
+      for (var i = 0; i < 4; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      return cubit;
+    }
+
+    WatchProgress ep(String id, int pos, int day) => WatchProgress(
+          itemKey: 'episode:$id',
+          playlistId: 'p1',
+          kind: MediaKind.episode,
+          positionSec: pos,
+          durationSec: 2700,
+          updatedAt: DateTime.utc(2026, 1, day),
+        );
+
+    test('a finished episode shows the next one, not an older unfinished one',
+        () async {
+      final cubit = await homeWith([
+        ep('p1:series:s4:season:1:ep:41', 600, 1),
+        ep('p1:series:s4:season:1:ep:42', 2700, 2),
+      ]);
+      expect(cubit.state.continueWatching.map((p) => p.itemKey),
+          ['episode:p1:series:s4:season:2:ep:43']);
+      expect(cubit.state.continueWatching.single.positionSec, 0);
+      await cubit.close();
+    });
+
+    test('a series whose last episode was finished leaves the row', () async {
+      final cubit = await homeWith([
+        ep('p1:series:s4:season:1:ep:41', 600, 1),
+        ep('p1:series:s4:season:2:ep:43', 2700, 2),
+      ]);
+      expect(cubit.state.continueWatching, isEmpty);
+      await cubit.close();
+    });
+
     test('load() emits state with non-empty movies and series', () async {
       final cubit = HomeCubit(
         FakeContentRepository(),
