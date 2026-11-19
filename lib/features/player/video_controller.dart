@@ -88,10 +88,7 @@ class VideoPlayerControllerAdapter implements PlayerController {
       // 4K60, against ~22 through GL), but seeking froze the picture while
       // audio played, and a frozen decoder is never released. Through GL,
       // maxWidth/maxHeight scale 4K down to 1080p.
-      // Audio backend: MDK's default. It was pinned to OpenSL while AAudio
-      // reported positions too coarsely here (fvp#384, fixed upstream), but
-      // OpenSL zeroes the audio clock on live streams whose timestamps start
-      // far from zero, freezing video while sound plays — see kAudioRenderer.
+      // Audio backend: AudioTrack, see kAudioRenderer.
       fvp.registerWith(
           options: Platform.isAndroid
               ? {
