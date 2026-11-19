@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -197,7 +197,13 @@ class _WideLayoutState extends State<_WideLayout> {
     final title = widget.title;
     final onOpen = widget.onOpen;
 
-    return BlocBuilder<GridCubit, GridState>(
+    return BlocConsumer<GridCubit, GridState>(
+      // A new category starts at its first row: keeping the old offset left
+      // the user mid-list, as if they had reached the end.
+      listenWhen: (a, b) => a.selectedCategoryId != b.selectedCategoryId,
+      listener: (_, _) {
+        if (_gridController.hasClients) _gridController.jumpTo(0);
+      },
       builder: (ctx, state) {
         final displayed = state.filteredItems;
 
@@ -236,6 +242,7 @@ class _WideLayoutState extends State<_WideLayout> {
                 // "All" is the empty id; the cubit models that selection as null.
                 selectedId: state.selectedCategoryId ?? '',
                 pinnedCount: state.pinnedCategoryCount,
+                recentCount: state.recentCategoryCount,
                 onSelect: (id) => ctx.read<GridCubit>().selectCategory(
                   id.isEmpty ? null : id,
                 ),
@@ -248,9 +255,8 @@ class _WideLayoutState extends State<_WideLayout> {
                     ? Center(
                         child: Text(
                           AppLocalizations.of(context)!.noItemsFound,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyLarge?.copyWith(color: p.dim),
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(color: p.dim),
                         ),
                       )
                     : GridView.builder(
@@ -265,10 +271,14 @@ class _WideLayoutState extends State<_WideLayout> {
                           final itemKey = entry.isSeries
                               ? 'episode:${entry.id}'
                               : 'movie:${entry.id}';
+                          final watch = state.progressByKey[itemKey];
                           return PosterCard(
                             title: entry.title,
                             subtitle: entry.subtitle,
                             imageUrl: entry.posterUrl,
+                            progress: watch?.fraction,
+                            remainingSec: watch?.remainingSec,
+                            watched: watch?.isWatched ?? false,
                             isFavorite: state.favoriteKeys.contains(itemKey),
                             onTap: () => onOpen(entry),
                             onToggleFavorite: () =>
@@ -335,6 +345,7 @@ class _NarrowLayout extends StatelessWidget {
                       builder: (_) => CategoryResultsScreen(
                         categoryName: label,
                         items: items,
+                        progressByKey: cubit.state.progressByKey,
                         onOpen: onOpen,
                       ),
                     ),
@@ -395,11 +406,15 @@ class CategoryResultsScreen extends StatelessWidget {
     super.key,
     required this.categoryName,
     required this.items,
+    this.progressByKey = const {},
     required this.onOpen,
   });
 
   final String categoryName;
   final List<GridEntry> items;
+
+  /// Watch progress keyed `movie:<id>`, snapshotted with [items].
+  final Map<String, WatchProgress> progressByKey;
   final void Function(GridEntry entry) onOpen;
 
   @override
@@ -432,11 +447,17 @@ class CategoryResultsScreen extends StatelessWidget {
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final entry = items[index];
+                final watch = entry.isSeries
+                    ? null
+                    : progressByKey['movie:${entry.id}'];
                 return PosterCard(
                   autofocus: index == 0,
                   title: entry.title,
                   subtitle: entry.subtitle,
                   imageUrl: entry.posterUrl,
+                  progress: watch?.fraction,
+                  remainingSec: watch?.remainingSec,
+                  watched: watch?.isWatched ?? false,
                   onTap: () => onOpen(entry),
                 );
               },

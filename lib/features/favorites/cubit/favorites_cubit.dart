@@ -14,27 +14,38 @@ import '../../grid/cubit/grid_cubit.dart' show GridEntry;
 
 class FavoritesState extends Equatable {
   final bool loading;
+
+  /// Newest favorite first.
   final List<GridEntry> entries;
+
+  /// Watch progress of favorite movies, keyed by entry id. Series have no
+  /// single position and channels are live, so neither has an entry.
+  final Map<String, WatchProgress> movieProgress;
 
   const FavoritesState({
     this.loading = false,
     this.entries = const [],
+    this.movieProgress = const {},
   });
 
   bool get isEmpty => entries.isEmpty;
 
+  WatchProgress? progressFor(GridEntry entry) => movieProgress[entry.id];
+
   FavoritesState copyWith({
     bool? loading,
     List<GridEntry>? entries,
+    Map<String, WatchProgress>? movieProgress,
   }) {
     return FavoritesState(
       loading: loading ?? this.loading,
       entries: entries ?? this.entries,
+      movieProgress: movieProgress ?? this.movieProgress,
     );
   }
 
   @override
-  List<Object?> get props => [loading, entries];
+  List<Object?> get props => [loading, entries, movieProgress];
 }
 
 // ---------------------------------------------------------------------------
@@ -42,11 +53,16 @@ class FavoritesState extends Equatable {
 // ---------------------------------------------------------------------------
 
 class FavoritesCubit extends Cubit<FavoritesState> {
-  FavoritesCubit(this._content, this._playlists)
-      : super(const FavoritesState());
+  FavoritesCubit(this._content, this._playlists, {this._playback})
+    : super(const FavoritesState());
 
   final ContentRepository _content;
   final PlaylistRepository _playlists;
+
+  /// Optional: powers the watched/progress look on favorite movies.
+  final PlaybackRepository? _playback;
+  StreamSubscription<List<WatchProgress>>? _progressSub;
+  Map<String, WatchProgress> _progress = const {};
 
   StreamSubscription<Playlist?>? _activeSub;
   StreamSubscription<List<Favorite>>? _favsSub;
@@ -61,6 +77,11 @@ class FavoritesCubit extends Cubit<FavoritesState> {
   List<VodItem> _movies = [];
   List<Series> _series = [];
   List<Channel> _channels = [];
+
+  /// Catalogs (movies/series/channels) that have emitted since binding. A
+  /// favorite only counts as unresolvable once all three are in: on the TV
+  /// every favorite was logged "hidden" because favorites arrived first.
+  final Set<MediaKind> _loaded = {};
 
   /// React to the ACTIVE playlist so favorites reflect the imported/switched
   /// playlist live, without an app restart.
@@ -79,10 +100,13 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     _moviesSub?.cancel();
     _seriesSub?.cancel();
     _channelsSub?.cancel();
+    _progressSub?.cancel();
+    _progress = const {};
     _favorites = [];
     _movies = [];
     _series = [];
     _channels = [];
+    _loaded.clear();
 
     if (pid == null) {
       emit(state.copyWith(loading: false, entries: const []));
@@ -96,16 +120,24 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 
     _moviesSub = _content.movies(pid).listen((movies) {
       _movies = movies;
+      _loaded.add(MediaKind.movie);
       _rebuild();
     });
 
     _seriesSub = _content.series(pid).listen((series) {
       _series = series;
+      _loaded.add(MediaKind.episode);
       _rebuild();
     });
 
     _channelsSub = _content.channels(pid).listen((channels) {
       _channels = channels;
+      _loaded.add(MediaKind.channel);
+      _rebuild();
+    });
+
+    _progressSub = _playback?.progressForPlaylist(pid).listen((rows) {
+      _progress = {for (final r in rows) r.itemKey: r};
       _rebuild();
     });
   }
@@ -116,16 +148,30 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 
   void _rebuild() {
     final entries = <GridEntry>[];
-    for (final fav in _favorites) {
+    final movieProgress = <String, WatchProgress>{};
+    final newestFirst = [..._favorites]
+      ..sort((a, b) => b.addedAt.compareTo(a.addedAt));
+    for (final fav in newestFirst) {
       final entry = _resolve(fav);
       if (entry != null) {
         entries.add(entry);
-      } else if (_loggedMissing.add(fav.itemKey)) {
+        if (fav.kind == MediaKind.movie) {
+          final p = _progress['movie:${entry.id}'];
+          if (p != null) movieProgress[entry.id] = p;
+        }
+      } else if (_loaded.length == 3 && _loggedMissing.add(fav.itemKey)) {
         appLog.warning(
-            'favorites: ${fav.itemKey} title="${fav.title}" unresolvable — hidden');
+          'favorites: ${fav.itemKey} title="${fav.title}" unresolvable — hidden',
+        );
       }
     }
-    emit(state.copyWith(loading: false, entries: entries));
+    emit(
+      state.copyWith(
+        loading: false,
+        entries: entries,
+        movieProgress: movieProgress,
+      ),
+    );
   }
 
   /// Finds the favorited item among [items].
@@ -150,8 +196,10 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     String Function(T) idOf,
     String Function(T) titleOf,
   ) {
-    T? firstWhere(bool Function(T) test) =>
-        items.cast<T?>().firstWhere((i) => i != null && test(i), orElse: () => null);
+    T? firstWhere(bool Function(T) test) => items.cast<T?>().firstWhere(
+      (i) => i != null && test(i),
+      orElse: () => null,
+    );
 
     final byId = firstWhere((i) => idOf(i) == id);
     if (byId != null) {
@@ -179,13 +227,14 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 
   void _repair(Favorite fav, String newItemKey, String title) {
     if (newItemKey == fav.itemKey && title == fav.title) return;
-    appLog.info(
-        'favorites: heal ${fav.itemKey} -> $newItemKey title="$title"');
-    unawaited(_content.repairFavorite(
-      oldItemKey: fav.itemKey,
-      newItemKey: newItemKey,
-      title: title,
-    ));
+    appLog.info('favorites: heal ${fav.itemKey} -> $newItemKey title="$title"');
+    unawaited(
+      _content.repairFavorite(
+        oldItemKey: fav.itemKey,
+        newItemKey: newItemKey,
+        title: title,
+      ),
+    );
   }
 
   GridEntry? _resolve(Favorite fav) {
@@ -196,8 +245,14 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 
     switch (kindStr) {
       case 'movie':
-        final movie =
-            _pick(fav, id, kindStr, _movies, (m) => m.id, (m) => m.title);
+        final movie = _pick(
+          fav,
+          id,
+          kindStr,
+          _movies,
+          (m) => m.id,
+          (m) => m.title,
+        );
         if (movie == null) return null;
         return GridEntry(
           id: movie.id,
@@ -215,8 +270,14 @@ class FavoritesCubit extends Cubit<FavoritesState> {
       // details all use that key), so resolve both prefixes against series.
       case 'series':
       case 'episode':
-        final show =
-            _pick(fav, id, kindStr, _series, (s) => s.id, (s) => s.title);
+        final show = _pick(
+          fav,
+          id,
+          kindStr,
+          _series,
+          (s) => s.id,
+          (s) => s.title,
+        );
         if (show == null) return null;
         return GridEntry(
           id: show.id,
@@ -228,8 +289,14 @@ class FavoritesCubit extends Cubit<FavoritesState> {
         );
 
       case 'channel':
-        final ch =
-            _pick(fav, id, kindStr, _channels, (c) => c.id, (c) => c.name);
+        final ch = _pick(
+          fav,
+          id,
+          kindStr,
+          _channels,
+          (c) => c.id,
+          (c) => c.name,
+        );
         if (ch == null) return null;
         return GridEntry(
           id: ch.id,
@@ -253,6 +320,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     await _moviesSub?.cancel();
     await _seriesSub?.cancel();
     await _channelsSub?.cancel();
+    await _progressSub?.cancel();
     return super.close();
   }
 }

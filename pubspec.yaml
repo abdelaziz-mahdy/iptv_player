@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.3+4
 
 environment:
-  sdk: ^3.12.2
+  sdk: ^3.14.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -31,16 +31,11 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
   flutter_bloc: ^9.1.1
   hydrated_bloc: ^11.0.0
-  equatable: ^2.0.8
-  bloc_concurrency: ^0.3.0
-  go_router: ^17.3.0
+  equatable: ^3.0.0
+  go_router: ^18.1.4
   get_it: ^9.2.1
-  injectable: ^3.0.0
   intl: ^0.20.2
   path_provider: ^2.1.6
   freezed_annotation: ^3.1.0
@@ -53,22 +48,21 @@ dependencies:
   dio: ^5.9.2
   drift: ^2.34.0
   drift_flutter: ^0.3.0
-  flutter_secure_storage: ^10.3.1
-  connectivity_plus: ^7.1.1
   video_player: ^2.11.1
   # fvp (MDK) backs video_player on every platform. On Android its
   # decoder-to-SurfaceView path is the only one that sustains 4K on TV
   # hardware; media_kit/libmpv was the Android player until that landed.
-  fvp: ^0.37.2
+  fvp: ^0.40.0
   wakelock_plus: ^1.6.1
-  subtitle: ^0.2.0
   # Used only by the FVP_CAPTURE debug build to surface MDK's log=all output
   # (fvp forwards MDK logs through package:logging) — see core/debug_flags.dart.
   logging: ^1.3.0
   flutter_android_tv_text_field:
     path: packages/flutter_android_tv_text_field
   talker_flutter: ^5.1.19
-  cached_network_image: ^3.4.1
+  cached_network_image: ^4.0.7
+  material_ui: ^1.11.0
+  cupertino_icons: ^2.0.0
 
 dev_dependencies:
   flutter_test:
@@ -86,12 +80,9 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   build_runner: ^2.15.0
-  freezed: ^3.2.6-dev.1
+  freezed: ^4.0.1
   json_serializable: ^6.14.0
-  injectable_generator: ^3.0.2
   bloc_test: ^10.0.0
-  mocktail: ^1.0.5
-  fake_async: ^1.3.2
   drift_dev: ^2.34.0
   flutter_launcher_icons: ^0.14.4
 
@@ -141,17 +132,18 @@ flutter:
           weight: 700
 
 
-# fvp pinned to the branch of upstream PR wang-bin/fvp#379: SurfaceView
-# platform view + `tunnel` decoding straight into it (MediaCodec writes to the
-# surface, no GL) — the only 4K-capable path on this TV, benchmarked
-# 2026-07-19 and posted on the PR — plus the surface detach/re-attach that
-# survives backgrounding. Drop the override once it is merged and released.
-# NOTE: this branch has no HDR-to-GL fallback, so HDR titles stall until
-# wang-bin/mdk-sdk#361 is fixed. The audio backend needs no fork: stock fvp
+# fvp pinned to abdelaziz-mahdy/fvp `app/dispose-fixes`: fvp 0.40.0 plus two
+# open upstream PRs. wang-bin/fvp#413 deletes the player off Android's main
+# thread (closing a player whose decoder was stuck froze the TV into an ANR,
+# #412); the platform-view PR stops surfaceDestroyed from touching a player
+# that was already deleted (SIGSEGV). Drop the override once both ship.
+# NOTE: the app runs with `tunnel` off until wang-bin/fvp#420 (seek freeze)
+# is fixed; tunnel also stalls HDR titles (wang-bin/mdk-sdk#361). The audio
+# backend needs no fork: stock fvp
 # forwards options['player'] via setProperty, and MDK's "audio.renderer"
 # property == setAudioBackends (see video_controller.dart).
 dependency_overrides:
   fvp:
     git:
       url: https://github.com/abdelaziz-mahdy/fvp.git
-      ref: 70806fb58dcaf0635a21acd648cb76d8a3d2f0f0
+      ref: 9283bcf936241518a4802a9d4890f794f927bbe9

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/a11y/accessibility_cubit.dart';
@@ -131,7 +131,13 @@ class _LiveViewState extends State<_LiveView> {
           ),
         ],
       ),
-      body: BlocBuilder<LiveCubit, LiveState>(
+      body: BlocConsumer<LiveCubit, LiveState>(
+        // A new group starts at its first row: keeping the old offset left
+        // the user mid-list, as if they had reached the end.
+        listenWhen: (a, b) => a.selectedGroupId != b.selectedGroupId,
+        listener: (_, _) {
+          if (_gridController.hasClients) _gridController.jumpTo(0);
+        },
         builder: (context, state) {
           if (state.loading) {
             return const LoadingState();
@@ -190,6 +196,7 @@ class _WideLayout extends StatelessWidget {
               ],
               selectedId: state.selectedGroupId,
               pinnedCount: state.pinnedGroupCount,
+              recentCount: state.recentGroupCount,
               onSelect: (id) => context.read<LiveCubit>().selectGroup(id),
             ),
             // Divider
@@ -265,9 +272,8 @@ class _NarrowLayout extends StatelessWidget {
                     ),
                     Text(
                       '${group.count}',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelSmall?.copyWith(color: p.dim),
+                      style: Theme.of(context).textTheme.labelSmall
+                          ?.copyWith(color: p.dim),
                     ),
                     const SizedBox(width: 8),
                     Icon(Icons.chevron_right, color: p.dim, size: IconSize.sm),

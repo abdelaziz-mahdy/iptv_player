@@ -1,6 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_player/core/di/injection.dart';
+import 'package:iptv_player/data/models/models.dart';
+import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
+import 'package:iptv_player/data/repositories/repositories.dart';
 import 'package:iptv_player/core/theme/app_palette.dart';
 import 'package:iptv_player/core/theme/app_theme.dart';
 import 'package:iptv_player/core/widgets/focusable_button.dart';
@@ -9,6 +12,21 @@ import 'package:iptv_player/features/grid/grid_screen.dart';
 import 'package:iptv_player/l10n/generated/app_localizations.dart';
 
 import '../../support/fake_hydrated_storage.dart';
+
+/// Enough movies in two categories for the wide grid to scroll.
+class _ManyMovies extends FakeContentRepository {
+  @override
+  Stream<List<VodItem>> movies(String playlistId) => Stream.value([
+    for (var i = 0; i < 200; i++)
+      VodItem(
+        id: 'm$i',
+        playlistId: 'p1',
+        title: 'Movie $i',
+        streamUrl: 'http://x/m$i',
+        categoryId: i.isEven ? 'cat1' : 'cat2',
+      ),
+  ]);
+}
 
 Widget _buildTestApp({
   GridKind kind = GridKind.movies,
@@ -22,15 +40,11 @@ Widget _buildTestApp({
     ),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
-    home: GridScreen(
-      kind: kind,
-      onOpen: onOpen ?? (_) {},
-    ),
+    home: GridScreen(kind: kind, onOpen: onOpen ?? (_) {}),
   );
 }
 
-Future<void> _pumpAndIgnoreOverflow(
-    WidgetTester tester, Widget widget) async {
+Future<void> _pumpAndIgnoreOverflow(WidgetTester tester, Widget widget) async {
   final previousHandler = FlutterError.onError;
   FlutterError.onError = (FlutterErrorDetails details) {
     if (details.exceptionAsString().contains('overflowed')) return;
@@ -51,8 +65,9 @@ void main() {
     await sl.reset();
   });
 
-  testWidgets('wide layout shows category sidebar with Action category',
-      (tester) async {
+  testWidgets('wide layout shows category sidebar with Action category', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -64,10 +79,14 @@ void main() {
     expect(find.text('Action', skipOffstage: false), findsAtLeastNWidgets(1));
     // Wide layout has a vertical ListView (sidebar)
     final listViews = tester.widgetList<ListView>(find.byType(ListView));
-    final hasVertical =
-        listViews.any((lv) => lv.scrollDirection != Axis.horizontal);
-    expect(hasVertical, isTrue,
-        reason: 'wide layout must include a vertical ListView for the sidebar');
+    final hasVertical = listViews.any(
+      (lv) => lv.scrollDirection != Axis.horizontal,
+    );
+    expect(
+      hasVertical,
+      isTrue,
+      reason: 'wide layout must include a vertical ListView for the sidebar',
+    );
   });
 
   testWidgets('wide layout grid shows movie title', (tester) async {
@@ -96,10 +115,15 @@ void main() {
 
     // The phone layout shows categories list; "All" or "Action" should appear
     final hasAll = find.text('All', skipOffstage: false).evaluate().isNotEmpty;
-    final hasAction =
-        find.text('Action', skipOffstage: false).evaluate().isNotEmpty;
-    expect(hasAll || hasAction, isTrue,
-        reason: 'phone layout must show category names');
+    final hasAction = find
+        .text('Action', skipOffstage: false)
+        .evaluate()
+        .isNotEmpty;
+    expect(
+      hasAll || hasAction,
+      isTrue,
+      reason: 'phone layout must show category names',
+    );
     expect(find.byType(ListView), findsAtLeastNWidgets(1));
   });
 
@@ -163,14 +187,49 @@ void main() {
   });
 
   testWidgets(
-      'GridScreen has at least one autofocused FocusableButton when content loads',
-      (tester) async {
-    await _pumpAndIgnoreOverflow(tester, _buildTestApp());
+    'GridScreen has at least one autofocused FocusableButton when content loads',
+    (tester) async {
+      await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
-    final autofocused = find.byWidgetPredicate(
-      (w) => w is FocusableButton && w.autofocus == true,
-      skipOffstage: false,
+      final autofocused = find.byWidgetPredicate(
+        (w) => w is FocusableButton && w.autofocus == true,
+        skipOffstage: false,
+      );
+      expect(autofocused, findsAtLeastNWidgets(1));
+    },
+  );
+
+  testWidgets('switching category scrolls the grid back to the top', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    sl.unregister<ContentRepository>();
+    sl.registerLazySingleton<ContentRepository>(_ManyMovies.new);
+
+    await _pumpAndIgnoreOverflow(tester, _buildTestApp(kind: GridKind.movies));
+
+    ScrollPosition grid() => tester
+        .state<ScrollableState>(
+          find.descendant(
+            of: find.byType(GridView),
+            matching: find.byType(Scrollable),
+          ),
+        )
+        .position;
+    grid().jumpTo(2000);
+    await tester.pumpAndSettle();
+    expect(grid().pixels, greaterThan(0));
+
+    await tester.tap(find.text('Drama').first);
+    await tester.pumpAndSettle();
+
+    expect(
+      grid().pixels,
+      0,
+      reason: 'a new category must start at its first row, not mid-list',
     );
-    expect(autofocused, findsAtLeastNWidgets(1));
   });
 }

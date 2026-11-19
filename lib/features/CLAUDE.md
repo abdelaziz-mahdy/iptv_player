@@ -65,10 +65,13 @@ the "no content until restart" bug fixed in commit d7603ae.
 ## Category sidebars (Live / Movies / Series)
 
 Both sidebars are built the same way: `Recently Viewed` (items you played),
-`All`, then the categories you have **opened**, most recent first and capped at
-`kRecentCategoryLimit`, then everything else in the provider's order. A category
-in the recency block is removed from the block below — it is never listed twice.
-`pinnedGroupCount` / `pinnedCategoryCount` mark where the separator goes.
+`All`, then the last `kRecentCategoryLimit` (5) categories you **opened** under a
+"RECENT" heading, most recent first, then everything in the provider's order. A
+recent category is ALSO kept in its place below: removing it there moved the row
+the user had just clicked. Recency applies the moment a category is picked, and
+`CategorySidebar` scrolls by the height it adds above, so the picked row stays put
+on screen. `pinnedGroupCount` / `pinnedCategoryCount` mark where the separator
+goes; `recentGroupCount` / `recentCategoryCount` how many pinned rows are recent.
 
 Synthetic entries (`Recently Viewed`, `All`, `Other`) are emitted with an **empty
 name** — the cubit has no `BuildContext`, so the screen resolves a localized

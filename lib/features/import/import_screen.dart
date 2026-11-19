@@ -1,6 +1,6 @@
 import 'dart:io' show Platform;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_android_tv_text_field/native_textfield_tv.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -353,8 +353,7 @@ class _ImportViewState extends State<_ImportView> {
   ) {
     return FocusableButton(
       semanticLabel: l10n.importAction,
-      onPressed:
-          state.submitting ? () {} : () => _handleSubmit(context, state),
+      onPressed: state.submitting ? () {} : () => _handleSubmit(context),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         decoration: BoxDecoration(
@@ -366,10 +365,7 @@ class _ImportViewState extends State<_ImportView> {
                 child: SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: p.fg,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: p.fg),
                 ),
               )
             : Center(
@@ -385,11 +381,14 @@ class _ImportViewState extends State<_ImportView> {
     );
   }
 
-  void _handleSubmit(BuildContext context, ImportState state) {
+  void _handleSubmit(BuildContext context) {
     final cubit = context.read<ImportCubit>();
     final name = _nameController.text.trim();
 
-    switch (state.tab) {
+    // The current tab, not the builder's: the button's BlocBuilder does not
+    // rebuild on tab changes, so its `state` kept the first tab (Xtream) and
+    // an M3U import submitted the empty Xtream server field.
+    switch (cubit.state.tab) {
       case ImportTab.xtream:
         cubit.submit(
           name: name.isEmpty ? _xtreamServerController.text.trim() : name,
@@ -398,14 +397,9 @@ class _ImportViewState extends State<_ImportView> {
           password: _passwordController.text,
         );
       case ImportTab.m3u:
-        cubit.submit(
-          name: name,
-          serverUrl: _m3uUrlController.text.trim(),
-        );
+        cubit.submit(name: name, serverUrl: _m3uUrlController.text.trim());
       case ImportTab.upload:
-        cubit.submit(
-          name: name,
-        );
+        cubit.submit(name: name);
     }
   }
 }
@@ -460,8 +454,9 @@ class _TabSelector extends StatelessWidget {
                     label,
                     style: textTheme.labelMedium?.copyWith(
                       color: isSelected ? p.onAccent : p.fg,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.normal,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.normal,
                     ),
                   ),
                 ),

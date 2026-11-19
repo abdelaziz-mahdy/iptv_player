@@ -11,7 +11,7 @@ dart run build_runner build --delete-conflicting-outputs   # generated code
 flutter run            # pick a device
 ```
 
-Requirements: Flutter **3.44.2** (stable), Dart 3.12+, JDK 17, Android SDK 36.
+Requirements: Flutter **3.50.0** (stable), Dart 3.14+, JDK 17, Android SDK 36.
 
 ## Testing
 
@@ -78,7 +78,7 @@ Diagnostics/automation helpers for TV debugging live in `scripts/` and
 
 - **State:** `flutter_bloc` / Cubit, `hydrated_bloc`, `equatable`
 - **Navigation:** `go_router` (`StatefulShellRoute.indexedStack`)
-- **DI:** `get_it` + `injectable`
+- **DI:** `get_it`, registered by hand
 - **Persistence:** `drift` (SQLite) with schema migrations
 - **Models/codegen:** `freezed` + `json_serializable` + `build_runner`
 - **Data:** `xtream_code_client`, `m3u_nullsafe`, `xml` (XMLTV), `dio`
@@ -111,7 +111,9 @@ appear; both are worked around here:
   SurfaceView's buffer queue, so the video scans out at panel resolution while
   the UI layer stays at 1080p. Measured on a Realtek TV: 24.0 fps at 4K24 and
   56.3 fps at 4K60, against ~22 through the GL platform view and 10.9 through
-  the Flutter texture. Upstream: wang-bin/fvp#379.
+  the Flutter texture. Upstream: wang-bin/fvp#379. **Currently off**: seeking
+  with `tunnel` freezes the picture (wang-bin/fvp#420), so the app renders
+  through GL and scales 4K to 1080p until that is fixed in MDK.
 
 - **Audio backend drives frame pacing.** MDK slaves video timing to the audio
   clock; this TV's AAudio reported positions too coarsely and frames presented

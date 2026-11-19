@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
 import 'accessibility_settings.dart';
 
 /// Resolved caption appearance derived from [AccessibilitySettings].
@@ -18,8 +19,8 @@ class CaptionStyle {
   });
 
   factory CaptionStyle.from(AccessibilitySettings s) => CaptionStyle(
-        fontSize: s.captionSize * s.textScale,
-        textColor: Color(s.captionColor),
-        backgroundColor: Colors.black.withValues(alpha: s.captionBgOpacity),
-      );
+    fontSize: s.captionSize * s.textScale,
+    textColor: Color(s.captionColor),
+    backgroundColor: Colors.black.withValues(alpha: s.captionBgOpacity),
+  );
 }

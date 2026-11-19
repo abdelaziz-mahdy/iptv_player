@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'native_textfield_tv_platform_interface.dart';
 
@@ -338,7 +338,8 @@ class _DpadNativeTextFieldState extends State<AndroidTVTextField> {
               ),
             );
           }),
-          Positioned(right: 10, child: widget.postFixWidget ?? const SizedBox()),
+          Positioned(
+              right: 10, child: widget.postFixWidget ?? const SizedBox()),
         ],
       ),
     );

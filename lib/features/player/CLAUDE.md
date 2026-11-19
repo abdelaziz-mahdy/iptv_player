@@ -19,12 +19,16 @@ until the decoder-to-SurfaceView path landed; it is gone (removed with its
 `media_kit_libs_android_video` natives, which clashed with MDK's).
 
 - Wraps `video_player` with fvp (MDK); registered once via `fvp.registerWith()`.
-- On Android uses `VideoViewType.platformView` plus `'tunnel': true`:
-  MediaCodec writes decoded frames straight into the SurfaceView's buffer
-  queue — no GL renderer, no EGLConfig, no GPU copy. This is the only path
-  that sustains 4K on the TV (24.0 fps at 4K24, 56.3 at 4K60, against ~22
-  through GL and 10.9 through a Flutter texture). `maxWidth`/`maxHeight` are a
-  GL-path clamp and do not apply.
+- On Android uses `VideoViewType.platformView` with `'tunnel': false`: MDK
+  renders into the SurfaceView through GL, and `maxWidth`/`maxHeight` scale 4K
+  down to 1080p. `'tunnel': true` (MediaCodec writing straight into the
+  SurfaceView) is the only path that keeps 4K at full rate on the TV (24.0 fps
+  at 4K24, 56.3 at 4K60, against ~22 through GL), but it is OFF until
+  wang-bin/fvp#420 is fixed in MDK: with it a seek can freeze the picture while
+  audio plays (resume 10/30, seek during playback 10/10 on the emulator), and
+  the stalled decoder is never released, so after a few seeks the TV cannot
+  open video at all. Reopening the stream at the target instead of seeking was
+  tried and reverted: it stalled the same way on the TV.
 - `'audio.renderer': 'OpenSL'` — MDK paces video off the audio clock, and this
   TV's AAudio reported positions too coarsely (frames burst at ~10 fps). Fixed
   upstream (fvp#384) but not in a released SDK, so the override stays.
@@ -32,13 +36,18 @@ until the decoder-to-SurfaceView path landed; it is gone (removed with its
   starved on burst-serving IPTV providers.
 - `initialize(startAt:)` seeks after init (video_player has no start option).
 
-**Pinned to a fork** (`pubspec.yaml` `dependency_overrides`): the branch of
-upstream PR wang-bin/fvp#379. Drop the override once it merges and ships.
+**Pinned to a fork** (`pubspec.yaml` `dependency_overrides`):
+abdelaziz-mahdy/fvp `app/dispose-fixes`, which is fvp 0.40.0 (the SurfaceView/
+tunnel work of PR #379 shipped in 0.38) plus two open upstream PRs:
+wang-bin/fvp#413 deletes the MDK player off Android's main thread (a stuck
+decoder froze the TV into an ANR on close, #412), and the platform-view PR
+stops `surfaceDestroyed` from touching an already deleted player (SIGSEGV).
+Drop the override once both ship. Repro: `benchmarkplayer` cycle/teardown
+modes (`BENCH_CYCLES`, `BENCH_MODE=teardown`).
 
-**HDR caveat:** direct-to-surface output wedges the Realtek decoder on HDR
-content (mdk-sdk#361 — h264 + PQ/BT.2020 VUI stalls, HEVC 10-bit HDR10 plays).
-The PR branch has no HDR-to-GL fallback, so HDR titles stall until that is
-fixed in MDK.
+**HDR caveat (tunnel only):** direct-to-surface output wedges the Realtek
+decoder on HDR content (mdk-sdk#361 — h264 + PQ/BT.2020 VUI stalls, HEVC
+10-bit HDR10 plays). Recheck before turning `tunnel` back on.
 
 ## `kFvpCaptureBuild` (`core/debug_flags.dart`)
 

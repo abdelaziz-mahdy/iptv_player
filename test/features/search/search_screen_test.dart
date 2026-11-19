@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_player/core/di/injection.dart';
 import 'package:iptv_player/core/theme/app_palette.dart';
@@ -38,8 +38,7 @@ void _restoreOverflow() {
 }
 
 /// Pump and settle while suppressing overflow errors from narrow test surface.
-Future<void> _pumpAndIgnoreOverflow(
-    WidgetTester tester, Widget widget) async {
+Future<void> _pumpAndIgnoreOverflow(WidgetTester tester, Widget widget) async {
   _suppressOverflow();
   await tester.pumpWidget(widget);
   await tester.pumpAndSettle();
@@ -74,43 +73,45 @@ void main() {
   });
 
   testWidgets(
-      'SearchScreen: entering "Dune" into the text field shows Dune result',
-      (tester) async {
-    await _pumpAndIgnoreOverflow(tester, _buildTestApp());
+    'SearchScreen: entering "Dune" into the text field shows Dune result',
+    (tester) async {
+      await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
-    _suppressOverflow();
-    await tester.enterText(find.byType(TextField), 'Dune');
-    await tester.pumpAndSettle();
-    _restoreOverflow();
+      _suppressOverflow();
+      await tester.enterText(find.byType(TextField), 'Dune');
+      await tester.pumpAndSettle();
+      _restoreOverflow();
 
-    expect(
-      find.textContaining('Dune', skipOffstage: false),
-      findsAtLeastNWidgets(1),
-    );
-  });
+      expect(
+        find.textContaining('Dune', skipOffstage: false),
+        findsAtLeastNWidgets(1),
+      );
+    },
+  );
 
   testWidgets(
-      'SearchScreen: no on-screen keyboard keys while typing shows result',
-      (tester) async {
-    await _pumpAndIgnoreOverflow(tester, _buildTestApp());
+    'SearchScreen: no on-screen keyboard keys while typing shows result',
+    (tester) async {
+      await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
-    // Keyboard keys must be absent before typing
-    expect(find.text('Q'), findsNothing);
+      // Keyboard keys must be absent before typing
+      expect(find.text('Q'), findsNothing);
 
-    _suppressOverflow();
-    await tester.enterText(find.byType(TextField), 'Dune');
-    await tester.pumpAndSettle();
-    _restoreOverflow();
+      _suppressOverflow();
+      await tester.enterText(find.byType(TextField), 'Dune');
+      await tester.pumpAndSettle();
+      _restoreOverflow();
 
-    // Still no keyboard keys after typing
-    expect(find.text('Q'), findsNothing);
+      // Still no keyboard keys after typing
+      expect(find.text('Q'), findsNothing);
 
-    // But the Dune result is shown
-    expect(
-      find.textContaining('Dune', skipOffstage: false),
-      findsAtLeastNWidgets(1),
-    );
-  });
+      // But the Dune result is shown
+      expect(
+        find.textContaining('Dune', skipOffstage: false),
+        findsAtLeastNWidgets(1),
+      );
+    },
+  );
 
   testWidgets('SearchScreen: tapping a result calls onOpen', (tester) async {
     SearchEntry? opened;
@@ -143,18 +144,16 @@ void main() {
     expect(opened!.title, 'Dune');
   });
 
-  testWidgets(
-      'SearchScreen: TextField has autofocus enabled',
-      (tester) async {
+  testWidgets('SearchScreen: TextField has autofocus enabled', (tester) async {
     await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
     final textField = tester.widget<TextField>(find.byType(TextField));
     expect(textField.autofocus, isTrue);
   });
 
-  testWidgets(
-      'SearchScreen: typing "Dune" shows a Movies section label',
-      (tester) async {
+  testWidgets('SearchScreen: typing "Dune" shows a Movies section label', (
+    tester,
+  ) async {
     await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
     _suppressOverflow();
@@ -170,42 +169,42 @@ void main() {
   });
 
   testWidgets(
-      'SearchScreen: typing "Dune" shows the Dune card in a horizontal rail',
-      (tester) async {
-    await _pumpAndIgnoreOverflow(tester, _buildTestApp());
+    'SearchScreen: typing "Dune" shows the Dune card in a horizontal rail',
+    (tester) async {
+      await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
-    _suppressOverflow();
-    await tester.enterText(find.byType(TextField), 'Dune');
-    await tester.pumpAndSettle();
-    _restoreOverflow();
+      _suppressOverflow();
+      await tester.enterText(find.byType(TextField), 'Dune');
+      await tester.pumpAndSettle();
+      _restoreOverflow();
 
-    // Results are rendered in horizontal ListViews (rails), not a GridView.
-    expect(find.byType(GridView), findsNothing);
-    expect(
-      find.textContaining('Dune', skipOffstage: false),
-      findsAtLeastNWidgets(1),
-    );
-  });
-
-  testWidgets(
-      'SearchScreen: searching "horizon" shows a Series section label',
-      (tester) async {
-    await _pumpAndIgnoreOverflow(tester, _buildTestApp());
-
-    _suppressOverflow();
-    await tester.enterText(find.byType(TextField), 'horizon');
-    await tester.pumpAndSettle();
-    _restoreOverflow();
-
-    expect(
-      find.textContaining('Series', skipOffstage: false),
-      findsAtLeastNWidgets(1),
-    );
-  });
+      // Results are rendered in horizontal ListViews (rails), not a GridView.
+      expect(find.byType(GridView), findsNothing);
+      expect(
+        find.textContaining('Dune', skipOffstage: false),
+        findsAtLeastNWidgets(1),
+      );
+    },
+  );
 
   testWidgets(
-      'SearchScreen: empty query shows no rails',
-      (tester) async {
+    'SearchScreen: searching "horizon" shows a Series section label',
+    (tester) async {
+      await _pumpAndIgnoreOverflow(tester, _buildTestApp());
+
+      _suppressOverflow();
+      await tester.enterText(find.byType(TextField), 'horizon');
+      await tester.pumpAndSettle();
+      _restoreOverflow();
+
+      expect(
+        find.textContaining('Series', skipOffstage: false),
+        findsAtLeastNWidgets(1),
+      );
+    },
+  );
+
+  testWidgets('SearchScreen: empty query shows no rails', (tester) async {
     await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
     // No text entered — no section labels should appear.

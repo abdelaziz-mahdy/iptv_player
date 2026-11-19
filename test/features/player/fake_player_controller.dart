@@ -28,6 +28,9 @@ class FakePlayerController implements PlayerController {
 
   int initializeCount = 0;
 
+  /// How many seeks reached the backend.
+  int seekCount = 0;
+
   @override
   Future<void> initialize(String url, {Duration? startAt}) async {
     initializeCount++;
@@ -59,6 +62,7 @@ class FakePlayerController implements PlayerController {
 
   @override
   Future<void> seek(Duration position) async {
+    seekCount++;
     _position = position;
     _emit();
   }
@@ -97,12 +101,14 @@ class FakePlayerController implements PlayerController {
 
   void _emit() {
     if (!_statusCtrl.isClosed) {
-      _statusCtrl.add(PlayerStatus(
-        isPlaying: _playing,
-        position: _position,
-        duration: _duration,
-        buffering: buffering,
-      ));
+      _statusCtrl.add(
+        PlayerStatus(
+          isPlaying: _playing,
+          position: _position,
+          duration: _duration,
+          buffering: buffering,
+        ),
+      );
     }
   }
 }

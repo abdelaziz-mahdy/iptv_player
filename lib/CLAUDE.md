@@ -32,7 +32,7 @@ Pushed routes (player, details, import, etc.) use typed arg classes (`PlayerArgs
 - `configureDependencies()` — in-memory fakes; used by widget tests.
 - `configureProductionDependencies()` — drift-backed impls; called by `main()`.
 
-**GOTCHA:** `injectable` is in `pubspec.yaml` but **not used** — no `@injectable`/`@lazySingleton` annotations. Everything is registered manually with `registerLazySingleton` / `registerSingleton`. Do not add codegen-style annotations.
+**GOTCHA:** DI is manual — no `injectable` and no `@lazySingleton`-style annotations. Everything is registered with `registerLazySingleton` / `registerSingleton`. Do not add codegen-style annotations.
 
 ## Data access pattern
 

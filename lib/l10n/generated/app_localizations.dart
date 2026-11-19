@@ -578,6 +578,12 @@ abstract class AppLocalizations {
   /// **'Play S{season}E{episode}'**
   String playSeasonEpisode(int season, int episode);
 
+  /// Series Play button once every episode was watched; starts over from the first episode.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch again'**
+  String get watchAgain;
+
   /// No description provided for @resumeSeasonEpisode.
   ///
   /// In en, this message translates to:
@@ -655,6 +661,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Details are in Settings → View logs.'**
   String get importErrorDetails;
+
+  /// No description provided for @watched.
+  ///
+  /// In en, this message translates to:
+  /// **'Watched'**
+  String get watched;
+
+  /// Time remaining in a partly watched item, e.g. '38m left'.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} left'**
+  String timeLeft(String time);
+
+  /// No description provided for @durationHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String durationHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @durationMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String durationMinutes(int minutes);
+
+  /// Heading over the categories the user opened most recently, in the category sidebar.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get recentGroups;
 }
 
 class _AppLocalizationsDelegate

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/di/injection.dart';
@@ -40,10 +40,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
 }
 
 class _PlaylistsView extends StatelessWidget {
-  const _PlaylistsView({
-    required this.onAddPlaylist,
-    required this.onSelected,
-  });
+  const _PlaylistsView({required this.onAddPlaylist, required this.onSelected});
 
   final VoidCallback onAddPlaylist;
   final void Function(Playlist) onSelected;
@@ -194,8 +191,7 @@ class _PlaylistTile extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         '${playlist.channelCount} ${l10n.channels}',
-                        style:
-                            textTheme.bodySmall?.copyWith(color: p.dim),
+                        style: textTheme.bodySmall?.copyWith(color: p.dim),
                       ),
                     ],
                   ],
@@ -203,7 +199,11 @@ class _PlaylistTile extends StatelessWidget {
               ),
               // Active checkmark
               if (isActive)
-                Icon(Icons.check_circle_rounded, color: p.accent, size: IconSize.md),
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: p.accent,
+                  size: IconSize.md,
+                ),
             ],
           ),
         ),
@@ -288,7 +288,9 @@ class _DashedBorderPainter extends CustomPainter {
       double distance = 0;
       while (distance < metric.length) {
         canvas.drawPath(
-            metric.extractPath(distance, distance + dashWidth), paint);
+          metric.extractPath(distance, distance + dashWidth),
+          paint,
+        );
         distance += dashWidth + dashSpace;
       }
     }

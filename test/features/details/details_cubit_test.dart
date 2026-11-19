@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:iptv_player/core/logging/app_logger.dart';
 import 'package:iptv_player/data/models/models.dart';
 import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
 import 'package:iptv_player/features/details/cubit/details_cubit.dart';
@@ -6,16 +7,19 @@ import 'package:iptv_player/features/details/cubit/details_cubit.dart';
 Series _series(String id) =>
     Series(id: id, playlistId: 'p1', title: 'Show $id');
 
-WatchProgress _progress(String episodeId, int pos,
-        {int dur = 2700, DateTime? at}) =>
-    WatchProgress(
-      itemKey: 'episode:$episodeId',
-      playlistId: 'p1',
-      kind: MediaKind.episode,
-      positionSec: pos,
-      durationSec: dur,
-      updatedAt: at ?? DateTime.utc(2026, 1, 1),
-    );
+WatchProgress _progress(
+  String episodeId,
+  int pos, {
+  int dur = 2700,
+  DateTime? at,
+}) => WatchProgress(
+  itemKey: 'episode:$episodeId',
+  playlistId: 'p1',
+  kind: MediaKind.episode,
+  positionSec: pos,
+  durationSec: dur,
+  updatedAt: at ?? DateTime.utc(2026, 1, 1),
+);
 
 void main() {
   group('DetailsCubit', () {
@@ -25,8 +29,7 @@ void main() {
       playback = FakePlaybackRepository();
     });
 
-    DetailsCubit makeCubit() =>
-        DetailsCubit(FakeContentRepository(), playback);
+    DetailsCubit makeCubit() => DetailsCubit(FakeContentRepository(), playback);
 
     test('loadSeries populates seasons, episodes and description', () async {
       final cubit = makeCubit();
@@ -37,8 +40,10 @@ void main() {
       expect(state.loading, isFalse);
       expect(state.seasons, isNotEmpty);
       expect(state.episodes.length, 2);
-      expect(state.episodes.map((e) => e.title),
-          containsAll(['Pilot', 'Contact']));
+      expect(
+        state.episodes.map((e) => e.title),
+        containsAll(['Pilot', 'Contact']),
+      );
       expect(state.info.description, isNotNull);
     });
 
@@ -83,12 +88,12 @@ void main() {
 
       // Simulates returning from the player after finishing an episode.
       await playback.saveProgress(
-          _progress('s1-1-e2', 2650, at: DateTime.utc(2026, 1, 2)));
+        _progress('s1-1-e2', 2650, at: DateTime.utc(2026, 1, 2)),
+      );
       await Future<void>.delayed(Duration.zero);
 
       expect(cubit.state.progressByKey.keys, contains('episode:s1-1-e2'));
-      expect(
-          cubit.state.progressByKey['episode:s1-1-e2']!.isWatched, isTrue);
+      expect(cubit.state.progressByKey['episode:s1-1-e2']!.isWatched, isTrue);
     });
 
     group('series-wide episode queue', () {
@@ -96,64 +101,159 @@ void main() {
         final cubit = makeCubit();
         await cubit.loadSeries(_series('s3'));
 
-        expect(cubit.allEpisodes.map((e) => e.title),
-            ['S1E1', 'S1E2', 'S2E1', 'S2E2']);
+        expect(cubit.allEpisodes.map((e) => e.title), [
+          'S1E1',
+          'S1E2',
+          'S2E1',
+          'S2E2',
+        ]);
         expect(cubit.indexInSeries(cubit.allEpisodes[2]), 2);
       });
 
-      test('playTarget indexes into the whole series, not the season',
-          () async {
-        // Season 1 finished → next up is the first episode of season 2, which
-        // is index 2 of the series-wide list.
+      test('playTarget logs its decision once, not on every rebuild', () async {
         await playback.saveProgress(_progress('s3-1-e1', 2700));
-        await playback.saveProgress(_progress('s3-1-e2', 2700));
+        final cubit = makeCubit();
+        await cubit.loadSeries(_series('s3'));
+        await Future<void>.delayed(Duration.zero);
+        appLog.cleanHistory();
+
+        // The details screen calls this from build, and playback saves
+        // progress every 10 s, so it runs many times with the same answer.
+        for (var i = 0; i < 5; i++) {
+          cubit.playTarget();
+        }
+
+        final lines = appLog.history.where(
+          (l) => (l.message ?? '').startsWith('playTarget '),
+        );
+        expect(lines, hasLength(1));
+      });
+
+      test(
+        'playTarget indexes into the whole series, not the season',
+        () async {
+          // Season 1 finished → next up is the first episode of season 2, which
+          // is index 2 of the series-wide list.
+          await playback.saveProgress(_progress('s3-1-e1', 2700));
+          await playback.saveProgress(_progress('s3-1-e2', 2700));
+
+          final cubit = makeCubit();
+          await cubit.loadSeries(_series('s3'));
+          await Future<void>.delayed(Duration.zero);
+
+          final target = cubit.playTarget();
+          expect(target, isNotNull);
+          expect(
+            target!.episodes.length,
+            4,
+            reason: 'queue spans both seasons',
+          );
+          expect(target.episodeIndex, 2);
+          expect(target.episodes[target.episodeIndex].title, 'S2E1');
+          expect(
+            target.isResume,
+            isFalse,
+            reason: 'starting a fresh episode, not resuming one',
+          );
+          expect((target.seasonNumber, target.episodeNumber), (2, 1));
+        },
+      );
+
+      test('an older part-watched episode does not pull Play back', () async {
+        // TV log: E12 left at 0:01 on Nov 17, E13-E15 finished after it, and
+        // Play still offered E12.
+        await playback.saveProgress(
+          _progress('s3-1-e1', 30, at: DateTime.utc(2026, 1, 1)),
+        );
+        await playback.saveProgress(
+          _progress('s3-1-e2', 2700, at: DateTime.utc(2026, 1, 2)),
+        );
 
         final cubit = makeCubit();
         await cubit.loadSeries(_series('s3'));
         await Future<void>.delayed(Duration.zero);
 
-        final target = cubit.playTarget();
-        expect(target, isNotNull);
-        expect(target!.episodes.length, 4, reason: 'queue spans both seasons');
-        expect(target.episodeIndex, 2);
+        final target = cubit.playTarget()!;
         expect(target.episodes[target.episodeIndex].title, 'S2E1');
-        expect(target.isResume, isFalse,
-            reason: 'starting a fresh episode, not resuming one');
-        expect((target.seasonNumber, target.episodeNumber), (2, 1));
+        expect(target.isResume, isFalse);
       });
 
-      test('rewatching an earlier episode makes Play continue that one',
-          () async {
-        // The reported confusion: finish S1E1 and S1E2, then go back and seek
-        // into the middle of S1E1. It becomes the most recently played
-        // unfinished episode, so Play continues it rather than moving on to
-        // S2E1 — surprising unless the button says so, which is why the
-        // target reports its own season/episode and resume flag.
-        await playback.saveProgress(_progress('s3-1-e2', 2700));
-        await playback.saveProgress(_progress('s3-1-e1', 2700));
-        await playback.saveProgress(_progress('s3-1-e1', 900,
-            at: DateTime.utc(2026, 2, 1)));
+      test('openings under a minute do not move Play', () async {
+        // TV DB, اللعبة part 5: E27 finished, then E28-E30 opened for 1-3 s.
+        await playback.saveProgress(
+          _progress('s3-1-e1', 2700, at: DateTime.utc(2026, 1, 1)),
+        );
+        await playback.saveProgress(
+          _progress('s3-1-e2', 3, at: DateTime.utc(2026, 1, 2)),
+        );
+        await playback.saveProgress(
+          _progress('s3-2-e1', 59, at: DateTime.utc(2026, 1, 3)),
+        );
 
         final cubit = makeCubit();
         await cubit.loadSeries(_series('s3'));
         await Future<void>.delayed(Duration.zero);
 
-        final target = cubit.playTarget();
-        expect(target, isNotNull);
-        expect(target!.episodes[target.episodeIndex].title, 'S1E1');
-        expect(target.isResume, isTrue);
-        expect((target.seasonNumber, target.episodeNumber), (1, 1));
+        final target = cubit.playTarget()!;
+        expect(target.episodes[target.episodeIndex].title, 'S1E2');
+        expect(target.isResume, isFalse);
       });
+
+      test('finishing the last episode starts the series over', () async {
+        await playback.saveProgress(
+          _progress('s3-1-e2', 900, at: DateTime.utc(2026, 1, 1)),
+        );
+        await playback.saveProgress(
+          _progress('s3-2-e2', 2700, at: DateTime.utc(2026, 1, 2)),
+        );
+
+        final cubit = makeCubit();
+        await cubit.loadSeries(_series('s3'));
+        await Future<void>.delayed(Duration.zero);
+
+        final target = cubit.playTarget()!;
+        expect(target.episodeIndex, 0);
+        expect(target.isResume, isFalse);
+        expect(target.isRestart, isTrue, reason: 'button says Watch again');
+      });
+
+      test(
+        'rewatching an earlier episode makes Play continue that one',
+        () async {
+          // The reported confusion: finish S1E1 and S1E2, then go back and seek
+          // into the middle of S1E1. It becomes the most recently played
+          // unfinished episode, so Play continues it rather than moving on to
+          // S2E1 — surprising unless the button says so, which is why the
+          // target reports its own season/episode and resume flag.
+          await playback.saveProgress(_progress('s3-1-e2', 2700));
+          await playback.saveProgress(_progress('s3-1-e1', 2700));
+          await playback.saveProgress(
+            _progress('s3-1-e1', 900, at: DateTime.utc(2026, 2, 1)),
+          );
+
+          final cubit = makeCubit();
+          await cubit.loadSeries(_series('s3'));
+          await Future<void>.delayed(Duration.zero);
+
+          final target = cubit.playTarget();
+          expect(target, isNotNull);
+          expect(target!.episodes[target.episodeIndex].title, 'S1E1');
+          expect(target.isResume, isTrue);
+          expect((target.seasonNumber, target.episodeNumber), (1, 1));
+        },
+      );
     });
     group('movie metadata', () {
       test('loadMovie fills in the provider metadata', () async {
         final cubit = makeCubit();
-        await cubit.loadMovie(const VodItem(
-          id: 'p1:vod:42',
-          playlistId: 'p1',
-          title: 'Dune',
-          streamUrl: 'http://x/42',
-        ));
+        await cubit.loadMovie(
+          const VodItem(
+            id: 'p1:vod:42',
+            playlistId: 'p1',
+            title: 'Dune',
+            streamUrl: 'http://x/42',
+          ),
+        );
 
         final info = cubit.state.info;
         expect(cubit.state.loading, isFalse);
@@ -174,8 +274,10 @@ void main() {
       });
 
       test('a bare youtube id becomes a watch URL, a link is kept', () {
-        expect(const MediaDetail(youtubeTrailer: 'abc123').trailerUrl,
-            'https://www.youtube.com/watch?v=abc123');
+        expect(
+          const MediaDetail(youtubeTrailer: 'abc123').trailerUrl,
+          'https://www.youtube.com/watch?v=abc123',
+        );
         expect(
           const MediaDetail(youtubeTrailer: 'https://youtu.be/abc123')
               .trailerUrl,

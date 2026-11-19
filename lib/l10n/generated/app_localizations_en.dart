@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -259,6 +260,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get watchAgain => 'Watch again';
+
+  @override
   String resumeSeasonEpisode(int season, int episode) {
     return 'Resume S${season}E$episode';
   }
@@ -302,4 +306,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importErrorDetails => 'Details are in Settings → View logs.';
+
+  @override
+  String get watched => 'Watched';
+
+  @override
+  String timeLeft(String time) {
+    return '$time left';
+  }
+
+  @override
+  String durationHoursMinutes(int hours, int minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String durationMinutes(int minutes) {
+    return '${minutes}m';
+  }
+
+  @override
+  String get recentGroups => 'Recent';
 }

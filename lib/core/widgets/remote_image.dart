@@ -1,5 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Network image with an on-disk cache — every poster, backdrop and channel
 /// logo goes through this. A raw `Image.network` re-downloads and re-decodes on

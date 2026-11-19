@@ -45,7 +45,7 @@ Future<String?> appLogDirPath() async {
   try {
     final base = Platform.isAndroid
         ? (await getExternalStorageDirectory() ??
-            await getApplicationSupportDirectory())
+              await getApplicationSupportDirectory())
         : await getApplicationSupportDirectory();
     return '${base.path}/logs';
   } catch (_) {
@@ -86,7 +86,8 @@ class _FileLogObserver extends TalkerObserver {
     try {
       Directory base;
       if (Platform.isAndroid) {
-        base = await getExternalStorageDirectory() ??
+        base =
+            await getExternalStorageDirectory() ??
             await getApplicationSupportDirectory();
       } else {
         base = await getApplicationSupportDirectory();
@@ -135,3 +136,10 @@ class _FileLogObserver extends TalkerObserver {
   @override
   void onException(TalkerException err) => _write(err);
 }
+
+/// MDK reports buffering in 1% steps ("***buffering progress 56%***"): about
+/// 17,000 lines in four days of TV use, two thirds of the whole log. The
+/// BUFFERING START/END markers around them carry what a stall diagnosis
+/// needs, so the per-percent lines are left out of the shipped log.
+bool isMdkProgressNoise(String message) =>
+    message.contains('***buffering progress ');

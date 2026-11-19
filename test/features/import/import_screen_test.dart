@@ -1,6 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_player/core/di/injection.dart';
+import 'package:iptv_player/core/result.dart';
+import 'package:iptv_player/data/models/models.dart';
+import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
+import 'package:iptv_player/data/repositories/repositories.dart';
 import 'package:iptv_player/core/theme/app_palette.dart';
 import 'package:iptv_player/core/theme/app_theme.dart';
 import 'package:iptv_player/features/import/import_screen.dart';
@@ -8,19 +12,30 @@ import 'package:iptv_player/l10n/generated/app_localizations.dart';
 
 import '../../support/fake_hydrated_storage.dart';
 
+/// Records the playlist the screen asks to import.
+class _CapturingContent extends FakeContentRepository {
+  Playlist? imported;
+
+  @override
+  Future<Result<void>> importPlaylist(Playlist p) async {
+    imported = p;
+    return const Ok(null);
+  }
+}
+
 AppLocalizations _l10n(WidgetTester tester) =>
     AppLocalizations.of(tester.element(find.byType(ImportScreen)))!;
 
 Widget _app() => MaterialApp(
-      theme: buildTheme(
-        palette: AppPalette.standard,
-        hyperlegible: false,
-        rtl: false,
-      ),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: ImportScreen(onImported: () {}),
-    );
+  theme: buildTheme(
+    palette: AppPalette.standard,
+    hyperlegible: false,
+    rtl: false,
+  ),
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: ImportScreen(onImported: () {}),
+);
 
 void main() {
   setUp(() async {
@@ -49,21 +64,50 @@ void main() {
   });
 
   testWidgets(
-      'typing into the server field updates its controller (non-Android platform)',
-      (tester) async {
+    'typing into the server field updates its controller (non-Android platform)',
+    (tester) async {
+      await tester.pumpWidget(_app());
+      await tester.pumpAndSettle();
+
+      // On the test host (non-Android) the field is an editable TextFormField.
+      final serverField = find.byKey(const ValueKey('import-server'));
+      expect(serverField, findsOneWidget);
+
+      await tester.enterText(serverField, 'http://example.com');
+      await tester.pump();
+
+      final editable = tester.widget<EditableText>(
+        find.descendant(of: serverField, matching: find.byType(EditableText)),
+      );
+      expect(editable.controller.text, 'http://example.com');
+    },
+  );
+
+  testWidgets('Import on the M3U tab submits the M3U URL', (tester) async {
+    final content = _CapturingContent();
+    sl.unregister<ContentRepository>();
+    sl.registerSingleton<ContentRepository>(content);
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
-    // On the test host (non-Android) the field is an editable TextFormField.
-    final serverField = find.byKey(const ValueKey('import-server'));
-    expect(serverField, findsOneWidget);
-
-    await tester.enterText(serverField, 'http://example.com');
-    await tester.pump();
-
-    final editable = tester.widget<EditableText>(
-      find.descendant(of: serverField, matching: find.byType(EditableText)),
+    await tester.tap(find.text('M3U URL'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('import-m3u')),
+      'http://host/list.m3u',
     );
-    expect(editable.controller.text, 'http://example.com');
+    await tester.pump();
+    await tester.tap(find.text('Import'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(content.imported?.type, PlaylistType.m3u);
+    expect(
+      content.imported?.serverUrl,
+      'http://host/list.m3u',
+      reason:
+          'the button must use the tab on screen, not the one it was '
+          'first built with',
+    );
   });
 }

@@ -9,7 +9,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
@@ -39,7 +39,10 @@ class _MemStorage implements Storage {
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  const outDir = String.fromEnvironment('SHOT_DIR', defaultValue: 'docs/screenshots');
+  const outDir = String.fromEnvironment(
+    'SHOT_DIR',
+    defaultValue: 'docs/screenshots',
+  );
   final boundaryKey = GlobalKey();
 
   // Pinned so runs are comparable: pumpWidget applies tight constraints from
@@ -56,7 +59,8 @@ void main() {
   ];
 
   void setSurface(Size s) {
-    final view = TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
     view.physicalSize = s * 2;
     view.devicePixelRatio = 2;
   }
@@ -71,7 +75,8 @@ void main() {
 
   tearDown(() async {
     await sl.reset();
-    final view = TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
     view.resetPhysicalSize();
     view.resetDevicePixelRatio();
   });
@@ -89,9 +94,9 @@ void main() {
   }
 
   Widget frame(Size size) => RepaintBoundary(
-        key: boundaryKey,
-        child: SizedBox.fromSize(size: size, child: const NoorApp()),
-      );
+    key: boundaryKey,
+    child: SizedBox.fromSize(size: size, child: const NoorApp()),
+  );
 
   // Bounded pumps only: the app runs repeating timers (sync service, bitrate
   // polling), so pumpAndSettle would never return.

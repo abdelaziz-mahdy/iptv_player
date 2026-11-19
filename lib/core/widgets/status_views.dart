@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_sizes.dart';
 import '../theme/app_theme.dart';
@@ -21,12 +21,7 @@ class LoadingState extends StatelessWidget {
 
 /// Centred "nothing here" message, with an optional glyph and action.
 class EmptyState extends StatelessWidget {
-  const EmptyState({
-    super.key,
-    required this.message,
-    this.icon,
-    this.action,
-  });
+  const EmptyState({super.key, required this.message, this.icon, this.action});
 
   final String message;
   final IconData? icon;
@@ -48,12 +43,10 @@ class EmptyState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: p.dim),
+              style: Theme.of(context).textTheme.bodyLarge
+                  ?.copyWith(color: p.dim),
             ),
-            if (action != null) ...[
-              const SizedBox(height: 24),
-              action!,
-            ],
+            if (action != null) ...[const SizedBox(height: 24), action!],
           ],
         ),
       ),

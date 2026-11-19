@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_player/core/theme/app_palette.dart';
 import 'package:iptv_player/core/theme/app_theme.dart';
@@ -13,7 +13,10 @@ void main() {
   }) {
     return MaterialApp(
       theme: buildTheme(
-          palette: AppPalette.standard, hyperlegible: false, rtl: false),
+        palette: AppPalette.standard,
+        hyperlegible: false,
+        rtl: false,
+      ),
       home: Scaffold(
         body: CategorySidebar(
           entries: entries,
@@ -45,13 +48,16 @@ void main() {
     expect(find.byType(Divider), findsOneWidget);
   });
 
-  testWidgets('no separator when the pinned block is everything',
-      (tester) async {
+  testWidgets('no separator when the pinned block is everything', (
+    tester,
+  ) async {
     await tester.pumpWidget(host(entries: entries, pinnedCount: 0));
     expect(find.byType(Divider), findsNothing);
   });
 
-  testWidgets('focus starts on the selected row, not the first', (tester) async {
+  testWidgets('focus starts on the selected row, not the first', (
+    tester,
+  ) async {
     await tester.pumpWidget(host(entries: entries, selectedId: 'news'));
     await tester.pump();
 

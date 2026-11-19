@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_player/core/theme/app_palette.dart';
@@ -13,16 +13,22 @@ void main() {
   testWidgets('invokes onPressed on tap and exposes semantics', (tester) async {
     final semantics = tester.ensureSemantics();
     var tapped = false;
-    await tester.pumpWidget(MaterialApp(
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      home: Scaffold(
-        body: FocusableButton(
-          semanticLabel: 'Play',
-          onPressed: () => tapped = true,
-          child: const Text('Play'),
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(
+          palette: AppPalette.standard,
+          hyperlegible: false,
+          rtl: false,
+        ),
+        home: Scaffold(
+          body: FocusableButton(
+            semanticLabel: 'Play',
+            onPressed: () => tapped = true,
+            child: const Text('Play'),
+          ),
         ),
       ),
-    ));
+    );
     await tester.tap(find.text('Play'));
     expect(tapped, true);
 
@@ -32,20 +38,27 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('invokes onPressed when Enter key is sent while focused',
-      (tester) async {
+  testWidgets('invokes onPressed when Enter key is sent while focused', (
+    tester,
+  ) async {
     var pressed = false;
-    await tester.pumpWidget(MaterialApp(
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      home: Scaffold(
-        body: FocusableButton(
-          autofocus: true,
-          semanticLabel: 'Play',
-          onPressed: () => pressed = true,
-          child: const Text('Play'),
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(
+          palette: AppPalette.standard,
+          hyperlegible: false,
+          rtl: false,
+        ),
+        home: Scaffold(
+          body: FocusableButton(
+            autofocus: true,
+            semanticLabel: 'Play',
+            onPressed: () => pressed = true,
+            child: const Text('Play'),
+          ),
         ),
       ),
-    ));
+    );
     await tester.pump();
 
     // Send Enter key — the FocusableActionDetector shortcut should fire onPressed
@@ -55,87 +68,116 @@ void main() {
     expect(pressed, isTrue);
   });
 
-  testWidgets('shows AnimatedScale with scale > 1.0 when focused and reduceMotion is false',
-      (tester) async {
-    // Force traditional (keyboard/D-pad) highlight mode so onShowFocusHighlight
-    // fires in the test environment (the default is touch mode).
-    FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
-    addTearDown(
-      () => FocusManager.instance.highlightStrategy = FocusHighlightStrategy.automatic,
-    );
+  testWidgets(
+    'shows AnimatedScale with scale > 1.0 when focused and reduceMotion is false',
+    (tester) async {
+      // Force traditional (keyboard/D-pad) highlight mode so onShowFocusHighlight
+      // fires in the test environment (the default is touch mode).
+      FocusManager.instance.highlightStrategy =
+          FocusHighlightStrategy.alwaysTraditional;
+      addTearDown(
+        () => FocusManager.instance.highlightStrategy =
+            FocusHighlightStrategy.automatic,
+      );
 
-    await tester.pumpWidget(MaterialApp(
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      home: Scaffold(
-        body: FocusableButton(
-          autofocus: true,
-          reduceMotion: false,
-          semanticLabel: 'Test',
-          onPressed: () {},
-          child: const Text('Test'),
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildTheme(
+            palette: AppPalette.standard,
+            hyperlegible: false,
+            rtl: false,
+          ),
+          home: Scaffold(
+            body: FocusableButton(
+              autofocus: true,
+              reduceMotion: false,
+              semanticLabel: 'Test',
+              onPressed: () {},
+              child: const Text('Test'),
+            ),
+          ),
         ),
-      ),
-    ));
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    final scale = tester.widget<AnimatedScale>(find.byType(AnimatedScale));
-    expect(scale.scale, greaterThan(1.0));
-  });
+      final scale = tester.widget<AnimatedScale>(find.byType(AnimatedScale));
+      expect(scale.scale, greaterThan(1.0));
+    },
+  );
 
-  testWidgets('AnimatedScale stays at 1.0 when focused but reduceMotion is true',
-      (tester) async {
-    // Even in traditional mode the scale must stay 1.0 when reduceMotion is true.
-    FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
-    addTearDown(
-      () => FocusManager.instance.highlightStrategy = FocusHighlightStrategy.automatic,
-    );
+  testWidgets(
+    'AnimatedScale stays at 1.0 when focused but reduceMotion is true',
+    (tester) async {
+      // Even in traditional mode the scale must stay 1.0 when reduceMotion is true.
+      FocusManager.instance.highlightStrategy =
+          FocusHighlightStrategy.alwaysTraditional;
+      addTearDown(
+        () => FocusManager.instance.highlightStrategy =
+            FocusHighlightStrategy.automatic,
+      );
 
-    await tester.pumpWidget(MaterialApp(
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      home: Scaffold(
-        body: FocusableButton(
-          autofocus: true,
-          reduceMotion: true,
-          semanticLabel: 'Test',
-          onPressed: () {},
-          child: const Text('Test'),
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildTheme(
+            palette: AppPalette.standard,
+            hyperlegible: false,
+            rtl: false,
+          ),
+          home: Scaffold(
+            body: FocusableButton(
+              autofocus: true,
+              reduceMotion: true,
+              semanticLabel: 'Test',
+              onPressed: () {},
+              child: const Text('Test'),
+            ),
+          ),
         ),
-      ),
-    ));
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    final scale = tester.widget<AnimatedScale>(find.byType(AnimatedScale));
-    expect(scale.scale, equals(1.0));
-  });
+      final scale = tester.widget<AnimatedScale>(find.byType(AnimatedScale));
+      expect(scale.scale, equals(1.0));
+    },
+  );
 
   group('reduced motion comes from the accessibility setting', () {
     setUp(installFakeHydratedStorage);
 
-    Future<double> scaleWith(WidgetTester tester,
-        {required bool reduceMotion}) async {
+    Future<double> scaleWith(
+      WidgetTester tester, {
+      required bool reduceMotion,
+    }) async {
       // Traditional highlight mode, so onShowFocusHighlight fires at all —
       // the test environment defaults to touch.
       FocusManager.instance.highlightStrategy =
           FocusHighlightStrategy.alwaysTraditional;
-      addTearDown(() => FocusManager.instance.highlightStrategy =
-          FocusHighlightStrategy.automatic);
+      addTearDown(
+        () => FocusManager.instance.highlightStrategy =
+            FocusHighlightStrategy.automatic,
+      );
 
       final cubit = AccessibilityCubit();
       if (reduceMotion) cubit.toggleReduceMotion();
-      await tester.pumpWidget(BlocProvider.value(
-        value: cubit,
-        child: MaterialApp(
-          theme: buildTheme(
-              palette: AppPalette.standard, hyperlegible: false, rtl: false),
-          home: Scaffold(
-            body: FocusableButton(
-              autofocus: true,
-              onPressed: () {},
-              child: const Text('Play'),
+      await tester.pumpWidget(
+        BlocProvider.value(
+          value: cubit,
+          child: MaterialApp(
+            theme: buildTheme(
+              palette: AppPalette.standard,
+              hyperlegible: false,
+              rtl: false,
+            ),
+            home: Scaffold(
+              body: FocusableButton(
+                autofocus: true,
+                onPressed: () {},
+                child: const Text('Play'),
+              ),
             ),
           ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
       return tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale;
     }

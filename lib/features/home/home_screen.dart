@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/di/injection.dart';
@@ -77,7 +77,9 @@ class _HomeView extends StatelessWidget {
                   onPressed: onAddPlaylist,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: context.palette.accent,
                       borderRadius: BorderRadius.circular(8),
@@ -136,10 +138,7 @@ class _HomeView extends StatelessWidget {
 }
 
 class _HeroBanner extends StatelessWidget {
-  const _HeroBanner({
-    required this.movies,
-    required this.onOpenMovie,
-  });
+  const _HeroBanner({required this.movies, required this.onOpenMovie});
 
   final List<VodItem> movies;
   final void Function(VodItem) onOpenMovie;
@@ -164,10 +163,7 @@ class _HeroBanner extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  p.surface2,
-                  p.bg,
-                ],
+                colors: [p.surface2, p.bg],
               ),
             ),
           ),
@@ -182,10 +178,7 @@ class _HeroBanner extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  p.bg,
-                ],
+                colors: [Colors.transparent, p.bg],
                 stops: const [0.4, 1.0],
               ),
             ),
@@ -224,7 +217,9 @@ class _HeroBanner extends StatelessWidget {
                         onPressed: () => onOpenMovie(featured),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: p.accent,
                             borderRadius: BorderRadius.circular(8),
@@ -232,8 +227,11 @@ class _HeroBanner extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.play_arrow_rounded,
-                                  color: p.onAccent, size: IconSize.sm),
+                              Icon(
+                                Icons.play_arrow_rounded,
+                                color: p.onAccent,
+                                size: IconSize.sm,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 l10n.play,
@@ -252,7 +250,9 @@ class _HeroBanner extends StatelessWidget {
                         onPressed: () => onOpenMovie(featured),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: p.surface2,
                             borderRadius: BorderRadius.circular(8),
@@ -261,8 +261,11 @@ class _HeroBanner extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.info_outline_rounded,
-                                  color: p.fg, size: IconSize.sm),
+                              Icon(
+                                Icons.info_outline_rounded,
+                                color: p.fg,
+                                size: IconSize.sm,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 l10n.moreInfo,
@@ -343,17 +346,17 @@ class _ContinueWatchingRail extends StatelessWidget {
 
       // Try to find the matching movie
       final movie = movies.cast<VodItem?>().firstWhere(
-            (m) =>
-                m?.id == progress.itemKey ||
-                'movie:${m?.id}' == progress.itemKey,
-            orElse: () => null,
-          );
+        (m) =>
+            m?.id == progress.itemKey || 'movie:${m?.id}' == progress.itemKey,
+        orElse: () => null,
+      );
       if (movie != null) {
         card = PosterCard(
           title: movie.title,
           subtitle: movie.year,
           imageUrl: movie.posterUrl,
           progress: progress0.clamp(0.0, 1.0),
+          remainingSec: progress.remainingSec,
           onTap: () => onOpenMovie(movie),
         );
       } else {
@@ -361,14 +364,15 @@ class _ContinueWatchingRail extends StatelessWidget {
         // key `episode:<playlistId>:series:<sid>:season:<n>:ep:<id>` — the
         // series id is the segment before ':season:', and the season number
         // sits between ':season:' and ':ep:'.
-        final (seriesId, seasonNumber) =
-            resolveContinueWatchingSeriesRef(progress.itemKey);
+        final (seriesId, seasonNumber) = resolveContinueWatchingSeriesRef(
+          progress.itemKey,
+        );
         final show = seriesId == null
             ? null
             : series.cast<Series?>().firstWhere(
-                  (s) => s?.id == seriesId,
-                  orElse: () => null,
-                );
+                (s) => s?.id == seriesId,
+                orElse: () => null,
+              );
         if (show != null) {
           // Prefer "S{season} · E{number}" when the episode is cached locally,
           // else fall back to the season, else the year.
@@ -390,12 +394,14 @@ class _ContinueWatchingRail extends StatelessWidget {
             subtitle: subtitle,
             imageUrl: show.posterUrl,
             progress: progress0.clamp(0.0, 1.0),
+            remainingSec: progress.remainingSec,
             onTap: () => onOpenSeries(show),
           );
         } else {
           card = PosterCard(
             title: progress.itemKey,
             progress: progress0.clamp(0.0, 1.0),
+            remainingSec: progress.remainingSec,
             onTap: () {},
           );
         }
@@ -409,10 +415,7 @@ class _ContinueWatchingRail extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(top: 8),
-      child: ContentRail(
-        title: 'Continue Watching',
-        items: cards,
-      ),
+      child: ContentRail(title: 'Continue Watching', items: cards),
     );
   }
 }

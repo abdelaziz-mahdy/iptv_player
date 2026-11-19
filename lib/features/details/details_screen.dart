@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:iptv_player/core/di/injection.dart';
@@ -10,6 +10,7 @@ import 'package:iptv_player/core/theme/app_theme.dart';
 import 'package:iptv_player/core/widgets/focusable_button.dart';
 import 'package:iptv_player/core/widgets/remote_image.dart';
 import 'package:iptv_player/core/widgets/status_views.dart';
+import 'package:iptv_player/core/widgets/watch_labels.dart';
 import 'package:iptv_player/data/models/models.dart';
 import 'package:iptv_player/data/repositories/repositories.dart';
 import 'package:iptv_player/l10n/generated/app_localizations.dart';
@@ -33,9 +34,9 @@ class DetailsScreen extends StatelessWidget {
     super.key,
     required this.onBack,
     required void Function(VodItem) this._onPlay,
-  })  : _movie = movie,
-        _series = null,
-        _onPlayEpisode = null;
+  }) : _movie = movie,
+       _series = null,
+       _onPlayEpisode = null;
 
   /// Show series details with season/episode browsing. [onPlayEpisode] receives
   /// the shown season's episode list and the tapped index, so the player can
@@ -45,10 +46,10 @@ class DetailsScreen extends StatelessWidget {
     super.key,
     required this.onBack,
     required void Function(List<Episode> episodes, int index)
-        this._onPlayEpisode,
-  })  : _movie = null,
-        _series = series,
-        _onPlay = null;
+    this._onPlayEpisode,
+  }) : _movie = null,
+       _series = series,
+       _onPlay = null;
 
   @override
   Widget build(BuildContext context) {
@@ -56,10 +57,9 @@ class DetailsScreen extends StatelessWidget {
     if (series != null) {
       final onPlayEpisode = _onPlayEpisode!;
       return BlocProvider<DetailsCubit>(
-        create: (_) => DetailsCubit(
-          sl<ContentRepository>(),
-          sl<PlaybackRepository>(),
-        )..loadSeries(series),
+        create: (_) =>
+            DetailsCubit(sl<ContentRepository>(), sl<PlaybackRepository>())
+              ..loadSeries(series),
         child: _SeriesDetailBody(
           series: series,
           onBack: onBack,
@@ -69,15 +69,10 @@ class DetailsScreen extends StatelessWidget {
     }
     final movie = _movie!;
     return BlocProvider<DetailsCubit>(
-      create: (_) => DetailsCubit(
-        sl<ContentRepository>(),
-        sl<PlaybackRepository>(),
-      )..loadMovie(movie),
-      child: _MovieDetailBody(
-        movie: movie,
-        onBack: onBack,
-        onPlay: _onPlay!,
-      ),
+      create: (_) =>
+          DetailsCubit(sl<ContentRepository>(), sl<PlaybackRepository>())
+            ..loadMovie(movie),
+      child: _MovieDetailBody(movie: movie, onBack: onBack, onPlay: _onPlay!),
     );
   }
 }
@@ -301,9 +296,7 @@ class _GradientPlaceholder extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Text(
             title,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
+            style: Theme.of(context).textTheme.titleMedium
                 ?.copyWith(color: context.palette.dim),
             textAlign: TextAlign.center,
           ),
@@ -332,9 +325,7 @@ class _MetaChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(context)
-            .textTheme
-            .labelSmall
+        style: Theme.of(context).textTheme.labelSmall
             ?.copyWith(color: context.palette.dim),
       ),
     );
@@ -369,7 +360,9 @@ class _MyListButtonState extends State<_MyListButton> {
   @override
   void initState() {
     super.initState();
-    _favSub = sl<ContentRepository>().favorites(widget.playlistId).listen((favs) {
+    _favSub = sl<ContentRepository>().favorites(widget.playlistId).listen((
+      favs,
+    ) {
       if (!mounted) return;
       setState(() {
         _inList = favs.any((f) => f.itemKey == widget.itemKey);
@@ -397,7 +390,9 @@ class _MyListButtonState extends State<_MyListButton> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: _inList ? context.palette.accent.withAlpha(30) : context.palette.surface2,
+          color: _inList
+              ? context.palette.accent.withAlpha(30)
+              : context.palette.surface2,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: _inList ? context.palette.accent : context.palette.border,
@@ -415,8 +410,8 @@ class _MyListButtonState extends State<_MyListButton> {
             Text(
               l10n.myList,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: _inList ? context.palette.accent : context.palette.fg,
-                  ),
+                color: _inList ? context.palette.accent : context.palette.fg,
+              ),
             ),
           ],
         ),
@@ -462,7 +457,11 @@ class _PlayButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.play_arrow, color: context.palette.bg, size: IconSize.sm),
+            Icon(
+              Icons.play_arrow,
+              color: context.palette.bg,
+              size: IconSize.sm,
+            ),
             const SizedBox(width: 6),
             Text(
               text,
@@ -554,20 +553,20 @@ class _CreditsBlock extends StatelessWidget {
     final p = context.palette;
 
     Widget row(String label, String value) => Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: RichText(
-            text: TextSpan(
-              style: tt.bodyMedium?.copyWith(color: p.dim),
-              children: [
-                TextSpan(
-                  text: '$label: ',
-                  style: TextStyle(color: p.fg, fontWeight: FontWeight.w600),
-                ),
-                TextSpan(text: value),
-              ],
+      padding: const EdgeInsets.only(bottom: 4),
+      child: RichText(
+        text: TextSpan(
+          style: tt.bodyMedium?.copyWith(color: p.dim),
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: TextStyle(color: p.fg, fontWeight: FontWeight.w600),
             ),
-          ),
-        );
+            TextSpan(text: value),
+          ],
+        ),
+      ),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -598,7 +597,8 @@ List<Widget> _metaChips({
   final firstGenre = info.genre?.split(',').first.trim();
   return [
     if (year != null && year.isNotEmpty) _MetaChip(year),
-    if (rating != null && rating > 0) _MetaChip('${rating.toStringAsFixed(1)}★'),
+    if (rating != null && rating > 0)
+      _MetaChip('${rating.toStringAsFixed(1)}★'),
     if (runtimeMin != null) _MetaChip('$runtimeMin min'),
     if (firstGenre != null && firstGenre.isNotEmpty) _MetaChip(firstGenre),
   ];
@@ -651,8 +651,8 @@ class _MovieDetailBody extends StatelessWidget {
             synopsis: state.loading && info.description == null
                 ? l10n.loading
                 : (info.description?.isNotEmpty ?? false)
-                    ? info.description!
-                    : l10n.noSynopsis,
+                ? info.description!
+                : l10n.noSynopsis,
             info: info,
           ),
         );
@@ -697,31 +697,39 @@ class _SeriesDetailBody extends StatelessWidget {
             ),
             actions: [
               if (hasEpisodes)
-                Builder(builder: (btnCtx) {
-                  // Resume-aware: the unfinished episode you played last, or
-                  // the one after the last finished episode — not just S01E01.
-                  // The label names it, so the choice is visible before you
-                  // commit to it.
-                  final t = btnCtx.watch<DetailsCubit>().state.seasons.isEmpty
-                      ? null
-                      : btnCtx.read<DetailsCubit>().playTarget();
-                  return _PlayButton(
-                    autofocus: true,
-                    label: t == null
+                Builder(
+                  builder: (btnCtx) {
+                    // Resume-aware: the unfinished episode you played last, or
+                    // the one after the last finished episode — not just S01E01.
+                    // The label names it, so the choice is visible before you
+                    // commit to it.
+                    final t = btnCtx.watch<DetailsCubit>().state.seasons.isEmpty
                         ? null
-                        : t.isResume
-                            ? l10n.resumeSeasonEpisode(
-                                t.seasonNumber, t.episodeNumber)
-                            : l10n.playSeasonEpisode(
-                                t.seasonNumber, t.episodeNumber),
-                    onPressed: () {
-                      final target = btnCtx.read<DetailsCubit>().playTarget();
-                      if (target != null) {
-                        onPlayEpisode(target.episodes, target.episodeIndex);
-                      }
-                    },
-                  );
-                }),
+                        : btnCtx.read<DetailsCubit>().playTarget();
+                    return _PlayButton(
+                      autofocus: true,
+                      label: t == null
+                          ? null
+                          : t.isRestart
+                          ? l10n.watchAgain
+                          : t.isResume
+                          ? l10n.resumeSeasonEpisode(
+                              t.seasonNumber,
+                              t.episodeNumber,
+                            )
+                          : l10n.playSeasonEpisode(
+                              t.seasonNumber,
+                              t.episodeNumber,
+                            ),
+                      onPressed: () {
+                        final target = btnCtx.read<DetailsCubit>().playTarget();
+                        if (target != null) {
+                          onPlayEpisode(target.episodes, target.episodeIndex);
+                        }
+                      },
+                    );
+                  },
+                ),
               _MyListButton(
                 itemKey: 'episode:${series.id}',
                 playlistId: series.playlistId,
@@ -811,8 +819,10 @@ class _SeasonChips extends StatelessWidget {
               onPressed: () => onSelect(i),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: selected
                       ? context.palette.accent
@@ -822,13 +832,9 @@ class _SeasonChips extends StatelessWidget {
                 child: Text(
                   'S${seasons[i].number}',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: selected
-                            ? context.palette.bg
-                            : context.palette.fg,
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.normal,
-                      ),
+                    color: selected ? context.palette.bg : context.palette.fg,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
+                  ),
                 ),
               ),
             ),
@@ -902,6 +908,8 @@ class _EpisodeRow extends StatelessWidget {
     final watched = progress?.isWatched ?? false;
     final fraction = progress?.fraction ?? 0.0;
     final showBar = !watched && fraction > 0;
+    final remaining = progress?.remainingSec;
+    final palette = context.palette;
     return FocusableButton(
       semanticLabel: l10n.playEpisode(episode.number, episode.title),
       onPressed: onPlay,
@@ -931,13 +939,14 @@ class _EpisodeRow extends StatelessWidget {
                 children: [
                   Text(
                     episode.title,
-                    style: tt.bodyMedium?.copyWith(color: context.palette.fg),
+                    style: tt.bodyMedium?.copyWith(
+                      color: watched ? palette.dim : palette.fg,
+                    ),
                   ),
                   if (duration.isNotEmpty)
                     Text(
                       duration,
-                      style:
-                          tt.bodySmall?.copyWith(color: context.palette.dim),
+                      style: tt.bodySmall?.copyWith(color: context.palette.dim),
                     ),
                   // Episode synopsis, when the provider ships one. Clamped:
                   // these run long and the row is a list item, not a page.
@@ -948,39 +957,90 @@ class _EpisodeRow extends StatelessWidget {
                         episode.plot!,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style:
-                            tt.bodySmall?.copyWith(color: context.palette.dim),
+                        style: tt.bodySmall?.copyWith(
+                          color: context.palette.dim,
+                        ),
                       ),
                     ),
                   if (showBar)
                     Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(1.5),
-                        child: LinearProgressIndicator(
-                          key: Key('episode-progress-$itemKey'),
-                          value: fraction,
-                          minHeight: 3,
-                          backgroundColor: context.palette.surface2,
-                          color: context.palette.accent,
-                        ),
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                key: Key('episode-progress-$itemKey'),
+                                value: fraction,
+                                minHeight: 8,
+                                backgroundColor: palette.surface2,
+                                color: palette.accent,
+                              ),
+                            ),
+                          ),
+                          if (remaining != null) ...[
+                            const SizedBox(width: 12),
+                            Text(
+                              timeLeftLabel(l10n, remaining),
+                              style: tt.labelMedium?.copyWith(
+                                color: palette.accent,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                 ],
               ),
             ),
+            const SizedBox(width: 12),
             if (watched)
-              Icon(
-                Icons.check_circle,
+              _WatchedPill(
                 key: Key('episode-watched-$itemKey'),
-                color: context.palette.accent,
-                size: IconSize.sm,
+                label: l10n.watched,
               )
             else
-              Icon(Icons.play_circle_outline,
-                  color: context.palette.dim, size: IconSize.sm),
+              Icon(
+                Icons.play_circle_outline,
+                color: palette.dim,
+                size: IconSize.md,
+              ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Filled "✓ Watched" label at the end of a finished episode's row: big
+/// enough to read from the sofa, unlike the small check icon it replaced.
+class _WatchedPill extends StatelessWidget {
+  const _WatchedPill({super.key, required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: p.accent,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_rounded, size: 18, color: p.onAccent),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: p.onAccent, fontWeight: FontWeight.w800),
+          ),
+        ],
       ),
     );
   }

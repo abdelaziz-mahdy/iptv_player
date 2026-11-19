@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_theme.dart';
 import 'focusable_button.dart';
@@ -8,8 +8,32 @@ const String kOtherLetter = '#';
 
 /// The letters offered by the picker, in order.
 const List<String> kJumpLetters = [
-  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'O',
+  'P',
+  'Q',
+  'R',
+  'S',
+  'T',
+  'U',
+  'V',
+  'W',
+  'X',
+  'Y',
+  'Z',
   kOtherLetter,
 ];
 
@@ -102,9 +126,9 @@ class _LetterKey extends StatelessWidget {
       child: Text(
         letter,
         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: enabled ? p.fg : p.dim,
-              fontWeight: FontWeight.w700,
-            ),
+          color: enabled ? p.fg : p.dim,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
     if (!enabled) return ExcludeFocus(child: box);

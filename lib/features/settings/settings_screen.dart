@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iptv_player/core/a11y/accessibility_cubit.dart';
@@ -91,8 +91,10 @@ class _LogsEntry extends StatelessWidget {
             Icon(Icons.description_outlined, color: p.fg, size: IconSize.sm),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(l10n.viewLogs,
-                  style: Theme.of(context).textTheme.bodyLarge),
+              child: Text(
+                l10n.viewLogs,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
             ),
             Icon(Icons.chevron_right, color: p.dim, size: IconSize.sm),
           ],
@@ -110,10 +112,8 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: context.palette.dim,
-            letterSpacing: 0.8,
-          ),
+      style: Theme.of(context).textTheme.labelLarge
+          ?.copyWith(color: context.palette.dim, letterSpacing: 0.8),
     );
   }
 }
@@ -197,12 +197,9 @@ class _LangChip extends StatelessWidget {
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: selected
-                          ? context.palette.bg
-                          : context.palette.fg,
-                      fontWeight:
-                          selected ? FontWeight.w600 : FontWeight.normal,
-                    ),
+                  color: selected ? context.palette.bg : context.palette.fg,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                ),
               ),
             ),
           ),
@@ -235,7 +232,8 @@ class _DisplayToggles extends StatelessWidget {
               _ToggleRow(
                 label: l10n.highContrast,
                 value: state.highContrast,
-                onChanged: (_) => ctx.read<AccessibilityCubit>().toggleHighContrast(),
+                onChanged: (_) =>
+                    ctx.read<AccessibilityCubit>().toggleHighContrast(),
                 semanticLabel: l10n.highContrast,
                 isFirst: true,
               ),
@@ -243,21 +241,24 @@ class _DisplayToggles extends StatelessWidget {
               _ToggleRow(
                 label: l10n.reduceMotion,
                 value: state.reduceMotion,
-                onChanged: (_) => ctx.read<AccessibilityCubit>().toggleReduceMotion(),
+                onChanged: (_) =>
+                    ctx.read<AccessibilityCubit>().toggleReduceMotion(),
                 semanticLabel: l10n.reduceMotion,
               ),
               const _Divider(),
               _ToggleRow(
                 label: l10n.colorblindSafe,
                 value: state.colorblindSafe,
-                onChanged: (_) => ctx.read<AccessibilityCubit>().toggleColorblindSafe(),
+                onChanged: (_) =>
+                    ctx.read<AccessibilityCubit>().toggleColorblindSafe(),
                 semanticLabel: l10n.colorblindSafe,
               ),
               const _Divider(),
               _ToggleRow(
                 label: l10n.highLegibilityFont,
                 value: state.hyperlegibleFont,
-                onChanged: (_) => ctx.read<AccessibilityCubit>().toggleHyperlegible(),
+                onChanged: (_) =>
+                    ctx.read<AccessibilityCubit>().toggleHyperlegible(),
                 semanticLabel: l10n.highLegibilityFont,
                 isLast: true,
               ),
@@ -294,9 +295,7 @@ class _ToggleRow extends StatelessWidget {
       child: SwitchListTile(
         title: Text(
           label,
-          style: Theme.of(context)
-              .textTheme
-              .bodyMedium
+          style: Theme.of(context).textTheme.bodyMedium
               ?.copyWith(color: context.palette.fg),
         ),
         value: value,
@@ -358,7 +357,8 @@ class _TextSizeSelector extends StatelessWidget {
                 return _SegmentChip(
                   label: opt.label,
                   selected: selected,
-                  onTap: () => ctx.read<AccessibilityCubit>().setTextScale(opt.value),
+                  onTap: () =>
+                      ctx.read<AccessibilityCubit>().setTextScale(opt.value),
                   semanticLabel: '${l10n.textSize} ${opt.label}',
                 );
               }).toList(),
@@ -402,12 +402,9 @@ class _SegmentChip extends StatelessWidget {
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: selected
-                          ? context.palette.bg
-                          : context.palette.fg,
-                      fontWeight:
-                          selected ? FontWeight.w600 : FontWeight.normal,
-                    ),
+                  color: selected ? context.palette.bg : context.palette.fg,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                ),
               ),
             ),
           ),
@@ -445,16 +442,17 @@ class _CaptionsSection extends StatelessWidget {
                 child: SwitchListTile(
                   title: Text(
                     l10n.captionsLabel,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
+                    style: Theme.of(context).textTheme.bodyMedium
                         ?.copyWith(color: context.palette.fg),
                   ),
                   value: state.captionsOn,
-                  onChanged: (_) => ctx.read<AccessibilityCubit>().toggleCaptions(),
+                  onChanged: (_) =>
+                      ctx.read<AccessibilityCubit>().toggleCaptions(),
                   activeThumbColor: context.palette.accent,
                   shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(14),
+                    ),
                   ),
                 ),
               ),
@@ -487,10 +485,8 @@ class _SubSectionLabel extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: context.palette.dim,
-              letterSpacing: 0.6,
-            ),
+        style: Theme.of(context).textTheme.labelSmall
+            ?.copyWith(color: context.palette.dim, letterSpacing: 0.6),
       ),
     );
   }
@@ -523,7 +519,8 @@ class _CaptionSizeRow extends StatelessWidget {
                 selected: selected,
                 button: true,
                 child: GestureDetector(
-                  onTap: () => ctx.read<AccessibilityCubit>().setCaptionSize(opt.value),
+                  onTap: () =>
+                      ctx.read<AccessibilityCubit>().setCaptionSize(opt.value),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -538,13 +535,13 @@ class _CaptionSizeRow extends StatelessWidget {
                       child: Text(
                         opt.label,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: selected
-                                  ? context.palette.bg
-                                  : context.palette.fg,
-                              fontWeight: selected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                            ),
+                          color: selected
+                              ? context.palette.bg
+                              : context.palette.fg,
+                          fontWeight: selected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                        ),
                       ),
                     ),
                   ),
@@ -585,7 +582,8 @@ class _CaptionBgRow extends StatelessWidget {
                 selected: selected,
                 button: true,
                 child: GestureDetector(
-                  onTap: () => ctx.read<AccessibilityCubit>().setCaptionBg(opt.value),
+                  onTap: () =>
+                      ctx.read<AccessibilityCubit>().setCaptionBg(opt.value),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -600,13 +598,13 @@ class _CaptionBgRow extends StatelessWidget {
                       child: Text(
                         opt.label,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: selected
-                                  ? context.palette.bg
-                                  : context.palette.fg,
-                              fontWeight: selected
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                            ),
+                          color: selected
+                              ? context.palette.bg
+                              : context.palette.fg,
+                          fontWeight: selected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                        ),
                       ),
                     ),
                   ),
@@ -630,9 +628,21 @@ class _CaptionColorRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final options = [
-      (label: l10n.colorWhite, value: 0xFFFFFFFF, color: const Color(0xFFFFFFFF)),
-      (label: l10n.colorYellow, value: 0xFFFFE23D, color: const Color(0xFFFFE23D)),
-      (label: l10n.colorCyan, value: 0xFF5EE7FF, color: const Color(0xFF5EE7FF)),
+      (
+        label: l10n.colorWhite,
+        value: 0xFFFFFFFF,
+        color: const Color(0xFFFFFFFF),
+      ),
+      (
+        label: l10n.colorYellow,
+        value: 0xFFFFE23D,
+        color: const Color(0xFFFFE23D),
+      ),
+      (
+        label: l10n.colorCyan,
+        value: 0xFF5EE7FF,
+        color: const Color(0xFF5EE7FF),
+      ),
     ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
@@ -648,7 +658,8 @@ class _CaptionColorRow extends StatelessWidget {
                 selected: selected,
                 button: true,
                 child: GestureDetector(
-                  onTap: () => ctx.read<AccessibilityCubit>().setCaptionColor(opt.value),
+                  onTap: () =>
+                      ctx.read<AccessibilityCubit>().setCaptionColor(opt.value),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     width: 36,
@@ -687,9 +698,8 @@ class _ComplianceNote extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Text(
         AppLocalizations.of(context)!.complianceNote,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: context.palette.dim,
-            ),
+        style: Theme.of(context).textTheme.bodySmall
+            ?.copyWith(color: context.palette.dim),
         textAlign: TextAlign.center,
       ),
     );

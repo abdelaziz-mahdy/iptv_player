@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_player/core/di/injection.dart';
 import 'package:iptv_player/core/theme/app_palette.dart';
@@ -33,9 +33,9 @@ void main() {
 
   tearDown(() async => sl.reset());
 
-  testWidgets(
-      'PlaylistsScreen has at least one autofocused FocusableButton',
-      (tester) async {
+  testWidgets('PlaylistsScreen has at least one autofocused FocusableButton', (
+    tester,
+  ) async {
     await tester.pumpWidget(_buildTestApp());
     await tester.pumpAndSettle();
 

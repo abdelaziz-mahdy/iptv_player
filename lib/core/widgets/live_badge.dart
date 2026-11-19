@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
+
 import '../theme/app_theme.dart';
 
 /// The red "LIVE" badge from the prototype. The leading dot pulses, unless
@@ -13,15 +14,18 @@ class LiveBadge extends StatefulWidget {
   State<LiveBadge> createState() => _LiveBadgeState();
 }
 
-class _LiveBadgeState extends State<LiveBadge> with SingleTickerProviderStateMixin {
+class _LiveBadgeState extends State<LiveBadge>
+    with SingleTickerProviderStateMixin {
   AnimationController? _c;
 
   @override
   void initState() {
     super.initState();
     if (!widget.reduceMotion) {
-      _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))
-        ..repeat(reverse: true);
+      _c = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 1600),
+      )..repeat(reverse: true);
     }
   }
 
@@ -36,7 +40,10 @@ class _LiveBadgeState extends State<LiveBadge> with SingleTickerProviderStateMix
     final dot = Container(
       width: 6,
       height: 6,
-      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+      ),
     );
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
@@ -51,7 +58,11 @@ class _LiveBadgeState extends State<LiveBadge> with SingleTickerProviderStateMix
           const SizedBox(width: 5),
           Text(
             widget.label,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+            ),
           ),
         ],
       ),

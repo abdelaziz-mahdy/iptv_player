@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Bundled font family names (declared in pubspec.yaml `flutter > fonts`).
 const _hanken = 'HankenGrotesk';
@@ -22,10 +22,20 @@ TextTheme buildTextTheme({
 }) {
   TextStyle base(double size, FontWeight w, Color c) {
     if (hyperlegible) {
-      return TextStyle(fontFamily: _hyperlegible, fontSize: size, fontWeight: w, color: c);
+      return TextStyle(
+        fontFamily: _hyperlegible,
+        fontSize: size,
+        fontWeight: w,
+        color: c,
+      );
     }
     if (rtl) {
-      return TextStyle(fontFamily: _arabic, fontSize: size, fontWeight: w, color: c);
+      return TextStyle(
+        fontFamily: _arabic,
+        fontSize: size,
+        fontWeight: w,
+        color: c,
+      );
     }
     return TextStyle(
       fontFamily: _hanken,

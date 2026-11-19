@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -258,6 +259,9 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get watchAgain => 'إعادة المشاهدة';
+
+  @override
   String resumeSeasonEpisode(int season, int episode) {
     return 'متابعة م$seasonح$episode';
   }
@@ -300,4 +304,25 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get importErrorDetails => 'التفاصيل في الإعدادات ← عرض السجلات.';
+
+  @override
+  String get watched => 'تمت المشاهدة';
+
+  @override
+  String timeLeft(String time) {
+    return 'متبقٍ $time';
+  }
+
+  @override
+  String durationHoursMinutes(int hours, int minutes) {
+    return '$hours س $minutes د';
+  }
+
+  @override
+  String durationMinutes(int minutes) {
+    return '$minutes د';
+  }
+
+  @override
+  String get recentGroups => 'الأخيرة';
 }

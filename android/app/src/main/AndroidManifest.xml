@@ -1,8 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Streaming IPTV content + downloading playlists/EPG (dio, video_player/fvp). -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- connectivity_plus: detect offline/online for retry + error states. -->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <!-- wakelock_plus: keep the screen on during playback. -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 

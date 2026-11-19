@@ -8,9 +8,35 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:video_player/video_player.dart';
 
+import 'teardown_repro.dart';
+
+/// fvp#412 teardown repro (see teardown_repro.dart): 'teardown' runs N
+/// texture players per round, releases their textures, waits
+/// BENCH_TEARDOWN_GAP_MS, then disposes them. BENCH_URL may list several
+/// comma-separated clips.
+const kMode = String.fromEnvironment('BENCH_MODE');
+const kTeardownPlayers = int.fromEnvironment(
+  'BENCH_TEARDOWN_PLAYERS',
+  defaultValue: 4,
+);
+const kTeardownRounds = int.fromEnvironment(
+  'BENCH_TEARDOWN_ROUNDS',
+  defaultValue: 12,
+);
+const kTeardownGapMs = int.fromEnvironment(
+  'BENCH_TEARDOWN_GAP_MS',
+  defaultValue: 3000,
+);
+const kTeardownDecoder = String.fromEnvironment(
+  'BENCH_TEARDOWN_DECODER',
+  defaultValue: 'AMediaCodec',
+);
+
 /// Which backend renders the clip: 'media_kit' (libmpv) or 'fvp' (MDK).
-const kBackend =
-    String.fromEnvironment('BENCH_BACKEND', defaultValue: 'media_kit');
+const kBackend = String.fromEnvironment(
+  'BENCH_BACKEND',
+  defaultValue: 'media_kit',
+);
 
 /// Clip URL; playback starts automatically on launch. A `bench_url` launch
 /// intent extra (exported by MainActivity as BENCH_URL_OVERRIDE) wins, so one
@@ -26,8 +52,10 @@ final String kUrl = () {
 
 /// Human label for this run, shown in the on-screen HUD and in every
 /// [BENCH_STATS] log line, so captures are self-documenting.
-const kVariant =
-    String.fromEnvironment('BENCH_VARIANT', defaultValue: 'unnamed');
+const kVariant = String.fromEnvironment(
+  'BENCH_VARIANT',
+  defaultValue: 'unnamed',
+);
 
 /// fvp: use MediaCodec in copy-back mode (CPU copy like mpv's
 /// mediacodec-copy) instead of the default zero-copy AImageReader path.
@@ -51,13 +79,33 @@ const kSeekSec = int.fromEnvironment('BENCH_SEEK');
 /// MainActivity from the `direct_surface` launch intent extra) the platform
 /// view additionally bypasses MDK's GL renderer: MediaCodec outputs straight
 /// to the SurfaceView (wang-bin's suggestion on #379).
-const kBenchView =
-    String.fromEnvironment('BENCH_VIEW', defaultValue: 'texture');
+const kBenchView = String.fromEnvironment(
+  'BENCH_VIEW',
+  defaultValue: 'texture',
+);
 
 /// fvp: `tunnel` — MediaCodec decodes straight into the platform view's
 /// SurfaceView, no GL renderer. Upstream carries the direct-surface path under
 /// this option since PR #379 merged; only meaningful with BENCH_VIEW=platform.
 const kFvpTunnel = bool.fromEnvironment('FVP_TUNNEL');
+
+/// fvp#412: number of open → play → close cycles in one process. 0 = the
+/// usual single open. Each close removes the view first, then disposes the
+/// controller — the order the IPTV app uses when leaving the player — and
+/// logs how long the main isolate was held. A cycle that never logs is the
+/// freeze (ANR in `mdkPlayerAPI_reset`).
+const kCycles = int.fromEnvironment('BENCH_CYCLES');
+
+/// Seconds each cycle plays before it closes.
+const kCyclePlaySec = int.fromEnvironment('BENCH_CYCLE_PLAY', defaultValue: 8);
+
+/// Milliseconds between removing the view and disposing the controller.
+const kCycleGapMs = int.fromEnvironment('BENCH_CYCLE_GAP_MS');
+
+/// Open the next player before disposing the previous one, as the IPTV app's
+/// next/previous episode does (`context.replace` builds the new player screen
+/// while the old one tears down).
+const kCycleOverlap = bool.fromEnvironment('BENCH_CYCLE_OVERLAP');
 
 /// True when MainActivity exported FVP_DIRECT_SURFACE=1 for this run (display
 /// only — the switch itself lives in the fvp fork's native code).
@@ -72,10 +120,12 @@ final bool kDirectSurface = () {
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // ignore: avoid_print
-  print('[BENCH_META] variant=$kVariant backend=$kBackend url=$kUrl '
-      'view=$kBenchView direct=$kDirectSurface tunnel=$kFvpTunnel '
-      'fvpCopy=$kFvpDecoderCopy fvpAudio=${kFvpAudioBackend.isEmpty ? '-' : kFvpAudioBackend} '
-      'seek=${kSeekSec}s');
+  print(
+    '[BENCH_META] variant=$kVariant backend=$kBackend url=$kUrl '
+    'view=$kBenchView direct=$kDirectSurface tunnel=$kFvpTunnel '
+    'fvpCopy=$kFvpDecoderCopy fvpAudio=${kFvpAudioBackend.isEmpty ? '-' : kFvpAudioBackend} '
+    'seek=${kSeekSec}s',
+  );
   if (kBackend == 'fvp') {
     // MDK logs arrive via package:logging; print() to avoid debugPrint throttling.
     Logger.root.level = Level.ALL;
@@ -83,17 +133,32 @@ void main() {
       // ignore: avoid_print
       print('[mdk] [${r.loggerName}] ${r.level.name}: ${r.message}');
     });
-    fvp.registerWith(options: {
-      'global': {'logLevel': 'all'},
-      if (kFvpTunnel) 'tunnel': true,
-      if (kFvpDecoderCopy) 'video.decoders': ['AMediaCodec:copy=1', 'FFmpeg'],
-      // MDK "audio.renderer" player property == setAudioBackends; stock fvp
-      // forwards every options['player'] entry via setProperty before prepare.
-      if (kFvpAudioBackend.isNotEmpty)
-        'player': {'audio.renderer': kFvpAudioBackend},
-    });
+    fvp.registerWith(
+      options: {
+        'global': {'logLevel': 'all'},
+        if (kFvpTunnel) 'tunnel': true,
+        if (kFvpDecoderCopy) 'video.decoders': ['AMediaCodec:copy=1', 'FFmpeg'],
+        // MDK "audio.renderer" player property == setAudioBackends; stock fvp
+        // forwards every options['player'] entry via setProperty before prepare.
+        if (kFvpAudioBackend.isNotEmpty)
+          'player': {'audio.renderer': kFvpAudioBackend},
+      },
+    );
   } else {
     MediaKit.ensureInitialized();
+  }
+  if (kMode == 'teardown') {
+    runApp(const ColoredBox(color: Colors.black));
+    unawaited(
+      runTeardownRepro(
+        urls: kUrl.split(','),
+        rounds: kTeardownRounds,
+        players: kTeardownPlayers,
+        gapMs: kTeardownGapMs,
+        decoder: kTeardownDecoder,
+      ),
+    );
+    return;
   }
   runApp(const BenchApp());
 }
@@ -144,13 +209,17 @@ class _BenchScreenState extends State<BenchScreen> {
       _hudState = 'ERROR';
       return;
     }
-    if (kBackend == 'fvp') {
+    if (kBackend == 'fvp' && kCycles > 0) {
+      _runCycles();
+    } else if (kBackend == 'fvp') {
       _initFvp();
     } else {
       _initMediaKit();
     }
-    _statsTimer =
-        Timer.periodic(const Duration(seconds: 5), (_) => _logStats());
+    _statsTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _logStats(),
+    );
   }
 
   Future<void> _initMediaKit() async {
@@ -210,6 +279,66 @@ class _BenchScreenState extends State<BenchScreen> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _runCycles() async {
+    // Longest gap between 50 ms heartbeats = how long the main isolate was
+    // held, wherever in dispose() the blocking native call lands.
+    var last = DateTime.now();
+    var maxLag = 0;
+    Timer.periodic(const Duration(milliseconds: 50), (_) {
+      final now = DateTime.now();
+      final lag = now.difference(last).inMilliseconds - 50;
+      if (lag > maxLag) maxLag = lag;
+      last = now;
+    });
+    Future<void> sleep(int ms) => Future.delayed(Duration(milliseconds: ms));
+
+    Future<void> close(VideoPlayerController? c, int n) async {
+      maxLag = 0;
+      final sw = Stopwatch()..start();
+      await c?.dispose();
+      final disposeMs = sw.elapsedMilliseconds;
+      await sleep(1000);
+      // ignore: avoid_print
+      print(
+        '[BENCH_CYCLE] n=$n closed dispose=${disposeMs}ms '
+        'main_held_max=${maxLag}ms',
+      );
+    }
+
+    VideoPlayerController? previous;
+    for (var n = 1; n <= kCycles; n++) {
+      if (kCycleOverlap && previous != null) {
+        // Next/previous episode: the new player starts opening (its view
+        // replaces the old one) while the old player is still being torn down.
+        final opening = _initFvp();
+        if (mounted) setState(() {});
+        await sleep(kCycleGapMs);
+        await close(previous, n - 1);
+        await opening;
+      } else {
+        await _initFvp();
+      }
+      // ignore: avoid_print
+      print('[BENCH_CYCLE] n=$n opened error=${_error.isNotEmpty}');
+      _error = '';
+      await sleep(kCyclePlaySec * 1000);
+      if (kCycleOverlap) {
+        previous = _fvpController;
+        if (n == kCycles) {
+          if (mounted) setState(() => _fvpController = null);
+          await close(previous, n);
+        }
+        continue;
+      }
+      final c = _fvpController;
+      if (mounted) setState(() => _fvpController = null);
+      await sleep(kCycleGapMs);
+      await close(c, n);
+    }
+    // ignore: avoid_print
+    print('[BENCH_CYCLE] done cycles=$kCycles');
+  }
+
   void _updateHud(String state, String detail) {
     if (!mounted) return;
     if (state == _hudState && detail == _hudDetail) return;
@@ -236,20 +365,22 @@ class _BenchScreenState extends State<BenchScreen> {
         final bufEnd = v.buffered.isEmpty ? v.position : v.buffered.last.end;
         final ahead = (bufEnd - v.position).inMilliseconds;
         // ignore: avoid_print
-        print('[BENCH_STATS] variant=$kVariant backend=fvp '
-            'pos=${v.position.inMilliseconds}ms '
-            'size=${v.size.width.toInt()}x${v.size.height.toInt()} '
-            'buffered-ahead=${ahead}ms buffering=${v.isBuffering} '
-            'bitrate=${info?.bitRate} video=${video?.codec.codec} '
-            'fps=${video?.codec.frameRate} audio=${audio?.codec.codec}');
+        print(
+          '[BENCH_STATS] variant=$kVariant backend=fvp '
+          'pos=${v.position.inMilliseconds}ms '
+          'size=${v.size.width.toInt()}x${v.size.height.toInt()} '
+          'buffered-ahead=${ahead}ms buffering=${v.isBuffering} '
+          'bitrate=${info?.bitRate} video=${video?.codec.codec} '
+          'fps=${video?.codec.frameRate} audio=${audio?.codec.codec}',
+        );
         final advancing = v.position > _lastPos;
         _lastPos = v.position;
         _updateHud(
           v.isBuffering
               ? 'BUFFERING'
               : advancing
-                  ? 'PLAYING'
-                  : 'STALLED',
+              ? 'PLAYING'
+              : 'STALLED',
           '${_fmt(v.position)}  ${v.size.width.toInt()}x${v.size.height.toInt()}  '
           'ahead ${(ahead / 1000).toStringAsFixed(1)}s',
         );
@@ -282,19 +413,21 @@ class _BenchScreenState extends State<BenchScreen> {
         }
         final s = p.state;
         // ignore: avoid_print
-        print('[BENCH_STATS] variant=$kVariant backend=media_kit '
-            'pos=${s.position.inMilliseconds}ms size=${s.width}x${s.height} '
-            'buffering=${s.buffering} framedrops=$drops vo-delayed=$voDelayed '
-            'hwdec=$hwdec est-vf-fps=$vfFps cache-dur=${cacheDur}s '
-            'cache-speed=$cacheSpeed');
+        print(
+          '[BENCH_STATS] variant=$kVariant backend=media_kit '
+          'pos=${s.position.inMilliseconds}ms size=${s.width}x${s.height} '
+          'buffering=${s.buffering} framedrops=$drops vo-delayed=$voDelayed '
+          'hwdec=$hwdec est-vf-fps=$vfFps cache-dur=${cacheDur}s '
+          'cache-speed=$cacheSpeed',
+        );
         final advancing = s.position > _lastPos;
         _lastPos = s.position;
         _updateHud(
           s.buffering
               ? 'BUFFERING'
               : advancing
-                  ? 'PLAYING'
-                  : 'STALLED',
+              ? 'PLAYING'
+              : 'STALLED',
           '${_fmt(s.position)}  ${s.width ?? 0}x${s.height ?? 0}  '
           'hwdec $hwdec  drops $drops  cache ${double.tryParse(cacheDur)?.toStringAsFixed(1) ?? cacheDur}s',
         );
@@ -332,8 +465,10 @@ class _BenchScreenState extends State<BenchScreen> {
 
   Widget _video() {
     if (_error.isNotEmpty) {
-      return Text(_error,
-          style: const TextStyle(color: Colors.red, fontSize: 24));
+      return Text(
+        _error,
+        style: const TextStyle(color: Colors.red, fontSize: 24),
+      );
     }
     if (kBackend == 'fvp') {
       final c = _fvpController;
@@ -341,11 +476,17 @@ class _BenchScreenState extends State<BenchScreen> {
         return const CircularProgressIndicator();
       }
       return AspectRatio(
-          aspectRatio: c.value.aspectRatio, child: VideoPlayer(c));
+        aspectRatio: c.value.aspectRatio,
+        child: VideoPlayer(c),
+      );
     }
     final mk = _mkController;
     if (mk == null) return const CircularProgressIndicator();
-    return Video(controller: mk, controls: NoVideoControls, fit: BoxFit.contain);
+    return Video(
+      controller: mk,
+      controls: NoVideoControls,
+      fit: BoxFit.contain,
+    );
   }
 
   @override
@@ -359,8 +500,7 @@ class _BenchScreenState extends State<BenchScreen> {
             left: 24,
             top: 24,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.7),
                 border: Border(

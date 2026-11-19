@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_player/core/di/injection.dart';
 import 'package:iptv_player/core/theme/app_palette.dart';
@@ -83,8 +83,9 @@ void main() {
     expect(find.text('Live', skipOffstage: false), findsNothing);
   });
 
-  testWidgets('HomeScreen tapping Play button triggers onOpenMovie',
-      (tester) async {
+  testWidgets('HomeScreen tapping Play button triggers onOpenMovie', (
+    tester,
+  ) async {
     VodItem? tappedMovie;
     await _pumpAndIgnoreOverflow(
       tester,
@@ -106,7 +107,9 @@ void main() {
     expect(tappedMovie, isNotNull);
   });
 
-  testWidgets('HomeScreen hero Play button has autofocus: true', (tester) async {
+  testWidgets('HomeScreen hero Play button has autofocus: true', (
+    tester,
+  ) async {
     await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
     // The hero's Play FocusableButton should have autofocus.

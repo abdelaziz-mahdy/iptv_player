@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/focusable_button.dart';
@@ -56,7 +56,9 @@ class OnboardingScreen extends StatelessWidget {
                 onPressed: onGetStarted,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 32, vertical: 16),
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: p.accent,
                     borderRadius: BorderRadius.circular(8),

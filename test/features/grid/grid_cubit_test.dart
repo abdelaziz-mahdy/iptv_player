@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_player/data/models/models.dart';
 import 'package:iptv_player/data/repositories/fakes/fake_repositories.dart';
+import 'package:iptv_player/data/repositories/repositories.dart';
 import 'package:iptv_player/features/grid/cubit/grid_cubit.dart';
 
 void main() {
@@ -17,8 +18,12 @@ void main() {
 
       // State should expose CategoryRef list with human names
       final categoryNames = cubit.state.categories.map((c) => c.name).toList();
-      expect(categoryNames, containsAll(['Action', 'Drama']),
-          reason: 'should expose human names from FakeContentRepository.categories()');
+      expect(
+        categoryNames,
+        containsAll(['Action', 'Drama']),
+        reason:
+            'should expose human names from FakeContentRepository.categories()',
+      );
       // Must NOT contain raw ids like 'cat1'
       expect(categoryNames, isNot(contains('cat1')));
       expect(categoryNames, isNot(contains('cat2')));
@@ -73,15 +78,19 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       // Select a real category chip
-      final actionCat = cubit.state.categories
-          .firstWhere((c) => c.name == 'Action');
+      final actionCat = cubit.state.categories.firstWhere(
+        (c) => c.name == 'Action',
+      );
       cubit.selectCategory(actionCat.id);
       expect(cubit.state.selectedCategoryId, equals(actionCat.id));
 
       // Select "All" chip (id == '')
       cubit.selectCategory('');
-      expect(cubit.state.selectedCategoryId, isNull,
-          reason: 'Selecting All chip should clear the filter');
+      expect(
+        cubit.state.selectedCategoryId,
+        isNull,
+        reason: 'Selecting All chip should clear the filter',
+      );
 
       await cubit.close();
     });
@@ -115,7 +124,10 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       final titles = cubit.state.items.map((e) => e.title).toList();
-      expect(titles, containsAll(['The Signal', 'Dune', 'Arrival', 'Interstellar']));
+      expect(
+        titles,
+        containsAll(['The Signal', 'Dune', 'Arrival', 'Interstellar']),
+      );
 
       await cubit.close();
     });
@@ -199,14 +211,45 @@ void main() {
       await cubit.load();
       await Future<void>.delayed(Duration.zero);
 
-      expect(cubit.state.categories.map((c) => c.id),
-          isNot(contains(kRecentCategoryId)));
+      expect(
+        cubit.state.categories.map((c) => c.id),
+        isNot(contains(kRecentCategoryId)),
+      );
 
       await cubit.close();
     });
 
-    test('viewing a movie pins "Recently Viewed" first and filters to it',
-        () async {
+    test(
+      'viewing a movie pins "Recently Viewed" first and filters to it',
+      () async {
+        final playback = FakePlaybackRepository();
+        final cubit = GridCubit(
+          FakeContentRepository(),
+          FakePlaylistRepository(),
+          GridKind.movies,
+          playback: playback,
+        );
+        await cubit.load();
+        await Future<void>.delayed(Duration.zero);
+
+        final dune = cubit.state.items.firstWhere((e) => e.title == 'Dune');
+        await playback.recordView(
+          playlistId: 'p1',
+          itemKey: 'movie:${dune.id}',
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(cubit.state.categories.first.id, kRecentCategoryId);
+        expect(cubit.state.categories.first.count, 1);
+
+        cubit.selectCategory(kRecentCategoryId);
+        expect(cubit.state.filteredItems.map((e) => e.title), ['Dune']);
+
+        await cubit.close();
+      },
+    );
+
+    test('movies grid exposes watch progress keyed by movie', () async {
       final playback = FakePlaybackRepository();
       final cubit = GridCubit(
         FakeContentRepository(),
@@ -218,14 +261,19 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       final dune = cubit.state.items.firstWhere((e) => e.title == 'Dune');
-      await playback.recordView(playlistId: 'p1', itemKey: 'movie:${dune.id}');
+      await playback.saveProgress(
+        WatchProgress(
+          itemKey: 'movie:${dune.id}',
+          playlistId: 'p1',
+          kind: MediaKind.movie,
+          positionSec: 600,
+          durationSec: 6000,
+          updatedAt: DateTime.utc(2026, 1, 1),
+        ),
+      );
       await Future<void>.delayed(Duration.zero);
 
-      expect(cubit.state.categories.first.id, kRecentCategoryId);
-      expect(cubit.state.categories.first.count, 1);
-
-      cubit.selectCategory(kRecentCategoryId);
-      expect(cubit.state.filteredItems.map((e) => e.title), ['Dune']);
+      expect(cubit.state.progressByKey['movie:${dune.id}']?.positionSec, 600);
 
       await cubit.close();
     });
@@ -302,72 +350,121 @@ void main() {
       await cubit.close();
     });
 
-    test('toggleFavorite(entry) removes movie when already favorited', () async {
-      final contentRepo = FakeContentRepository();
-      final cubit = GridCubit(
-        contentRepo,
-        FakePlaylistRepository(),
-        GridKind.movies,
-      );
+    test(
+      'toggleFavorite(entry) removes movie when already favorited',
+      () async {
+        final contentRepo = FakeContentRepository();
+        final cubit = GridCubit(
+          contentRepo,
+          FakePlaylistRepository(),
+          GridKind.movies,
+        );
 
-      await cubit.load();
-      await Future<void>.delayed(Duration.zero);
+        await cubit.load();
+        await Future<void>.delayed(Duration.zero);
 
-      final entry = cubit.state.items.firstWhere((e) => e.title == 'Dune');
+        final entry = cubit.state.items.firstWhere((e) => e.title == 'Dune');
 
-      // Add it
-      await cubit.toggleFavorite(entry);
-      await Future<void>.delayed(Duration.zero);
-      expect(cubit.state.favoriteKeys, contains('movie:${entry.id}'));
+        // Add it
+        await cubit.toggleFavorite(entry);
+        await Future<void>.delayed(Duration.zero);
+        expect(cubit.state.favoriteKeys, contains('movie:${entry.id}'));
 
-      // Remove it
-      await cubit.toggleFavorite(entry);
-      await Future<void>.delayed(Duration.zero);
-      expect(cubit.state.favoriteKeys, isNot(contains('movie:${entry.id}')));
+        // Remove it
+        await cubit.toggleFavorite(entry);
+        await Future<void>.delayed(Duration.zero);
+        expect(cubit.state.favoriteKeys, isNot(contains('movie:${entry.id}')));
 
-      await cubit.close();
-    });
+        await cubit.close();
+      },
+    );
 
-    test('toggleFavorite(entry) uses episode kind for series entries', () async {
-      final contentRepo = FakeContentRepository();
-      final cubit = GridCubit(
-        contentRepo,
-        FakePlaylistRepository(),
-        GridKind.series,
-      );
+    test(
+      'toggleFavorite(entry) uses episode kind for series entries',
+      () async {
+        final contentRepo = FakeContentRepository();
+        final cubit = GridCubit(
+          contentRepo,
+          FakePlaylistRepository(),
+          GridKind.series,
+        );
 
-      await cubit.load();
-      await Future<void>.delayed(Duration.zero);
+        await cubit.load();
+        await Future<void>.delayed(Duration.zero);
 
-      final entry = cubit.state.items.firstWhere((e) => e.title == 'Deep Field');
-      await cubit.toggleFavorite(entry);
-      await Future<void>.delayed(Duration.zero);
+        final entry = cubit.state.items.firstWhere(
+          (e) => e.title == 'Deep Field',
+        );
+        await cubit.toggleFavorite(entry);
+        await Future<void>.delayed(Duration.zero);
 
-      // Series items are keyed as 'episode:<id>' matching details_screen convention
-      expect(cubit.state.favoriteKeys, contains('episode:${entry.id}'));
+        // Series items are keyed as 'episode:<id>' matching details_screen convention
+        expect(cubit.state.favoriteKeys, contains('episode:${entry.id}'));
 
-      await cubit.close();
-    });
+        await cubit.close();
+      },
+    );
   });
 
   group('GridCubit — recent categories', () {
-    test('a used category is pinned under All and not repeated below',
-        () async {
-      final content = FakeContentRepository();
-      final cubit = GridCubit(content, FakePlaylistRepository(), GridKind.movies);
+    test(
+      'a used category is pinned under All and stays in its place below',
+      () async {
+        final content = FakeContentRepository();
+        final cubit = GridCubit(
+          content,
+          FakePlaylistRepository(),
+          GridKind.movies,
+        );
 
+        await cubit.load();
+        await Future<void>.delayed(Duration.zero);
+
+        // cat2 (Drama) sits after cat1 (Action) in the provider's order.
+        cubit.selectCategory('cat2');
+        await Future<void>.delayed(Duration.zero);
+
+        final ids = cubit.state.categories.map((c) => c.id).toList();
+        expect(ids, [
+          '',
+          'cat2',
+          'cat1',
+          'cat2',
+        ], reason: 'pinned as recent, and still listed where it was clicked');
+        expect(
+          cubit.state.pinnedCategoryCount,
+          2,
+          reason: 'All + one recent category',
+        );
+        expect(cubit.state.recentCategoryCount, 1);
+
+        await cubit.close();
+      },
+    );
+
+    test('recent categories are capped at five', () async {
+      final content = FakeContentRepository();
+      for (var i = 0; i < 7; i++) {
+        await content.recordCategoryUse('p1', MediaKind.movie, 'x$i');
+      }
+      await content.recordCategoryUse('p1', MediaKind.movie, 'cat1');
+      await content.recordCategoryUse('p1', MediaKind.movie, 'cat2');
+      final cubit = GridCubit(
+        content,
+        FakePlaylistRepository(),
+        GridKind.movies,
+      );
       await cubit.load();
       await Future<void>.delayed(Duration.zero);
 
-      // cat2 (Drama) sits after cat1 (Action) in the provider's order.
-      cubit.selectCategory('cat2');
-      await Future<void>.delayed(Duration.zero);
-
-      final ids = cubit.state.categories.map((c) => c.id).toList();
-      expect(ids, ['', 'cat2', 'cat1'],
-          reason: 'used category moves up; it must not appear twice');
-      expect(cubit.state.pinnedCategoryCount, 2,
-          reason: 'All + one pinned category');
+      // Unknown ids are skipped; the two real ones are pinned, newest first.
+      expect(cubit.state.recentCategoryCount, 2);
+      expect(cubit.state.categories.take(3).map((c) => c.id), [
+        '',
+        'cat2',
+        'cat1',
+      ]);
+      expect(kRecentCategoryLimit, 5);
 
       await cubit.close();
     });

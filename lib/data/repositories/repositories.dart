@@ -5,7 +5,7 @@ import '../models/models.dart';
 const int kRecentlyViewedLimit = 20;
 
 /// How many recently-opened categories are pinned above the provider's list.
-const int kRecentCategoryLimit = 15;
+const int kRecentCategoryLimit = 5;
 
 /// Manages the set of user playlists and which one is active.
 abstract class PlaylistRepository {
@@ -30,6 +30,10 @@ abstract class ContentRepository {
   /// locally; missing ids are simply omitted.
   Future<List<Episode>> episodesByIds(List<String> ids);
 
+  /// The cached episode that follows [episodeId] in the series (crossing into
+  /// the next season), or null when it is the last one or is not cached.
+  Future<Episode?> episodeAfter(String episodeId);
+
   /// Fetches a series' full detail (plot, seasons, episodes) from the provider
   /// on demand and caches it locally. Seasons/episodes are not fetched during
   /// the initial import (too expensive per-series), so this is called when a
@@ -47,17 +51,22 @@ abstract class ContentRepository {
 
   /// [title] is the display name at add-time — stored with the favorite so it
   /// can survive provider stream-id renumbering (see [repairFavorite]).
-  Future<void> toggleFavorite(String itemKey, String playlistId, MediaKind kind,
-      {String title = ''});
+  Future<void> toggleFavorite(
+    String itemKey,
+    String playlistId,
+    MediaKind kind, {
+    String title = '',
+  });
 
   /// Self-heal for a favorite whose provider id changed: moves the row at
   /// [oldItemKey] to [newItemKey] (keeping playlist/kind/addedAt) and updates
   /// the stored [title]. With [oldItemKey] == [newItemKey] it only backfills
   /// the title. No-op when the old row no longer exists.
-  Future<void> repairFavorite(
-      {required String oldItemKey,
-      required String newItemKey,
-      required String title});
+  Future<void> repairFavorite({
+    required String oldItemKey,
+    required String newItemKey,
+    required String title,
+  });
 
   /// Returns the provider's category list for [playlistId] and [kind].
   ///
@@ -67,7 +76,10 @@ abstract class ContentRepository {
 
   /// Records that the user opened [categoryId] in the [kind] section.
   Future<void> recordCategoryUse(
-      String playlistId, MediaKind kind, String categoryId);
+    String playlistId,
+    MediaKind kind,
+    String categoryId,
+  );
 
   /// Category ids the user has opened in the [kind] section, most-recent first.
   Stream<List<String>> recentCategoryIds(String playlistId, MediaKind kind);
@@ -79,7 +91,10 @@ abstract class ContentRepository {
 /// Reads EPG programmes for a channel within a time window.
 abstract class EpgRepository {
   Future<Result<List<EpgProgramme>>> programmes(
-      String channelId, DateTime from, DateTime to);
+    String channelId,
+    DateTime from,
+    DateTime to,
+  );
 }
 
 /// Tracks playback position and the "continue watching" list.
@@ -97,7 +112,10 @@ abstract class PlaybackRepository {
   /// Records that [itemKey] (a browsable key — `movie:<id>` / `series:<id>` /
   /// `channel:<id>`) was just opened in the player. Unlike [saveProgress] this
   /// also tracks live channels, and powers the "Recently Viewed" category.
-  Future<void> recordView({required String playlistId, required String itemKey});
+  Future<void> recordView({
+    required String playlistId,
+    required String itemKey,
+  });
 
   /// The browsable keys recently opened in [playlistId], most-recent first,
   /// restricted to [prefix] (`movie:` / `series:` / `channel:`) and capped at

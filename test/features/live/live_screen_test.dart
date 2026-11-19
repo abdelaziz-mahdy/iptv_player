@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_player/core/a11y/accessibility_cubit.dart';
@@ -48,13 +48,31 @@ class _CategorisedContentRepository extends FakeContentRepository {
 
   @override
   Future<List<CategoryRef>> categories(
-      String playlistId, MediaKind kind) async {
+    String playlistId,
+    MediaKind kind,
+  ) async {
     if (kind != MediaKind.channel) return const [];
     return const [
       CategoryRef(id: 'cat-sports', name: 'Sports'),
       CategoryRef(id: 'cat-news', name: 'News'),
     ];
   }
+}
+
+/// Enough channels in two categories for the wide grid to scroll.
+class _ManyChannels extends _CategorisedContentRepository {
+  @override
+  Stream<List<Channel>> channels(String playlistId) => Stream.value([
+    for (var i = 0; i < 300; i++)
+      Channel(
+        id: 'ch$i',
+        playlistId: 'p1',
+        name: 'Channel $i',
+        number: '$i',
+        streamUrl: 'http://x/$i',
+        categoryId: i.isEven ? 'cat-sports' : 'cat-news',
+      ),
+  ]);
 }
 
 /// Builds a narrow (phone) app that creates a [LiveCubit] backed by the
@@ -98,9 +116,7 @@ class _LiveViewForTest extends StatelessWidget {
           );
         }
         if (state.groups.isEmpty) {
-          return const Scaffold(
-            body: Center(child: Text('No channels')),
-          );
+          return const Scaffold(body: Center(child: Text('No channels')));
         }
         // Always use narrow layout in this test harness.
         return Scaffold(
@@ -158,9 +174,7 @@ Future<void> _pumpLive(WidgetTester tester, Widget widget) async {
   await tester.pump(const Duration(milliseconds: 100));
 }
 
-Widget _buildTestApp({
-  void Function(List<Channel>, int)? onPlayChannel,
-}) {
+Widget _buildTestApp({void Function(List<Channel>, int)? onPlayChannel}) {
   return BlocProvider(
     create: (_) => AccessibilityCubit(),
     child: MaterialApp(
@@ -190,7 +204,9 @@ void main() {
   // Wide layout (>= 700 px wide) — sidebar + grid
   // -------------------------------------------------------------------------
 
-  testWidgets('LiveScreen renders channel name from fakes (wide)', (tester) async {
+  testWidgets('LiveScreen renders channel name from fakes (wide)', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -213,10 +229,7 @@ void main() {
 
     await _pumpLive(tester, _buildTestApp());
 
-    expect(
-      find.text('Live TV', skipOffstage: false),
-      findsAtLeastNWidgets(1),
-    );
+    expect(find.text('Live TV', skipOffstage: false), findsAtLeastNWidgets(1));
   });
 
   testWidgets('LiveScreen shows group label "All" (wide)', (tester) async {
@@ -227,14 +240,12 @@ void main() {
 
     await _pumpLive(tester, _buildTestApp());
 
-    expect(
-      find.text('All', skipOffstage: false),
-      findsAtLeastNWidgets(1),
-    );
+    expect(find.text('All', skipOffstage: false), findsAtLeastNWidgets(1));
   });
 
-  testWidgets('LiveScreen tapping channel tile invokes onPlayChannel (wide)',
-      (tester) async {
+  testWidgets('LiveScreen tapping channel tile invokes onPlayChannel (wide)', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -243,7 +254,9 @@ void main() {
     Channel? tappedChannel;
     await _pumpLive(
       tester,
-      _buildTestApp(onPlayChannel: (channels, index) => tappedChannel = channels[index]),
+      _buildTestApp(
+        onPlayChannel: (channels, index) => tappedChannel = channels[index],
+      ),
     );
 
     // Tap the first visible channel tile (find by text 'NOOR One').
@@ -269,108 +282,143 @@ void main() {
     await _pumpLive(tester, _buildTestApp());
 
     // Should show group names, not individual channel tiles in grid
-    expect(
-      find.text('All', skipOffstage: false),
-      findsAtLeastNWidgets(1),
-    );
+    expect(find.text('All', skipOffstage: false), findsAtLeastNWidgets(1));
   });
 
   testWidgets(
-      'LiveScreen narrow: tapping a group navigates to ChannelListScreen',
-      (tester) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    'LiveScreen narrow: tapping a group navigates to ChannelListScreen',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await _pumpLive(tester, _buildTestApp());
+      await _pumpLive(tester, _buildTestApp());
 
-    // Tap the 'All' group
-    await tester.tap(find.text('All').first);
-    await tester.pumpAndSettle(const Duration(milliseconds: 500));
+      // Tap the 'All' group
+      await tester.tap(find.text('All').first);
+      await tester.pumpAndSettle(const Duration(milliseconds: 500));
 
-    // ChannelListScreen should be pushed — check that a channel name appears
-    expect(
-      find.textContaining('NOOR', skipOffstage: false),
-      findsAtLeastNWidgets(1),
-    );
-  });
+      // ChannelListScreen should be pushed — check that a channel name appears
+      expect(
+        find.textContaining('NOOR', skipOffstage: false),
+        findsAtLeastNWidgets(1),
+      );
+    },
+  );
 
   // -------------------------------------------------------------------------
   // Narrow layout drill-in: non-"All" group shows only that group's channels
   // -------------------------------------------------------------------------
 
   testWidgets(
-      'Narrow drill-in: tapping "Sports" group pushes ChannelListScreen '
-      'with only the Sports channel (not channels from other groups)',
-      (tester) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    'Narrow drill-in: tapping "Sports" group pushes ChannelListScreen '
+    'with only the Sports channel (not channels from other groups)',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    // Build a cubit backed by our categorised-channel fake.
-    // Create the cubit inside BlocProvider (via _buildNarrowAppWithRepo) so
-    // that async work runs within the test's fake-async zone, avoiding
-    // pumpAndSettle hanging on never-closing broadcast streams.
-    final contentRepo = _CategorisedContentRepository();
-    final app = _buildNarrowAppWithRepo(contentRepo);
-    await tester.pumpWidget(app);
-    await tester.pump(Duration.zero);
-    await tester.pump(const Duration(milliseconds: 100));
+      // Build a cubit backed by our categorised-channel fake.
+      // Create the cubit inside BlocProvider (via _buildNarrowAppWithRepo) so
+      // that async work runs within the test's fake-async zone, avoiding
+      // pumpAndSettle hanging on never-closing broadcast streams.
+      final contentRepo = _CategorisedContentRepository();
+      final app = _buildNarrowAppWithRepo(contentRepo);
+      await tester.pumpWidget(app);
+      await tester.pump(Duration.zero);
+      await tester.pump(const Duration(milliseconds: 100));
 
-    // The group list should contain "Sports" and "News" (plus "All").
-    expect(find.text('Sports', skipOffstage: false), findsAtLeastNWidgets(1));
+      // The group list should contain "Sports" and "News" (plus "All").
+      expect(find.text('Sports', skipOffstage: false), findsAtLeastNWidgets(1));
 
-    // Tap the "Sports" group tile.
-    await tester.tap(find.text('Sports').first);
-    // Pump through the navigation animation (300 ms slide + fade) without
-    // using pumpAndSettle, which can hang when background Dart streams
-    // (e.g. FakePlaylistRepository's broadcast controller) keep the event
-    // loop alive indefinitely.
-    await tester.pump(Duration.zero);
-    await tester.pump(const Duration(milliseconds: 350));
+      // Tap the "Sports" group tile.
+      await tester.tap(find.text('Sports').first);
+      // Pump through the navigation animation (300 ms slide + fade) without
+      // using pumpAndSettle, which can hang when background Dart streams
+      // (e.g. FakePlaylistRepository's broadcast controller) keep the event
+      // loop alive indefinitely.
+      await tester.pump(Duration.zero);
+      await tester.pump(const Duration(milliseconds: 350));
 
-    // After navigation, ChannelListScreen must show only the Sports channel.
-    expect(
-      find.text('Sports Channel', skipOffstage: false),
-      findsAtLeastNWidgets(1),
-      reason: 'Sports channel must appear after tapping Sports group',
-    );
-    expect(
-      find.text('News Channel', skipOffstage: false),
-      findsNothing,
-      reason: 'News channel must NOT appear — it is in a different group',
-    );
+      // After navigation, ChannelListScreen must show only the Sports channel.
+      expect(
+        find.text('Sports Channel', skipOffstage: false),
+        findsAtLeastNWidgets(1),
+        reason: 'Sports channel must appear after tapping Sports group',
+      );
+      expect(
+        find.text('News Channel', skipOffstage: false),
+        findsNothing,
+        reason: 'News channel must NOT appear — it is in a different group',
+      );
 
-    // Verify the pushed screen received exactly the cubit's channelsInGroup
-    // for the Sports group (one channel).
-    expect(
-      tester.widgetList<ChannelListScreen>(find.byType(ChannelListScreen)),
-      isNotEmpty,
-      reason: 'ChannelListScreen should be on the navigation stack',
-    );
-    final screen = tester.widget<ChannelListScreen>(
-      find.byType(ChannelListScreen),
-    );
-    expect(screen.channels, hasLength(1));
-    expect(screen.channels.first.name, 'Sports Channel');
-  });
+      // Verify the pushed screen received exactly the cubit's channelsInGroup
+      // for the Sports group (one channel).
+      expect(
+        tester.widgetList<ChannelListScreen>(find.byType(ChannelListScreen)),
+        isNotEmpty,
+        reason: 'ChannelListScreen should be on the navigation stack',
+      );
+      final screen = tester.widget<ChannelListScreen>(
+        find.byType(ChannelListScreen),
+      );
+      expect(screen.channels, hasLength(1));
+      expect(screen.channels.first.name, 'Sports Channel');
+    },
+  );
 
   testWidgets(
-      'LiveScreen has at least one autofocused FocusableButton when content loads',
-      (tester) async {
+    'LiveScreen has at least one autofocused FocusableButton when content loads',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await _pumpLive(tester, _buildTestApp());
+
+      final autofocused = find.byWidgetPredicate(
+        (w) => w is FocusableButton && w.autofocus == true,
+        skipOffstage: false,
+      );
+      expect(autofocused, findsAtLeastNWidgets(1));
+    },
+  );
+
+  testWidgets('switching group scrolls the channel grid back to the top', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    sl.unregister<ContentRepository>();
+    sl.registerLazySingleton<ContentRepository>(_ManyChannels.new);
 
     await _pumpLive(tester, _buildTestApp());
 
-    final autofocused = find.byWidgetPredicate(
-      (w) => w is FocusableButton && w.autofocus == true,
-      skipOffstage: false,
+    ScrollPosition grid() => tester
+        .state<ScrollableState>(
+          find.descendant(
+            of: find.byType(GridView),
+            matching: find.byType(Scrollable),
+          ),
+        )
+        .position;
+    grid().jumpTo(2000);
+    await tester.pump();
+    expect(grid().pixels, greaterThan(0));
+
+    await tester.tap(find.text('News').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(
+      grid().pixels,
+      0,
+      reason: 'a new group must start at its first row, not mid-list',
     );
-    expect(autofocused, findsAtLeastNWidgets(1));
   });
 }

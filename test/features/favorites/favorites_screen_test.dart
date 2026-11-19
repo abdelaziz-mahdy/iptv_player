@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_player/core/di/injection.dart';
 import 'package:iptv_player/core/theme/app_palette.dart';
@@ -24,8 +24,7 @@ Widget _buildTestApp({void Function(GridEntry)? onOpen}) {
   );
 }
 
-Future<void> _pumpAndIgnoreOverflow(
-    WidgetTester tester, Widget widget) async {
+Future<void> _pumpAndIgnoreOverflow(WidgetTester tester, Widget widget) async {
   final previousHandler = FlutterError.onError;
   FlutterError.onError = (FlutterErrorDetails details) {
     if (details.exceptionAsString().contains('overflowed')) return;
@@ -46,8 +45,9 @@ void main() {
     await sl.reset();
   });
 
-  testWidgets('FavoritesScreen shows empty-state message when no favorites',
-      (tester) async {
+  testWidgets('FavoritesScreen shows empty-state message when no favorites', (
+    tester,
+  ) async {
     await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
     // Empty state message text
@@ -63,7 +63,10 @@ void main() {
   testWidgets('FavoritesScreen shows the favorites title', (tester) async {
     await _pumpAndIgnoreOverflow(tester, _buildTestApp());
 
-    expect(find.text('Favorites', skipOffstage: false), findsAtLeastNWidgets(1));
+    expect(
+      find.text('Favorites', skipOffstage: false),
+      findsAtLeastNWidgets(1),
+    );
   });
 
   testWidgets('FavoritesScreen renders without error', (tester) async {
@@ -73,24 +76,25 @@ void main() {
   });
 
   testWidgets(
-      'FavoritesScreen first PosterCard has autofocus when favorites exist',
-      (tester) async {
-    // The fake ContentRepository seeds favorites — assert at least one
-    // autofocused FocusableButton exists.
-    await tester.pumpWidget(_buildTestApp()); // use existing helper
-    await tester.pumpAndSettle();
+    'FavoritesScreen first PosterCard has autofocus when favorites exist',
+    (tester) async {
+      // The fake ContentRepository seeds favorites — assert at least one
+      // autofocused FocusableButton exists.
+      await tester.pumpWidget(_buildTestApp()); // use existing helper
+      await tester.pumpAndSettle();
 
-    // Only assert if the grid is non-empty (skip if fakes return empty).
-    final autofocused = find.byWidgetPredicate(
-      (w) => w is FocusableButton && w.autofocus == true,
-      skipOffstage: false,
-    );
-    // Either there are favorites and one is autofocused, or there are none
-    // and zero are autofocused — both are valid. We just assert no crash.
-    // A stronger assertion is that IF posters are shown, one is autofocused.
-    final posters = find.byType(PosterCard, skipOffstage: false);
-    if (posters.evaluate().isNotEmpty) {
-      expect(autofocused, findsAtLeastNWidgets(1));
-    }
-  });
+      // Only assert if the grid is non-empty (skip if fakes return empty).
+      final autofocused = find.byWidgetPredicate(
+        (w) => w is FocusableButton && w.autofocus == true,
+        skipOffstage: false,
+      );
+      // Either there are favorites and one is autofocused, or there are none
+      // and zero are autofocused — both are valid. We just assert no crash.
+      // A stronger assertion is that IF posters are shown, one is autofocused.
+      final posters = find.byType(PosterCard, skipOffstage: false);
+      if (posters.evaluate().isNotEmpty) {
+        expect(autofocused, findsAtLeastNWidgets(1));
+      }
+    },
+  );
 }

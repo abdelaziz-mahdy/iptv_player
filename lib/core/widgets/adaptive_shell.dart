@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
+
 import 'breakpoints.dart';
 
 /// A navigation destination for the adaptive shell.
@@ -65,7 +66,8 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
   /// move the caret rather than focus.
   bool _isEditing() {
     final ctx = FocusManager.instance.primaryFocus?.context;
-    return ctx != null && ctx.findAncestorStateOfType<EditableTextState>() != null;
+    return ctx != null &&
+        ctx.findAncestorStateOfType<EditableTextState>() != null;
   }
 
   /// Moves focus to the first focusable element inside [scope], descending
@@ -108,7 +110,9 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
       // Same band: excludes the rows above/below in a grid, which share one
       // Scrollable with the focused item.
       if (r.bottom <= rect.top || r.top >= rect.bottom) continue;
-      if (toLeft ? r.center.dx >= rect.center.dx : r.center.dx <= rect.center.dx) {
+      if (toLeft
+          ? r.center.dx >= rect.center.dx
+          : r.center.dx <= rect.center.dx) {
         continue;
       }
       if (best == null ||
@@ -226,7 +230,8 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
     // Along the row first, then whatever is visible beside it (a grid's
     // category sidebar), and only then out to the rail.
     if (towardRail && !inRail) {
-      final neighbour = _rowNeighbour(focused, toLeft: !rtl) ??
+      final neighbour =
+          _rowNeighbour(focused, toLeft: !rtl) ??
           _visibleNeighbour(focused, toLeft: !rtl);
       if (neighbour != null) {
         _focusAndReveal(neighbour, towardStart: !rtl);
@@ -274,18 +279,25 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                       width: 72,
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text(widget.brand,
-                            style: Theme.of(context).textTheme.titleLarge),
+                        child: Text(
+                          widget.brand,
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
                       ),
                     ),
                   ),
-                  trailing: (widget.onOpenSettings != null ||
+                  trailing:
+                      (widget.onOpenSettings != null ||
                           widget.onOpenPlaylists != null)
                       ? Expanded(
                           child: Align(
                             alignment: Alignment.bottomCenter,
+                            // Compact buttons and a slim bottom pad: a
+                            // 1080p TV is 540 logical px tall, and at full
+                            // size this block overflowed it and clipped the
+                            // Settings gear under the screen edge.
                             child: Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.only(bottom: 8),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -296,6 +308,7 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                                         label: 'Playlists',
                                         button: true,
                                         child: IconButton(
+                                          visualDensity: VisualDensity.compact,
                                           icon: const Icon(Icons.playlist_play),
                                           onPressed: widget.onOpenPlaylists,
                                         ),
@@ -308,6 +321,7 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                                         label: 'Settings',
                                         button: true,
                                         child: IconButton(
+                                          visualDensity: VisualDensity.compact,
                                           icon: const Icon(Icons.settings),
                                           onPressed: widget.onOpenSettings,
                                         ),
@@ -322,16 +336,15 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                   destinations: [
                     for (final d in widget.destinations)
                       NavigationRailDestination(
-                          icon: Icon(d.icon), label: Text(d.label)),
+                        icon: Icon(d.icon),
+                        label: Text(d.label),
+                      ),
                   ],
                 ),
               ),
               const VerticalDivider(width: 1),
               Expanded(
-                child: FocusScope(
-                  node: _bodyScope,
-                  child: widget.body,
-                ),
+                child: FocusScope(node: _bodyScope, child: widget.body),
               ),
             ],
           ),
@@ -351,8 +364,10 @@ class _AdaptiveShellState extends State<AdaptiveShell> {
                 child: Row(
                   children: [
                     const SizedBox(width: 16),
-                    Text(widget.brand,
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      widget.brand,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const Spacer(),
                     if (widget.onOpenPlaylists != null)
                       Tooltip(

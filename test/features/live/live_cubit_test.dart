@@ -43,8 +43,10 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       // No recent group until a channel is viewed.
-      expect(cubit.state.groups.map((g) => g.id),
-          isNot(contains(kRecentGroupId)));
+      expect(
+        cubit.state.groups.map((g) => g.id),
+        isNot(contains(kRecentGroupId)),
+      );
 
       await playback.recordView(playlistId: 'p1', itemKey: 'channel:c2');
       await Future<void>.delayed(Duration.zero);
@@ -83,7 +85,9 @@ void main() {
       await cubit.load();
       await Future<void>.delayed(Duration.zero);
 
-      final allGroup = cubit.state.groups.where((g) => g.id == 'all').firstOrNull;
+      final allGroup = cubit.state.groups
+          .where((g) => g.id == 'all')
+          .firstOrNull;
       expect(allGroup, isNotNull);
       // FakeContentRepository has 3 channels
       expect(allGroup!.count, equals(3));
@@ -105,20 +109,23 @@ void main() {
       await cubit.close();
     });
 
-    test('initial channelsInGroup shows all channels (All group selected)', () async {
-      final cubit = LiveCubit(
-        FakeContentRepository(),
-        FakePlaylistRepository(),
-      );
+    test(
+      'initial channelsInGroup shows all channels (All group selected)',
+      () async {
+        final cubit = LiveCubit(
+          FakeContentRepository(),
+          FakePlaylistRepository(),
+        );
 
-      await cubit.load();
-      await Future<void>.delayed(Duration.zero);
+        await cubit.load();
+        await Future<void>.delayed(Duration.zero);
 
-      // Default selection is 'all', so channelsInGroup should have all 3 channels
-      expect(cubit.state.channelsInGroup, hasLength(3));
+        // Default selection is 'all', so channelsInGroup should have all 3 channels
+        expect(cubit.state.channelsInGroup, hasLength(3));
 
-      await cubit.close();
-    });
+        await cubit.close();
+      },
+    );
 
     test('selectGroup() filters channelsInGroup by categoryId', () async {
       final cubit = LiveCubit(
@@ -175,23 +182,57 @@ void main() {
   });
 
   group('LiveCubit — group recency', () {
-    test('selecting a real group records it; synthetic groups do not',
-        () async {
-      final content = FakeContentRepository();
-      final cubit = LiveCubit(content, FakePlaylistRepository());
+    test(
+      'selecting a real group records it; synthetic groups do not',
+      () async {
+        final content = FakeContentRepository();
+        final cubit = LiveCubit(content, FakePlaylistRepository());
 
-      await cubit.load();
-      await Future<void>.delayed(Duration.zero);
+        await cubit.load();
+        await Future<void>.delayed(Duration.zero);
 
-      cubit.selectGroup(kAllGroupId);
-      cubit.selectGroup('cat3');
-      await Future<void>.delayed(Duration.zero);
+        cubit.selectGroup(kAllGroupId);
+        cubit.selectGroup('cat3');
+        await Future<void>.delayed(Duration.zero);
 
-      final used = await content.recentCategoryIds('p1', MediaKind.channel).first;
-      expect(used, ['cat3'], reason: '"All" is synthetic and is not recorded');
+        final used = await content
+            .recentCategoryIds('p1', MediaKind.channel)
+            .first;
+        expect(used, [
+          'cat3',
+        ], reason: '"All" is synthetic and is not recorded');
 
-      await cubit.close();
-    });
+        await cubit.close();
+      },
+    );
+
+    test(
+      'a used group is pinned at once and stays in its place below',
+      () async {
+        final content = _GroupedChannels();
+        final cubit = LiveCubit(content, FakePlaylistRepository());
+        await cubit.load();
+        await Future<void>.delayed(Duration.zero);
+        final before = cubit.state.groups.map((g) => g.id).toList();
+
+        cubit.selectGroup('cat3');
+        // Recorded, then emitted back by the recency stream.
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        final ids = cubit.state.groups.map((g) => g.id).toList();
+        final pinned = cubit.state.pinnedGroupCount;
+        expect(cubit.state.recentGroupCount, 1);
+        expect(ids[pinned - 1], 'cat3', reason: 'pinned as recent right away');
+        expect(
+          ids.sublist(pinned),
+          before.sublist(before.indexOf(kAllGroupId) + 1),
+          reason: 'the full list below is unchanged, cat3 included',
+        );
+
+        await cubit.close();
+      },
+    );
 
     test('the last used group is restored on the next load', () async {
       final content = FakeContentRepository();
@@ -214,4 +255,35 @@ void main() {
       await second.close();
     });
   });
+}
+
+/// Fake channels spread over the fake's channel categories (Sports, News).
+class _GroupedChannels extends FakeContentRepository {
+  @override
+  Stream<List<Channel>> channels(String playlistId) => Stream.value(const [
+    Channel(
+      id: 'a',
+      playlistId: 'p1',
+      name: 'A',
+      number: '1',
+      streamUrl: 'u1',
+      categoryId: 'cat4',
+    ),
+    Channel(
+      id: 'b',
+      playlistId: 'p1',
+      name: 'B',
+      number: '2',
+      streamUrl: 'u2',
+      categoryId: 'cat3',
+    ),
+    Channel(
+      id: 'c',
+      playlistId: 'p1',
+      name: 'C',
+      number: '3',
+      streamUrl: 'u3',
+      categoryId: 'cat3',
+    ),
+  ]);
 }

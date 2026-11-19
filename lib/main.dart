@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
+
 import 'app.dart';
 import 'core/debug_flags.dart';
 import 'core/logging/app_logger.dart';
@@ -25,6 +26,7 @@ Future<void> main() async {
   // pullable app log, everything under FVP_CAPTURE.
   Logger.root.level = kFvpCaptureBuild ? Level.ALL : Level.INFO;
   Logger.root.onRecord.listen((r) {
+    if (!kFvpCaptureBuild && isMdkProgressNoise(r.message)) return;
     final line = '[${r.loggerName}] ${r.message}';
     if (r.level >= Level.SEVERE) {
       appLog.error(line);
@@ -48,10 +50,7 @@ Future<void> main() async {
   // Android kills backgrounded apps without a clean shutdown, so this is the
   // last dependable chance to get buffered log lines onto disk — the whole
   // reason the file sink exists is to still be there afterwards.
-  AppLifecycleListener(
-    onPause: flushAppLog,
-    onDetach: flushAppLog,
-  );
+  AppLifecycleListener(onPause: flushAppLog, onDetach: flushAppLog);
 
   runApp(const NoorApp());
 

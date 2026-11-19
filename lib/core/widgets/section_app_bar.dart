@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../theme/app_theme.dart';
 
@@ -7,7 +7,11 @@ import '../theme/app_theme.dart';
 /// Each tab used to build its own — or fake one with padding, or skip it — so
 /// the title moved as you switched tabs.
 class SectionAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const SectionAppBar({super.key, required this.title, this.actions = const []});
+  const SectionAppBar({
+    super.key,
+    required this.title,
+    this.actions = const [],
+  });
 
   final String title;
   final List<Widget> actions;
@@ -23,10 +27,8 @@ class SectionAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       title: Text(
         title,
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: p.fg,
-              fontWeight: FontWeight.w700,
-            ),
+        style: Theme.of(context).textTheme.titleLarge
+            ?.copyWith(color: p.fg, fontWeight: FontWeight.w700),
       ),
       actions: actions,
     );
