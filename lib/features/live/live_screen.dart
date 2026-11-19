@@ -272,9 +272,8 @@ class _NarrowLayout extends StatelessWidget {
                     ),
                     Text(
                       '${group.count}',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelSmall?.copyWith(color: p.dim),
+                      style: Theme.of(context).textTheme.labelSmall
+                          ?.copyWith(color: p.dim),
                     ),
                     const SizedBox(width: 8),
                     Icon(Icons.chevron_right, color: p.dim, size: IconSize.sm),

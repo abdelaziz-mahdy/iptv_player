@@ -6,13 +6,13 @@ import 'package:iptv_player/features/home/cubit/home_cubit.dart';
 void main() {
   group('collapseContinueWatching', () {
     WatchProgress ep(String key, DateTime at) => WatchProgress(
-          itemKey: key,
-          playlistId: 'p1',
-          kind: MediaKind.episode,
-          positionSec: 10,
-          durationSec: 100,
-          updatedAt: at,
-        );
+      itemKey: key,
+      playlistId: 'p1',
+      kind: MediaKind.episode,
+      positionSec: 10,
+      durationSec: 100,
+      updatedAt: at,
+    );
 
     test('keeps only the newest episode per series', () {
       // Ordered newest-first, as continueWatching() returns.
@@ -83,34 +83,40 @@ void main() {
   });
 
   group('HomeCubit', () {
-    test('continue-watching episodes are enriched with their Episode row',
-        () async {
-      final playback = FakePlaybackRepository();
-      // A part-watched episode (fake episode id 's1-1-e1', number 1).
-      await playback.saveProgress(WatchProgress(
-        itemKey: 'episode:s1-1-e1',
-        playlistId: 'p1',
-        kind: MediaKind.episode,
-        positionSec: 100,
-        durationSec: 1000,
-        updatedAt: DateTime.now().toUtc(),
-      ));
+    test(
+      'continue-watching episodes are enriched with their Episode row',
+      () async {
+        final playback = FakePlaybackRepository();
+        // A part-watched episode (fake episode id 's1-1-e1', number 1).
+        await playback.saveProgress(
+          WatchProgress(
+            itemKey: 'episode:s1-1-e1',
+            playlistId: 'p1',
+            kind: MediaKind.episode,
+            positionSec: 100,
+            durationSec: 1000,
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
 
-      final cubit = HomeCubit(
-        FakeContentRepository(),
-        playback,
-        FakePlaylistRepository(),
-      );
-      await cubit.load();
-      await Future<void>.delayed(Duration.zero); // active bind + continue emit
-      await Future<void>.delayed(Duration.zero); // async episodesByIds fetch
+        final cubit = HomeCubit(
+          FakeContentRepository(),
+          playback,
+          FakePlaylistRepository(),
+        );
+        await cubit.load();
+        await Future<void>.delayed(
+          Duration.zero,
+        ); // active bind + continue emit
+        await Future<void>.delayed(Duration.zero); // async episodesByIds fetch
 
-      expect(cubit.state.continueWatching, hasLength(1));
-      expect(cubit.state.episodesById['s1-1-e1']?.number, 1);
-      expect(cubit.state.episodesById['s1-1-e1']?.title, 'Pilot');
+        expect(cubit.state.continueWatching, hasLength(1));
+        expect(cubit.state.episodesById['s1-1-e1']?.number, 1);
+        expect(cubit.state.episodesById['s1-1-e1']?.title, 'Pilot');
 
-      await cubit.close();
-    });
+        await cubit.close();
+      },
+    );
 
     Future<HomeCubit> homeWith(List<WatchProgress> rows) async {
       final playback = FakePlaybackRepository();
@@ -130,25 +136,28 @@ void main() {
     }
 
     WatchProgress ep(String id, int pos, int day) => WatchProgress(
-          itemKey: 'episode:$id',
-          playlistId: 'p1',
-          kind: MediaKind.episode,
-          positionSec: pos,
-          durationSec: 2700,
-          updatedAt: DateTime.utc(2026, 1, day),
-        );
+      itemKey: 'episode:$id',
+      playlistId: 'p1',
+      kind: MediaKind.episode,
+      positionSec: pos,
+      durationSec: 2700,
+      updatedAt: DateTime.utc(2026, 1, day),
+    );
 
-    test('a finished episode shows the next one, not an older unfinished one',
-        () async {
-      final cubit = await homeWith([
-        ep('p1:series:s4:season:1:ep:41', 600, 1),
-        ep('p1:series:s4:season:1:ep:42', 2700, 2),
-      ]);
-      expect(cubit.state.continueWatching.map((p) => p.itemKey),
-          ['episode:p1:series:s4:season:2:ep:43']);
-      expect(cubit.state.continueWatching.single.positionSec, 0);
-      await cubit.close();
-    });
+    test(
+      'a finished episode shows the next one, not an older unfinished one',
+      () async {
+        final cubit = await homeWith([
+          ep('p1:series:s4:season:1:ep:41', 600, 1),
+          ep('p1:series:s4:season:1:ep:42', 2700, 2),
+        ]);
+        expect(cubit.state.continueWatching.map((p) => p.itemKey), [
+          'episode:p1:series:s4:season:2:ep:43',
+        ]);
+        expect(cubit.state.continueWatching.single.positionSec, 0);
+        await cubit.close();
+      },
+    );
 
     test('a series whose last episode was finished leaves the row', () async {
       final cubit = await homeWith([
@@ -215,14 +224,16 @@ void main() {
       await cubit.load();
 
       // Seed a movie progress entry via the repository directly.
-      await playback.saveProgress(WatchProgress(
-        itemKey: 'movie:m1',
-        playlistId: 'p1',
-        kind: MediaKind.movie,
-        positionSec: 42,
-        durationSec: 120,
-        updatedAt: DateTime.utc(2026),
-      ));
+      await playback.saveProgress(
+        WatchProgress(
+          itemKey: 'movie:m1',
+          playlistId: 'p1',
+          kind: MediaKind.movie,
+          positionSec: 42,
+          durationSec: 120,
+          updatedAt: DateTime.utc(2026),
+        ),
+      );
 
       // Give the stream a tick to propagate.
       await Future<void>.delayed(Duration.zero);

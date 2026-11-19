@@ -56,7 +56,9 @@ class OnboardingScreen extends StatelessWidget {
                 onPressed: onGetStarted,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 32, vertical: 16),
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: p.accent,
                     borderRadius: BorderRadius.circular(8),

@@ -36,10 +36,7 @@ void main() {
       // Add the favorite before loading the cubit so the stream already has it
       await contentRepo.toggleFavorite('movie:m1', 'p1', MediaKind.movie);
 
-      final cubit = FavoritesCubit(
-        contentRepo,
-        FakePlaylistRepository(),
-      );
+      final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository());
 
       await cubit.load();
       await Future<void>.delayed(Duration.zero);
@@ -62,10 +59,7 @@ void main() {
       // details). The favorites list must still resolve them as the series.
       await contentRepo.toggleFavorite('episode:s1', 'p1', MediaKind.episode);
 
-      final cubit = FavoritesCubit(
-        contentRepo,
-        FakePlaylistRepository(),
-      );
+      final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository());
 
       await cubit.load();
       await Future<void>.delayed(Duration.zero);
@@ -82,10 +76,7 @@ void main() {
       await contentRepo.toggleFavorite('movie:m1', 'p1', MediaKind.movie);
       await contentRepo.toggleFavorite('movie:m1', 'p1', MediaKind.movie);
 
-      final cubit = FavoritesCubit(
-        contentRepo,
-        FakePlaylistRepository(),
-      );
+      final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository());
 
       await cubit.load();
       await Future<void>.delayed(Duration.zero);
@@ -96,13 +87,20 @@ void main() {
       await cubit.close();
     });
 
-
     test('newest favorite comes first', () async {
       final contentRepo = FakeContentRepository();
-      await contentRepo.toggleFavorite('movie:m1', 'p1', MediaKind.movie,
-          title: 'The Signal');
-      await contentRepo.toggleFavorite('movie:m2', 'p1', MediaKind.movie,
-          title: 'Dune');
+      await contentRepo.toggleFavorite(
+        'movie:m1',
+        'p1',
+        MediaKind.movie,
+        title: 'The Signal',
+      );
+      await contentRepo.toggleFavorite(
+        'movie:m2',
+        'p1',
+        MediaKind.movie,
+        title: 'Dune',
+      );
 
       final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository());
       await cubit.load();
@@ -115,19 +113,28 @@ void main() {
     test('favorite movies carry their watch progress', () async {
       final contentRepo = FakeContentRepository();
       final playback = FakePlaybackRepository();
-      await contentRepo.toggleFavorite('movie:m1', 'p1', MediaKind.movie,
-          title: 'The Signal');
-      await playback.saveProgress(WatchProgress(
-        itemKey: 'movie:m1',
-        playlistId: 'p1',
-        kind: MediaKind.movie,
-        positionSec: 5900,
-        durationSec: 6000,
-        updatedAt: DateTime.utc(2026),
-      ));
+      await contentRepo.toggleFavorite(
+        'movie:m1',
+        'p1',
+        MediaKind.movie,
+        title: 'The Signal',
+      );
+      await playback.saveProgress(
+        WatchProgress(
+          itemKey: 'movie:m1',
+          playlistId: 'p1',
+          kind: MediaKind.movie,
+          positionSec: 5900,
+          durationSec: 6000,
+          updatedAt: DateTime.utc(2026),
+        ),
+      );
 
-      final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository(),
-          playback: playback);
+      final cubit = FavoritesCubit(
+        contentRepo,
+        FakePlaylistRepository(),
+        playback: playback,
+      );
       await cubit.load();
       await Future<void>.delayed(Duration.zero);
 
@@ -138,36 +145,47 @@ void main() {
     // Provider stream ids embedded in favorite keys are not stable across
     // re-imports — these cover the self-healing resolution (title snapshot).
     group('id renumbering', () {
-      test('stale id heals by title: favorite follows the renamed id', () async {
-        final contentRepo = FakeContentRepository();
-        // 'm9' does not exist in the catalog — simulates the provider having
-        // renumbered The Signal from m9 to m1 since the favorite was added.
-        await contentRepo.toggleFavorite('movie:m9', 'p1', MediaKind.movie,
-            title: 'The Signal');
+      test(
+        'stale id heals by title: favorite follows the renamed id',
+        () async {
+          final contentRepo = FakeContentRepository();
+          // 'm9' does not exist in the catalog — simulates the provider having
+          // renumbered The Signal from m9 to m1 since the favorite was added.
+          await contentRepo.toggleFavorite(
+            'movie:m9',
+            'p1',
+            MediaKind.movie,
+            title: 'The Signal',
+          );
 
-        final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository());
-        await cubit.load();
-        await Future<void>.delayed(Duration.zero);
+          final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository());
+          await cubit.load();
+          await Future<void>.delayed(Duration.zero);
 
-        expect(cubit.state.entries, hasLength(1));
-        expect(cubit.state.entries.first.title, 'The Signal');
-        expect(cubit.state.entries.first.id, 'm1');
+          expect(cubit.state.entries, hasLength(1));
+          expect(cubit.state.entries.first.title, 'The Signal');
+          expect(cubit.state.entries.first.id, 'm1');
 
-        // The favorite row was rewritten to the current id.
-        await Future<void>.delayed(Duration.zero);
-        final favs = await contentRepo.favorites('p1').first;
-        expect(favs.single.itemKey, 'movie:m1');
-        expect(favs.single.title, 'The Signal');
+          // The favorite row was rewritten to the current id.
+          await Future<void>.delayed(Duration.zero);
+          final favs = await contentRepo.favorites('p1').first;
+          expect(favs.single.itemKey, 'movie:m1');
+          expect(favs.single.title, 'The Signal');
 
-        await cubit.close();
-      });
+          await cubit.close();
+        },
+      );
 
       test('reused id resolves by title, not by the reassigned id', () async {
         final contentRepo = FakeContentRepository();
         // The favorite's key says m1, but its stored title is Dune (m2):
         // the provider reused id m1 for different content after re-import.
-        await contentRepo.toggleFavorite('movie:m1', 'p1', MediaKind.movie,
-            title: 'Dune');
+        await contentRepo.toggleFavorite(
+          'movie:m1',
+          'p1',
+          MediaKind.movie,
+          title: 'Dune',
+        );
 
         final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository());
         await cubit.load();
@@ -184,53 +202,65 @@ void main() {
         await cubit.close();
       });
 
-      test('rename with stable id keeps the item and adopts the new title',
-          () async {
-        final contentRepo = FakeContentRepository();
-        // id m1 exists but the provider renamed it since the favorite was
-        // added; no catalog item carries the old title.
-        await contentRepo.toggleFavorite('movie:m1', 'p1', MediaKind.movie,
-            title: 'The Signal (Old Cut)');
+      test(
+        'rename with stable id keeps the item and adopts the new title',
+        () async {
+          final contentRepo = FakeContentRepository();
+          // id m1 exists but the provider renamed it since the favorite was
+          // added; no catalog item carries the old title.
+          await contentRepo.toggleFavorite(
+            'movie:m1',
+            'p1',
+            MediaKind.movie,
+            title: 'The Signal (Old Cut)',
+          );
 
-        final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository());
-        await cubit.load();
-        await Future<void>.delayed(Duration.zero);
+          final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository());
+          await cubit.load();
+          await Future<void>.delayed(Duration.zero);
 
-        expect(cubit.state.entries, hasLength(1));
-        expect(cubit.state.entries.first.id, 'm1');
-        expect(cubit.state.entries.first.title, 'The Signal');
+          expect(cubit.state.entries, hasLength(1));
+          expect(cubit.state.entries.first.id, 'm1');
+          expect(cubit.state.entries.first.title, 'The Signal');
 
-        await Future<void>.delayed(Duration.zero);
-        final favs = await contentRepo.favorites('p1').first;
-        expect(favs.single.itemKey, 'movie:m1');
-        expect(favs.single.title, 'The Signal');
+          await Future<void>.delayed(Duration.zero);
+          final favs = await contentRepo.favorites('p1').first;
+          expect(favs.single.itemKey, 'movie:m1');
+          expect(favs.single.title, 'The Signal');
 
-        await cubit.close();
-      });
+          await cubit.close();
+        },
+      );
 
-      test('legacy favorite without title resolves by id and backfills',
-          () async {
-        final contentRepo = FakeContentRepository();
-        await contentRepo.toggleFavorite('movie:m1', 'p1', MediaKind.movie);
+      test(
+        'legacy favorite without title resolves by id and backfills',
+        () async {
+          final contentRepo = FakeContentRepository();
+          await contentRepo.toggleFavorite('movie:m1', 'p1', MediaKind.movie);
 
-        final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository());
-        await cubit.load();
-        await Future<void>.delayed(Duration.zero);
+          final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository());
+          await cubit.load();
+          await Future<void>.delayed(Duration.zero);
 
-        expect(cubit.state.entries, hasLength(1));
-        expect(cubit.state.entries.first.title, 'The Signal');
+          expect(cubit.state.entries, hasLength(1));
+          expect(cubit.state.entries.first.title, 'The Signal');
 
-        await Future<void>.delayed(Duration.zero);
-        final favs = await contentRepo.favorites('p1').first;
-        expect(favs.single.title, 'The Signal');
+          await Future<void>.delayed(Duration.zero);
+          final favs = await contentRepo.favorites('p1').first;
+          expect(favs.single.title, 'The Signal');
 
-        await cubit.close();
-      });
+          await cubit.close();
+        },
+      );
 
       test('favorite for removed content is hidden, not deleted', () async {
         final contentRepo = FakeContentRepository();
-        await contentRepo.toggleFavorite('movie:m9', 'p1', MediaKind.movie,
-            title: 'Gone Forever');
+        await contentRepo.toggleFavorite(
+          'movie:m9',
+          'p1',
+          MediaKind.movie,
+          title: 'Gone Forever',
+        );
 
         final cubit = FavoritesCubit(contentRepo, FakePlaylistRepository());
         await cubit.load();

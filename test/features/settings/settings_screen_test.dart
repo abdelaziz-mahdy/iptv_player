@@ -31,38 +31,40 @@ Widget _buildTestApp(AccessibilityCubit a11y, LocaleCubit locale) {
 }
 
 AppLocalizations _l10n(WidgetTester tester) {
-  return AppLocalizations.of(
-    tester.element(find.byType(SettingsScreen)),
-  )!;
+  return AppLocalizations.of(tester.element(find.byType(SettingsScreen)))!;
 }
 
 void main() {
   setUp(installFakeHydratedStorage);
 
-  testWidgets('toggling High contrast flips AccessibilityCubit.state.highContrast',
-      (tester) async {
-    final a11y = AccessibilityCubit();
-    final locale = LocaleCubit();
+  testWidgets(
+    'toggling High contrast flips AccessibilityCubit.state.highContrast',
+    (tester) async {
+      final a11y = AccessibilityCubit();
+      final locale = LocaleCubit();
 
-    await tester.pumpWidget(_buildTestApp(a11y, locale));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(_buildTestApp(a11y, locale));
+      await tester.pumpAndSettle();
 
-    expect(a11y.state.highContrast, isFalse);
+      expect(a11y.state.highContrast, isFalse);
 
-    final l10n = _l10n(tester);
-    final switchFinder = find.ancestor(
-      of: find.text(l10n.highContrast),
-      matching: find.byType(SwitchListTile),
-    );
-    expect(switchFinder, findsOneWidget);
+      final l10n = _l10n(tester);
+      final switchFinder = find.ancestor(
+        of: find.text(l10n.highContrast),
+        matching: find.byType(SwitchListTile),
+      );
+      expect(switchFinder, findsOneWidget);
 
-    await tester.tap(switchFinder);
-    await tester.pumpAndSettle();
+      await tester.tap(switchFinder);
+      await tester.pumpAndSettle();
 
-    expect(a11y.state.highContrast, isTrue);
-  });
+      expect(a11y.state.highContrast, isTrue);
+    },
+  );
 
-  testWidgets('selecting text size Large sets textScale to 1.25', (tester) async {
+  testWidgets('selecting text size Large sets textScale to 1.25', (
+    tester,
+  ) async {
     final a11y = AccessibilityCubit();
     final locale = LocaleCubit();
 
@@ -86,14 +88,12 @@ void main() {
     await tester.pumpAndSettle();
 
     final l10n = _l10n(tester);
-    expect(
-      find.text(l10n.complianceNote, skipOffstage: false),
-      findsOneWidget,
-    );
+    expect(find.text(l10n.complianceNote, skipOffstage: false), findsOneWidget);
   });
 
-  testWidgets('SettingsScreen has at least one autofocused FocusableButton',
-      (tester) async {
+  testWidgets('SettingsScreen has at least one autofocused FocusableButton', (
+    tester,
+  ) async {
     final a11y = AccessibilityCubit();
     final locale = LocaleCubit();
     await tester.pumpWidget(_buildTestApp(a11y, locale));

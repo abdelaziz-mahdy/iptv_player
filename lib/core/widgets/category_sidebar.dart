@@ -98,8 +98,9 @@ class _CategorySidebarState extends State<CategorySidebar> {
       final shift = after - before;
       if (shift.abs() < 0.5) return;
       final pos = _scroll.position;
-      _scroll.jumpTo((pos.pixels + shift)
-          .clamp(pos.minScrollExtent, pos.maxScrollExtent));
+      _scroll.jumpTo(
+        (pos.pixels + shift).clamp(pos.minScrollExtent, pos.maxScrollExtent),
+      );
     });
   }
 
@@ -172,10 +173,10 @@ class _RecentHeading extends StatelessWidget {
       child: Text(
         AppLocalizations.of(context)!.recentGroups.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: p.dim,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-            ),
+          color: p.dim,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }
@@ -215,10 +216,9 @@ class _SidebarTile extends StatelessWidget {
               child: Text(
                 entry.label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isSelected ? p.accent : p.fg,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w400,
-                    ),
+                  color: isSelected ? p.accent : p.fg,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -226,9 +226,8 @@ class _SidebarTile extends StatelessWidget {
             if (entry.count != null)
               Text(
                 '${entry.count}',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: isSelected ? p.accent : p.dim,
-                    ),
+                style: Theme.of(context).textTheme.labelSmall
+                    ?.copyWith(color: isSelected ? p.accent : p.dim),
               ),
           ],
         ),

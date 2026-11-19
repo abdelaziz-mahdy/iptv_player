@@ -101,12 +101,14 @@ class FakePlayerController implements PlayerController {
 
   void _emit() {
     if (!_statusCtrl.isClosed) {
-      _statusCtrl.add(PlayerStatus(
-        isPlaying: _playing,
-        position: _position,
-        duration: _duration,
-        buffering: buffering,
-      ));
+      _statusCtrl.add(
+        PlayerStatus(
+          isPlaying: _playing,
+          position: _position,
+          duration: _duration,
+          buffering: buffering,
+        ),
+      );
     }
   }
 }

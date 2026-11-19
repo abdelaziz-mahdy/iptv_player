@@ -47,11 +47,11 @@ class LiveState extends Equatable {
 
   @override
   List<Object?> get props => [
-        loading,
-        groups,
-        selectedGroupId,
-        channelsInGroup,
-        pinnedGroupCount,
-        recentGroupCount,
-      ];
+    loading,
+    groups,
+    selectedGroupId,
+    channelsInGroup,
+    pinnedGroupCount,
+    recentGroupCount,
+  ];
 }

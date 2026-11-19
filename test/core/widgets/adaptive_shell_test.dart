@@ -4,25 +4,32 @@ import 'package:iptv_player/core/theme/app_palette.dart';
 import 'package:iptv_player/core/theme/app_theme.dart';
 import 'package:iptv_player/core/widgets/adaptive_shell.dart';
 
-Widget _wrap(Size size, {VoidCallback? onOpenSettings, VoidCallback? onOpenPlaylists}) =>
-    MaterialApp(
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      home: MediaQuery(
-        data: MediaQueryData(size: size),
-        child: AdaptiveShell(
-          brand: 'NOOR',
-          currentIndex: 0,
-          onSelect: (_) {},
-          destinations: const [
-            NavDestinationData(Icons.home, 'Home'),
-            NavDestinationData(Icons.tv, 'Live'),
-          ],
-          body: const Text('BODY'),
-          onOpenSettings: onOpenSettings,
-          onOpenPlaylists: onOpenPlaylists,
-        ),
-      ),
-    );
+Widget _wrap(
+  Size size, {
+  VoidCallback? onOpenSettings,
+  VoidCallback? onOpenPlaylists,
+}) => MaterialApp(
+  theme: buildTheme(
+    palette: AppPalette.standard,
+    hyperlegible: false,
+    rtl: false,
+  ),
+  home: MediaQuery(
+    data: MediaQueryData(size: size),
+    child: AdaptiveShell(
+      brand: 'NOOR',
+      currentIndex: 0,
+      onSelect: (_) {},
+      destinations: const [
+        NavDestinationData(Icons.home, 'Home'),
+        NavDestinationData(Icons.tv, 'Live'),
+      ],
+      body: const Text('BODY'),
+      onOpenSettings: onOpenSettings,
+      onOpenPlaylists: onOpenPlaylists,
+    ),
+  ),
+);
 
 void main() {
   testWidgets('wide layout uses NavigationRail', (tester) async {
@@ -37,38 +44,50 @@ void main() {
     expect(find.byType(NavigationRail), findsNothing);
   });
 
-  testWidgets('wide layout shows Settings icon and tapping it calls onOpenSettings',
-      (tester) async {
-    var settingsCalled = false;
-    await tester.pumpWidget(_wrap(
-      const Size(1280, 800),
-      onOpenSettings: () => settingsCalled = true,
-    ));
-    expect(find.byIcon(Icons.settings), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.settings));
-    await tester.pump();
-    expect(settingsCalled, isTrue);
-  });
+  testWidgets(
+    'wide layout shows Settings icon and tapping it calls onOpenSettings',
+    (tester) async {
+      var settingsCalled = false;
+      await tester.pumpWidget(
+        _wrap(
+          const Size(1280, 800),
+          onOpenSettings: () => settingsCalled = true,
+        ),
+      );
+      expect(find.byIcon(Icons.settings), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.settings));
+      await tester.pump();
+      expect(settingsCalled, isTrue);
+    },
+  );
 
-  testWidgets('narrow layout shows Settings icon and tapping it calls onOpenSettings',
-      (tester) async {
-    var settingsCalled = false;
-    await tester.pumpWidget(_wrap(
-      const Size(400, 800),
-      onOpenSettings: () => settingsCalled = true,
-    ));
-    expect(find.byIcon(Icons.settings), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.settings));
-    await tester.pump();
-    expect(settingsCalled, isTrue);
-  });
+  testWidgets(
+    'narrow layout shows Settings icon and tapping it calls onOpenSettings',
+    (tester) async {
+      var settingsCalled = false;
+      await tester.pumpWidget(
+        _wrap(
+          const Size(400, 800),
+          onOpenSettings: () => settingsCalled = true,
+        ),
+      );
+      expect(find.byIcon(Icons.settings), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.settings));
+      await tester.pump();
+      expect(settingsCalled, isTrue);
+    },
+  );
 
-  testWidgets('narrow layout top bar height is compact (≤ 56px)', (tester) async {
-    await tester.pumpWidget(_wrap(
-      const Size(400, 800),
-      onOpenSettings: () {},
-      onOpenPlaylists: () {},
-    ));
+  testWidgets('narrow layout top bar height is compact (≤ 56px)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        const Size(400, 800),
+        onOpenSettings: () {},
+        onOpenPlaylists: () {},
+      ),
+    );
     await tester.pump();
 
     // The top bar is rendered as a SizedBox with constrained height.
@@ -78,8 +97,11 @@ void main() {
     final compactBoxes = sizedBoxes.where(
       (sb) => sb.height != null && sb.height! <= 56,
     );
-    expect(compactBoxes, isNotEmpty,
-        reason: 'narrow top bar must be capped to ≤56px height');
+    expect(
+      compactBoxes,
+      isNotEmpty,
+      reason: 'narrow top bar must be capped to ≤56px height',
+    );
   });
 
   testWidgets('rail fits all six destinations plus Playlists and Settings on '
@@ -87,26 +109,31 @@ void main() {
     tester.view.physicalSize = const Size(1920, 1080);
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
-      theme: buildTheme(
-          palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      home: AdaptiveShell(
-        brand: 'IPTV Player',
-        currentIndex: 0,
-        onSelect: (_) {},
-        destinations: const [
-          NavDestinationData(Icons.home_outlined, 'Home'),
-          NavDestinationData(Icons.favorite_border, 'Favorites'),
-          NavDestinationData(Icons.live_tv_outlined, 'Live TV'),
-          NavDestinationData(Icons.movie_outlined, 'Movies'),
-          NavDestinationData(Icons.video_library_outlined, 'Series'),
-          NavDestinationData(Icons.search, 'Search'),
-        ],
-        body: const Text('BODY'),
-        onOpenSettings: () {},
-        onOpenPlaylists: () {},
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(
+          palette: AppPalette.standard,
+          hyperlegible: false,
+          rtl: false,
+        ),
+        home: AdaptiveShell(
+          brand: 'IPTV Player',
+          currentIndex: 0,
+          onSelect: (_) {},
+          destinations: const [
+            NavDestinationData(Icons.home_outlined, 'Home'),
+            NavDestinationData(Icons.favorite_border, 'Favorites'),
+            NavDestinationData(Icons.live_tv_outlined, 'Live TV'),
+            NavDestinationData(Icons.movie_outlined, 'Movies'),
+            NavDestinationData(Icons.video_library_outlined, 'Series'),
+            NavDestinationData(Icons.search, 'Search'),
+          ],
+          body: const Text('BODY'),
+          onOpenSettings: () {},
+          onOpenPlaylists: () {},
+        ),
       ),
-    ));
+    );
     // An overflow here clipped the Settings gear on the TV.
     expect(tester.takeException(), isNull);
     final gear = tester.getRect(find.byIcon(Icons.settings));

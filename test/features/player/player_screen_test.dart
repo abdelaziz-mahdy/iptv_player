@@ -21,25 +21,29 @@ Widget _buildPlayer({
   VoidCallback? onPlayPrevious,
   VoidCallback? onPlayNext,
 }) => MaterialApp(
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: BlocProvider(
-        create: (_) => AccessibilityCubit(),
-        child: PlayerScreen(
-          controller: controller ?? FakePlayerController(),
-          itemKey: kind == MediaKind.channel ? 'channel:c1' : 'movie:m1',
-          url: 'http://x',
-          title: 'Dune',
-          onBack: onBack ?? () {},
-          playbackRepository: FakePlaybackRepository(),
-          kind: kind,
-          playlistId: 'p1',
-          onPlayPrevious: onPlayPrevious,
-          onPlayNext: onPlayNext,
-        ),
-      ),
-    );
+  theme: buildTheme(
+    palette: AppPalette.standard,
+    hyperlegible: false,
+    rtl: false,
+  ),
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: BlocProvider(
+    create: (_) => AccessibilityCubit(),
+    child: PlayerScreen(
+      controller: controller ?? FakePlayerController(),
+      itemKey: kind == MediaKind.channel ? 'channel:c1' : 'movie:m1',
+      url: 'http://x',
+      title: 'Dune',
+      onBack: onBack ?? () {},
+      playbackRepository: FakePlaybackRepository(),
+      kind: kind,
+      playlistId: 'p1',
+      onPlayPrevious: onPlayPrevious,
+      onPlayNext: onPlayNext,
+    ),
+  ),
+);
 
 void main() {
   setUpAll(() => installFakeHydratedStorage());
@@ -54,8 +58,9 @@ void main() {
     expect(find.byType(PlayerScreen), findsOneWidget);
   });
 
-  testWidgets('controls auto-hide after idle and reappear on key press',
-      (tester) async {
+  testWidgets('controls auto-hide after idle and reappear on key press', (
+    tester,
+  ) async {
     await tester.pumpWidget(_buildPlayer());
     await tester.pump(); // let start() complete
     await tester.pump(const Duration(milliseconds: 100));
@@ -67,21 +72,31 @@ void main() {
 
     // Playing → controls visible.
     expect(targets(), isNotEmpty);
-    expect(targets().every((o) => o == 1.0), isTrue,
-        reason: 'Controls should be visible right after playback starts');
+    expect(
+      targets().every((o) => o == 1.0),
+      isTrue,
+      reason: 'Controls should be visible right after playback starts',
+    );
 
     // Stay idle past the timeout → controls hide.
-    await tester
-        .pump(PlayerCubit.controlsIdleTimeout + const Duration(seconds: 1));
+    await tester.pump(
+      PlayerCubit.controlsIdleTimeout + const Duration(seconds: 1),
+    );
     await tester.pump();
-    expect(targets().every((o) => o == 0.0), isTrue,
-        reason: 'Controls should auto-hide after idle timeout');
+    expect(
+      targets().every((o) => o == 0.0),
+      isTrue,
+      reason: 'Controls should auto-hide after idle timeout',
+    );
 
     // A remote key press reveals them again.
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
-    expect(targets().any((o) => o == 1.0), isTrue,
-        reason: 'Any key press should reveal the controls again');
+    expect(
+      targets().any((o) => o == 1.0),
+      isTrue,
+      reason: 'Any key press should reveal the controls again',
+    );
   });
 
   testWidgets('tapping back invokes onBack', (tester) async {
@@ -104,7 +119,9 @@ void main() {
   });
 
   group('live vs VOD UI', () {
-    testWidgets('live player shows LIVE indicator and hides seek Slider', (tester) async {
+    testWidgets('live player shows LIVE indicator and hides seek Slider', (
+      tester,
+    ) async {
       await tester.pumpWidget(_buildPlayer(kind: MediaKind.channel));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
@@ -116,13 +133,21 @@ void main() {
       // The volume Slider is still present, so we check we have at most one Slider
       // (the volume one) — not the progress scrubber.
       // We verify by absence of the skip icons instead (more robust).
-      expect(find.byIcon(Icons.replay_10), findsNothing,
-          reason: 'Live: skip-back button must be hidden');
-      expect(find.byIcon(Icons.forward_10), findsNothing,
-          reason: 'Live: skip-forward button must be hidden');
+      expect(
+        find.byIcon(Icons.replay_10),
+        findsNothing,
+        reason: 'Live: skip-back button must be hidden',
+      );
+      expect(
+        find.byIcon(Icons.forward_10),
+        findsNothing,
+        reason: 'Live: skip-forward button must be hidden',
+      );
     });
 
-    testWidgets('movie player shows seek Slider and no LIVE indicator', (tester) async {
+    testWidgets('movie player shows seek Slider and no LIVE indicator', (
+      tester,
+    ) async {
       await tester.pumpWidget(_buildPlayer(kind: MediaKind.movie));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
@@ -131,10 +156,16 @@ void main() {
       expect(find.text('LIVE'), findsNothing);
 
       // Skip buttons must exist for VOD
-      expect(find.byIcon(Icons.replay_10), findsOneWidget,
-          reason: 'VOD: skip-back button must be visible');
-      expect(find.byIcon(Icons.forward_10), findsOneWidget,
-          reason: 'VOD: skip-forward button must be visible');
+      expect(
+        find.byIcon(Icons.replay_10),
+        findsOneWidget,
+        reason: 'VOD: skip-back button must be visible',
+      );
+      expect(
+        find.byIcon(Icons.forward_10),
+        findsOneWidget,
+        reason: 'VOD: skip-forward button must be visible',
+      );
 
       // At least one Slider must be present (the progress scrubber + possibly volume)
       expect(find.byType(Slider), findsAtLeast(1));
@@ -146,34 +177,44 @@ void main() {
     // value adjustment (down nudged the position -10s before focus moved).
     // The seek bar's focus stop is now a wrapper node that owns the keys:
     // left/right skip ±10s, up/down are pure focus moves.
-    testWidgets('down leaves the position untouched and moves focus away',
-        (tester) async {
+    testWidgets('down leaves the position untouched and moves focus away', (
+      tester,
+    ) async {
       final controller = FakePlayerController();
-      await tester.pumpWidget(MaterialApp(
-        theme: buildTheme(
-            palette: AppPalette.standard, hyperlegible: false, rtl: false),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: BlocProvider(
-          create: (_) => AccessibilityCubit(),
-          child: PlayerScreen(
-            controller: controller,
-            itemKey: 'movie:m1',
-            url: 'http://x',
-            title: 'Dune',
-            onBack: () {},
-            playbackRepository: FakePlaybackRepository(),
-            kind: MediaKind.movie,
-            playlistId: 'p1',
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildTheme(
+            palette: AppPalette.standard,
+            hyperlegible: false,
+            rtl: false,
+          ),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: BlocProvider(
+            create: (_) => AccessibilityCubit(),
+            child: PlayerScreen(
+              controller: controller,
+              itemKey: 'movie:m1',
+              url: 'http://x',
+              title: 'Dune',
+              onBack: () {},
+              playbackRepository: FakePlaybackRepository(),
+              kind: MediaKind.movie,
+              playlistId: 'p1',
+            ),
           ),
         ),
-      ));
+      );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
       final sliderFocus = tester
-          .widget<Focus>(find.byWidgetPredicate((w) =>
-              w is Focus && w.focusNode?.debugLabel == 'player-seek-slider'))
+          .widget<Focus>(
+            find.byWidgetPredicate(
+              (w) =>
+                  w is Focus && w.focusNode?.debugLabel == 'player-seek-slider',
+            ),
+          )
           .focusNode!;
       sliderFocus.requestFocus();
       await tester.pump();
@@ -187,10 +228,16 @@ void main() {
       // Down must ONLY move focus — the position must not change.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pump(const Duration(milliseconds: 700));
-      expect(controller.position, const Duration(seconds: 10),
-          reason: 'Down on the seek bar must not seek');
-      expect(sliderFocus.hasPrimaryFocus, isFalse,
-          reason: 'Down on the seek bar must move focus away');
+      expect(
+        controller.position,
+        const Duration(seconds: 10),
+        reason: 'Down on the seek bar must not seek',
+      );
+      expect(
+        sliderFocus.hasPrimaryFocus,
+        isFalse,
+        reason: 'Down on the seek bar must move focus away',
+      );
 
       // And left on the (re-focused) bar seeks back 10s.
       sliderFocus.requestFocus();
@@ -221,17 +268,21 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
-  testWidgets('failed playback shows the reason and a retry, not black',
-      (tester) async {
+  testWidgets('failed playback shows the reason and a retry, not black', (
+    tester,
+  ) async {
     final controller = FakePlayerController();
-    controller.failNextInitializeWith =
-        Exception('SocketException: Failed host lookup');
+    controller.failNextInitializeWith = Exception(
+      'SocketException: Failed host lookup',
+    );
     await tester.pumpWidget(_buildPlayer(controller: controller));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(
-      find.text('Could not reach the stream. Check your connection and try again.'),
+      find.text(
+        'Could not reach the stream. Check your connection and try again.',
+      ),
       findsOneWidget,
     );
     expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -244,8 +295,9 @@ void main() {
     expect(find.text('Retry'), findsNothing);
   });
 
-  testWidgets('left/right seek immediately while controls are hidden',
-      (tester) async {
+  testWidgets('left/right seek immediately while controls are hidden', (
+    tester,
+  ) async {
     final controller = FakePlayerController();
     await tester.pumpWidget(_buildPlayer(controller: controller));
     await tester.pump();
@@ -275,8 +327,9 @@ void main() {
     expect(cubit.state.position, before);
   });
 
-  testWidgets('with the controls up, left/right leave the buttons alone',
-      (tester) async {
+  testWidgets('with the controls up, left/right leave the buttons alone', (
+    tester,
+  ) async {
     final controller = FakePlayerController();
     await tester.pumpWidget(_buildPlayer(controller: controller));
     await tester.pump();
@@ -309,7 +362,10 @@ void main() {
   // on one side, i.e. the first or last entry of a queue. Nothing is reachable
   // from the anchor, so landing there strands the remote.
   group('queue ends keep the D-pad on real controls', () {
-    Future<void> walk(WidgetTester tester, List<LogicalKeyboardKey> keys) async {
+    Future<void> walk(
+      WidgetTester tester,
+      List<LogicalKeyboardKey> keys,
+    ) async {
       for (final key in keys) {
         await tester.sendKeyEvent(key);
         await tester.pump();

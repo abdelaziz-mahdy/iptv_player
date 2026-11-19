@@ -1,5 +1,3 @@
-
-
 import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 
@@ -127,8 +125,7 @@ GoRouter buildRouter() {
               GoRoute(
                 path: '/home',
                 builder: (context, state) => HomeScreen(
-                  onOpenMovie: (m) =>
-                      context.push('/details/movie', extra: m),
+                  onOpenMovie: (m) => context.push('/details/movie', extra: m),
                   onOpenSeries: (s) =>
                       context.push('/details/series', extra: s),
                   onAddPlaylist: () => context.push('/import'),
@@ -141,9 +138,8 @@ GoRouter buildRouter() {
             routes: [
               GoRoute(
                 path: '/favorites',
-                builder: (context, state) => FavoritesScreen(
-                  onOpen: (e) => _openFavorite(context, e),
-                ),
+                builder: (context, state) =>
+                    FavoritesScreen(onOpen: (e) => _openFavorite(context, e)),
               ),
             ],
           ),
@@ -206,9 +202,8 @@ GoRouter buildRouter() {
             routes: [
               GoRoute(
                 path: '/search',
-                builder: (context, state) => SearchScreen(
-                  onOpen: (e) => _openSearchEntry(context, e),
-                ),
+                builder: (context, state) =>
+                    SearchScreen(onOpen: (e) => _openSearchEntry(context, e)),
               ),
             ],
           ),
@@ -218,7 +213,6 @@ GoRouter buildRouter() {
       // -----------------------------------------------------------------------
       // Pushed routes (outside the shell)
       // -----------------------------------------------------------------------
-
       GoRoute(
         path: '/details/movie',
         builder: (context, state) {
@@ -305,12 +299,16 @@ GoRouter buildRouter() {
           VoidCallback? onNext;
           if (queue != null) {
             if (a.queueIndex > 0) {
-              onPrev = () =>
-                  context.replace('/player', extra: a.atQueueIndex(a.queueIndex - 1));
+              onPrev = () => context.replace(
+                '/player',
+                extra: a.atQueueIndex(a.queueIndex - 1),
+              );
             }
             if (a.queueIndex < queue.length - 1) {
-              onNext = () =>
-                  context.replace('/player', extra: a.atQueueIndex(a.queueIndex + 1));
+              onNext = () => context.replace(
+                '/player',
+                extra: a.atQueueIndex(a.queueIndex + 1),
+              );
             }
           }
           return PlayerScreen(
@@ -337,10 +335,7 @@ GoRouter buildRouter() {
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
       ),
-      GoRoute(
-        path: '/logs',
-        builder: (context, state) => const LogsScreen(),
-      ),
+      GoRoute(path: '/logs', builder: (context, state) => const LogsScreen()),
       GoRoute(
         path: '/playlists',
         builder: (context, state) => PlaylistsScreen(
@@ -350,15 +345,13 @@ GoRouter buildRouter() {
       ),
       GoRoute(
         path: '/import',
-        builder: (context, state) => ImportScreen(
-          onImported: () => context.go('/home'),
-        ),
+        builder: (context, state) =>
+            ImportScreen(onImported: () => context.go('/home')),
       ),
       GoRoute(
         path: '/onboarding',
-        builder: (context, state) => OnboardingScreen(
-          onGetStarted: () => context.go('/import'),
-        ),
+        builder: (context, state) =>
+            OnboardingScreen(onGetStarted: () => context.go('/import')),
       ),
     ],
   );
@@ -372,8 +365,10 @@ GoRouter buildRouter() {
 /// Channels are marked with `badge == 'LIVE'` and carry their stream URL.
 void _openFavorite(BuildContext c, GridEntry e) {
   if (e.badge == 'LIVE') {
-    appLog.info('open origin=favorites channel:${e.id} title="${e.title}" '
-        'url=${scrubUrl(e.streamUrl ?? '')}');
+    appLog.info(
+      'open origin=favorites channel:${e.id} title="${e.title}" '
+      'url=${scrubUrl(e.streamUrl ?? '')}',
+    );
     c.push(
       '/player',
       extra: PlayerArgs(
@@ -393,8 +388,10 @@ void _openGridEntry(BuildContext c, GridEntry e, {String origin = 'grid'}) {
   // Which id a screen resolved for a title is the key forensic fact when an
   // item plays from one surface but not another (duplicate provider copies /
   // renumbered ids).
-  appLog.info('open origin=$origin ${e.isSeries ? 'series' : 'movie'}:${e.id} '
-      'title="${e.title}"');
+  appLog.info(
+    'open origin=$origin ${e.isSeries ? 'series' : 'movie'}:${e.id} '
+    'title="${e.title}"',
+  );
   if (e.isSeries) {
     c.push(
       '/details/series',

@@ -42,20 +42,25 @@ void main() {
         expect(cubit.state.showControls, isTrue);
       });
 
-      test('pausing keeps controls visible (no auto-hide while paused)',
-          () async {
-        await cubit.start();
-        expect(cubit.state.isPlaying, isTrue);
-        cubit.hideControlsForTesting();
-        expect(cubit.state.showControls, isFalse);
+      test(
+        'pausing keeps controls visible (no auto-hide while paused)',
+        () async {
+          await cubit.start();
+          expect(cubit.state.isPlaying, isTrue);
+          cubit.hideControlsForTesting();
+          expect(cubit.state.showControls, isFalse);
 
-        await cubit.togglePlayPause(); // pause
-        await Future<void>.delayed(const Duration(milliseconds: 10));
+          await cubit.togglePlayPause(); // pause
+          await Future<void>.delayed(const Duration(milliseconds: 10));
 
-        expect(cubit.state.isPlaying, isFalse);
-        expect(cubit.state.showControls, isTrue,
-            reason: 'Controls must reappear and stay when paused');
-      });
+          expect(cubit.state.isPlaying, isFalse);
+          expect(
+            cubit.state.showControls,
+            isTrue,
+            reason: 'Controls must reappear and stay when paused',
+          );
+        },
+      );
     });
 
     group('live-aware progress', () {
@@ -75,7 +80,11 @@ void main() {
         await liveCubit.close();
 
         final saved = await livePlayback.progressFor('channel:c1');
-        expect(saved, isNull, reason: 'Live channels must not persist watch progress');
+        expect(
+          saved,
+          isNull,
+          reason: 'Live channels must not persist watch progress',
+        );
       });
 
       test('movie kind: after start()+close(), progress IS saved', () async {
@@ -95,36 +104,45 @@ void main() {
         await movieCubit.close();
 
         final saved = await moviePlayback.progressFor('movie:m1');
-        expect(saved, isNotNull, reason: 'VOD (movie) must persist watch progress on close');
+        expect(
+          saved,
+          isNotNull,
+          reason: 'VOD (movie) must persist watch progress on close',
+        );
         expect(saved!.positionSec, 60);
       });
 
-      test('movie kind: saveProgressNow() persists mid-playback (no close)',
-          () async {
-        final controller = FakePlayerController();
-        final playback = FakePlaybackRepository();
-        final cubit = PlayerCubit(
-          controller,
-          playback,
-          itemKey: 'movie:m2',
-          url: 'http://vod',
-          title: 'Dune',
-          kind: MediaKind.movie,
-          playlistId: 'p1',
-        );
-        await cubit.start();
-        await controller.seek(const Duration(seconds: 120));
+      test(
+        'movie kind: saveProgressNow() persists mid-playback (no close)',
+        () async {
+          final controller = FakePlayerController();
+          final playback = FakePlaybackRepository();
+          final cubit = PlayerCubit(
+            controller,
+            playback,
+            itemKey: 'movie:m2',
+            url: 'http://vod',
+            title: 'Dune',
+            kind: MediaKind.movie,
+            playlistId: 'p1',
+          );
+          await cubit.start();
+          await controller.seek(const Duration(seconds: 120));
 
-        // Simulates the periodic timer / app-background checkpoint firing
-        // before any clean close().
-        await cubit.saveProgressNow();
+          // Simulates the periodic timer / app-background checkpoint firing
+          // before any clean close().
+          await cubit.saveProgressNow();
 
-        final saved = await playback.progressFor('movie:m2');
-        expect(saved, isNotNull,
-            reason: 'progress must persist mid-playback, not only on close');
-        expect(saved!.positionSec, 120);
-        await cubit.close();
-      });
+          final saved = await playback.progressFor('movie:m2');
+          expect(
+            saved,
+            isNotNull,
+            reason: 'progress must persist mid-playback, not only on close',
+          );
+          expect(saved!.positionSec, 120);
+          await cubit.close();
+        },
+      );
 
       test('channel kind: saveProgressNow() persists nothing (live)', () async {
         final controller = FakePlayerController();
@@ -146,51 +164,57 @@ void main() {
         await cubit.close();
       });
 
-      test('start() records the item in recently-viewed (live included)',
-          () async {
-        final playback = FakePlaybackRepository();
-        final cubit = PlayerCubit(
-          FakePlayerController(),
-          playback,
-          itemKey: 'channel:c1',
-          url: 'http://live',
-          title: 'NOOR One',
-          kind: MediaKind.channel,
-          playlistId: 'p1',
-        );
-        await cubit.start();
-        await Future<void>.delayed(Duration.zero);
+      test(
+        'start() records the item in recently-viewed (live included)',
+        () async {
+          final playback = FakePlaybackRepository();
+          final cubit = PlayerCubit(
+            FakePlayerController(),
+            playback,
+            itemKey: 'channel:c1',
+            url: 'http://live',
+            title: 'NOOR One',
+            kind: MediaKind.channel,
+            playlistId: 'p1',
+          );
+          await cubit.start();
+          await Future<void>.delayed(Duration.zero);
 
-        final recent =
-            await playback.recentlyViewed('p1', prefix: 'channel:').first;
-        expect(recent, contains('channel:c1'));
+          final recent = await playback
+              .recentlyViewed('p1', prefix: 'channel:')
+              .first;
+          expect(recent, contains('channel:c1'));
 
-        await cubit.close();
-      });
+          await cubit.close();
+        },
+      );
 
-      test('start() records recentKey (series) when playing an episode',
-          () async {
-        final playback = FakePlaybackRepository();
-        final cubit = PlayerCubit(
-          FakePlayerController(),
-          playback,
-          itemKey: 'episode:e9',
-          url: 'http://vod',
-          title: 'Ep 9',
-          kind: MediaKind.episode,
-          playlistId: 'p1',
-          recentKey: 'series:s1',
-        );
-        await cubit.start();
-        await Future<void>.delayed(Duration.zero);
+      test(
+        'start() records recentKey (series) when playing an episode',
+        () async {
+          final playback = FakePlaybackRepository();
+          final cubit = PlayerCubit(
+            FakePlayerController(),
+            playback,
+            itemKey: 'episode:e9',
+            url: 'http://vod',
+            title: 'Ep 9',
+            kind: MediaKind.episode,
+            playlistId: 'p1',
+            recentKey: 'series:s1',
+          );
+          await cubit.start();
+          await Future<void>.delayed(Duration.zero);
 
-        final recent =
-            await playback.recentlyViewed('p1', prefix: 'series:').first;
-        expect(recent, contains('series:s1'));
-        expect(recent, isNot(contains('episode:e9')));
+          final recent = await playback
+              .recentlyViewed('p1', prefix: 'series:')
+              .first;
+          expect(recent, contains('series:s1'));
+          expect(recent, isNot(contains('episode:e9')));
 
-        await cubit.close();
-      });
+          await cubit.close();
+        },
+      );
 
       test('isLive returns true for channel, false for movie', () {
         final liveController = FakePlayerController();
@@ -236,8 +260,11 @@ void main() {
         await liveCubit.start();
 
         // The controller should NOT have been seeked (position stays at zero)
-        expect(liveController.position, Duration.zero,
-            reason: 'Live channels must not seek to a resume position');
+        expect(
+          liveController.position,
+          Duration.zero,
+          reason: 'Live channels must not seek to a resume position',
+        );
 
         await liveCubit.close();
       });
@@ -246,13 +273,13 @@ void main() {
     group('resume & watched handling', () {
       // FakePlayerController reports a 90-minute (5400 s) duration.
       WatchProgress progressAt(int pos) => WatchProgress(
-            itemKey: 'movie:m1',
-            playlistId: 'p1',
-            kind: MediaKind.movie,
-            positionSec: pos,
-            durationSec: 5400,
-            updatedAt: DateTime.utc(2026),
-          );
+        itemKey: 'movie:m1',
+        playlistId: 'p1',
+        kind: MediaKind.movie,
+        positionSec: pos,
+        durationSec: 5400,
+        updatedAt: DateTime.utc(2026),
+      );
 
       test('partially watched item resumes at the saved position', () async {
         await playback.saveProgress(progressAt(2400));
@@ -263,9 +290,13 @@ void main() {
       test('watched item (>= 95%) restarts from the beginning', () async {
         await playback.saveProgress(progressAt(5300)); // ~98% watched
         await cubit.start();
-        expect(controller.position, Duration.zero,
-            reason: 'A finished item must replay from the start, not resume '
-                'at the last seconds');
+        expect(
+          controller.position,
+          Duration.zero,
+          reason:
+              'A finished item must replay from the start, not resume '
+              'at the last seconds',
+        );
       });
 
       test('a brief replay of a watched item keeps it watched', () async {
@@ -286,28 +317,33 @@ void main() {
         expect((await playback.progressFor('movie:m1'))!.positionSec, 300);
       });
 
-      test('closing before playback begins keeps the existing resume point',
-          () async {
-        // User backs out while the stream is still buffering: the controller
-        // position is still zero. That zero must not clobber the real
-        // resume point saved by an earlier session.
-        await playback.saveProgress(progressAt(2400));
+      test(
+        'closing before playback begins keeps the existing resume point',
+        () async {
+          // User backs out while the stream is still buffering: the controller
+          // position is still zero. That zero must not clobber the real
+          // resume point saved by an earlier session.
+          await playback.saveProgress(progressAt(2400));
 
-        final earlyExitCubit = PlayerCubit(
-          FakePlayerController(),
-          playback,
-          itemKey: 'movie:m1',
-          url: 'http://vod',
-          title: 'Dune',
-          kind: MediaKind.movie,
-          playlistId: 'p1',
-        );
-        await earlyExitCubit.close(); // never started
+          final earlyExitCubit = PlayerCubit(
+            FakePlayerController(),
+            playback,
+            itemKey: 'movie:m1',
+            url: 'http://vod',
+            title: 'Dune',
+            kind: MediaKind.movie,
+            playlistId: 'p1',
+          );
+          await earlyExitCubit.close(); // never started
 
-        final saved = await playback.progressFor('movie:m1');
-        expect(saved!.positionSec, 2400,
-            reason: 'a zero-position save must not overwrite real progress');
-      });
+          final saved = await playback.progressFor('movie:m1');
+          expect(
+            saved!.positionSec,
+            2400,
+            reason: 'a zero-position save must not overwrite real progress',
+          );
+        },
+      );
     });
 
     test('start() → isPlaying true', () async {
@@ -327,8 +363,11 @@ void main() {
     test('skipForward() advances position by 10s', () async {
       await cubit.start();
       cubit.skipForward();
-      expect(cubit.state.position, const Duration(seconds: 10),
-          reason: 'the target shows at once');
+      expect(
+        cubit.state.position,
+        const Duration(seconds: 10),
+        reason: 'the target shows at once',
+      );
       await Future<void>.delayed(const Duration(milliseconds: 700));
       expect(controller.position, const Duration(seconds: 10));
     });
@@ -357,8 +396,11 @@ void main() {
         quick.skipForward();
         quick.skipForward();
         expect(quick.state.position, const Duration(seconds: 30));
-        expect(controller.seekCount, 0,
-            reason: 'nothing reaches the backend while presses keep coming');
+        expect(
+          controller.seekCount,
+          0,
+          reason: 'nothing reaches the backend while presses keep coming',
+        );
 
         await Future<void>.delayed(const Duration(milliseconds: 80));
         expect(controller.seekCount, 1);
@@ -378,8 +420,7 @@ void main() {
         expect(controller.position, Duration.zero);
       });
 
-      test('playback ticks do not pull the shown time back mid-skip',
-          () async {
+      test('playback ticks do not pull the shown time back mid-skip', () async {
         await quick.start();
         quick.skipForward();
         controller.emitStatusForTesting();
@@ -440,35 +481,50 @@ void main() {
     group('computeStreamBadge()', () {
       test('≥ 1 Mbps → "X.X Mbps" with one decimal', () {
         expect(
-          PlayerCubit.computeStreamBadge(bitRate: 4200000, resolutionBadge: null),
+          PlayerCubit.computeStreamBadge(
+            bitRate: 4200000,
+            resolutionBadge: null,
+          ),
           '4.2 Mbps',
         );
       });
 
       test('exactly 1 000 000 bps → "1.0 Mbps"', () {
         expect(
-          PlayerCubit.computeStreamBadge(bitRate: 1000000, resolutionBadge: null),
+          PlayerCubit.computeStreamBadge(
+            bitRate: 1000000,
+            resolutionBadge: null,
+          ),
           '1.0 Mbps',
         );
       });
 
       test('< 1 Mbps → "X Kbps"', () {
         expect(
-          PlayerCubit.computeStreamBadge(bitRate: 850000, resolutionBadge: null),
+          PlayerCubit.computeStreamBadge(
+            bitRate: 850000,
+            resolutionBadge: null,
+          ),
           '850 Kbps',
         );
       });
 
       test('bitRate == 0 → falls back to resolutionBadge', () {
         expect(
-          PlayerCubit.computeStreamBadge(bitRate: 0, resolutionBadge: '1280×720'),
+          PlayerCubit.computeStreamBadge(
+            bitRate: 0,
+            resolutionBadge: '1280×720',
+          ),
           '1280×720',
         );
       });
 
       test('bitRate == null → falls back to resolutionBadge', () {
         expect(
-          PlayerCubit.computeStreamBadge(bitRate: null, resolutionBadge: '1920×1080'),
+          PlayerCubit.computeStreamBadge(
+            bitRate: null,
+            resolutionBadge: '1920×1080',
+          ),
           '1920×1080',
         );
       });
@@ -483,11 +539,14 @@ void main() {
 
     // ── Integration: streamBadge in cubit state ───────────────────────────────
 
-    test('start() → streamBadge reflects 4.2 Mbps from fake controller', () async {
-      controller.currentBitRate = 4200000;
-      await cubit.start();
-      expect(cubit.state.streamBadge, '4.2 Mbps');
-    });
+    test(
+      'start() → streamBadge reflects 4.2 Mbps from fake controller',
+      () async {
+        controller.currentBitRate = 4200000;
+        await cubit.start();
+        expect(cubit.state.streamBadge, '4.2 Mbps');
+      },
+    );
 
     test('start() with currentBitRate=0 → badge falls back to null (no resolution in fake)', () async {
       controller.currentBitRate = 0;
@@ -582,8 +641,9 @@ void main() {
       });
 
       test('start() surfaces a failure instead of throwing', () async {
-        controller.failNextInitializeWith =
-            Exception('SocketException: Failed host lookup');
+        controller.failNextInitializeWith = Exception(
+          'SocketException: Failed host lookup',
+        );
         await expectLater(cubit.start(), completes);
         expect(cubit.state.error, PlaybackFailure.network);
         expect(cubit.state.loading, isFalse);
@@ -609,18 +669,30 @@ void main() {
       });
 
       test('classifyStartFailure maps provider responses', () {
-        expect(PlayerCubit.classifyStartFailure(Exception('HTTP 403 Forbidden')),
-            PlaybackFailure.refused);
-        expect(PlayerCubit.classifyStartFailure(Exception('401 Unauthorized')),
-            PlaybackFailure.refused);
-        expect(PlayerCubit.classifyStartFailure(Exception('404 Not Found')),
-            PlaybackFailure.unavailable);
-        expect(PlayerCubit.classifyStartFailure(Exception('Connection timed out')),
-            PlaybackFailure.timeout);
-        expect(PlayerCubit.classifyStartFailure(Exception('SocketException')),
-            PlaybackFailure.network);
-        expect(PlayerCubit.classifyStartFailure(Exception('weird backend text')),
-            PlaybackFailure.unknown);
+        expect(
+          PlayerCubit.classifyStartFailure(Exception('HTTP 403 Forbidden')),
+          PlaybackFailure.refused,
+        );
+        expect(
+          PlayerCubit.classifyStartFailure(Exception('401 Unauthorized')),
+          PlaybackFailure.refused,
+        );
+        expect(
+          PlayerCubit.classifyStartFailure(Exception('404 Not Found')),
+          PlaybackFailure.unavailable,
+        );
+        expect(
+          PlayerCubit.classifyStartFailure(Exception('Connection timed out')),
+          PlaybackFailure.timeout,
+        );
+        expect(
+          PlayerCubit.classifyStartFailure(Exception('SocketException')),
+          PlaybackFailure.network,
+        );
+        expect(
+          PlayerCubit.classifyStartFailure(Exception('weird backend text')),
+          PlaybackFailure.unknown,
+        );
       });
     });
   });

@@ -255,9 +255,8 @@ class _WideLayoutState extends State<_WideLayout> {
                     ? Center(
                         child: Text(
                           AppLocalizations.of(context)!.noItemsFound,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyLarge?.copyWith(color: p.dim),
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(color: p.dim),
                         ),
                       )
                     : GridView.builder(
@@ -448,8 +447,9 @@ class CategoryResultsScreen extends StatelessWidget {
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final entry = items[index];
-                final watch =
-                    entry.isSeries ? null : progressByKey['movie:${entry.id}'];
+                final watch = entry.isSeries
+                    ? null
+                    : progressByKey['movie:${entry.id}'];
                 return PosterCard(
                   autofocus: index == 0,
                   title: entry.title,

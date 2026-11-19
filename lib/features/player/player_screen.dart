@@ -227,7 +227,8 @@ class _PlayerScreenState extends State<PlayerScreen>
     if (cubit == null) return false;
 
     final key = event.logicalKey;
-    final isSeekKey = key == LogicalKeyboardKey.arrowLeft ||
+    final isSeekKey =
+        key == LogicalKeyboardKey.arrowLeft ||
         key == LogicalKeyboardKey.arrowRight;
     // Only while the controls are hidden. Once they are up, left/right belong
     // to focus traversal — otherwise every press from a button seeks and

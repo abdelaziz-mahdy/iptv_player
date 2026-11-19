@@ -28,10 +28,7 @@ void main() {
       await tester.pumpWidget(buildTestApp(onGetStarted: () {}));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text(l10n(tester).complianceNote),
-        findsOneWidget,
-      );
+      expect(find.text(l10n(tester).complianceNote), findsOneWidget);
     });
 
     testWidgets('renders Get Started button', (tester) async {
@@ -43,9 +40,7 @@ void main() {
 
     testWidgets('tapping Get Started calls callback', (tester) async {
       var called = false;
-      await tester.pumpWidget(
-        buildTestApp(onGetStarted: () => called = true),
-      );
+      await tester.pumpWidget(buildTestApp(onGetStarted: () => called = true));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text(l10n(tester).getStarted));

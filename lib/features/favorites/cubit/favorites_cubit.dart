@@ -54,7 +54,7 @@ class FavoritesState extends Equatable {
 
 class FavoritesCubit extends Cubit<FavoritesState> {
   FavoritesCubit(this._content, this._playlists, {this._playback})
-      : super(const FavoritesState());
+    : super(const FavoritesState());
 
   final ContentRepository _content;
   final PlaylistRepository _playlists;
@@ -161,11 +161,17 @@ class FavoritesCubit extends Cubit<FavoritesState> {
         }
       } else if (_loaded.length == 3 && _loggedMissing.add(fav.itemKey)) {
         appLog.warning(
-            'favorites: ${fav.itemKey} title="${fav.title}" unresolvable — hidden');
+          'favorites: ${fav.itemKey} title="${fav.title}" unresolvable — hidden',
+        );
       }
     }
-    emit(state.copyWith(
-        loading: false, entries: entries, movieProgress: movieProgress));
+    emit(
+      state.copyWith(
+        loading: false,
+        entries: entries,
+        movieProgress: movieProgress,
+      ),
+    );
   }
 
   /// Finds the favorited item among [items].
@@ -190,8 +196,10 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     String Function(T) idOf,
     String Function(T) titleOf,
   ) {
-    T? firstWhere(bool Function(T) test) =>
-        items.cast<T?>().firstWhere((i) => i != null && test(i), orElse: () => null);
+    T? firstWhere(bool Function(T) test) => items.cast<T?>().firstWhere(
+      (i) => i != null && test(i),
+      orElse: () => null,
+    );
 
     final byId = firstWhere((i) => idOf(i) == id);
     if (byId != null) {
@@ -219,13 +227,14 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 
   void _repair(Favorite fav, String newItemKey, String title) {
     if (newItemKey == fav.itemKey && title == fav.title) return;
-    appLog.info(
-        'favorites: heal ${fav.itemKey} -> $newItemKey title="$title"');
-    unawaited(_content.repairFavorite(
-      oldItemKey: fav.itemKey,
-      newItemKey: newItemKey,
-      title: title,
-    ));
+    appLog.info('favorites: heal ${fav.itemKey} -> $newItemKey title="$title"');
+    unawaited(
+      _content.repairFavorite(
+        oldItemKey: fav.itemKey,
+        newItemKey: newItemKey,
+        title: title,
+      ),
+    );
   }
 
   GridEntry? _resolve(Favorite fav) {
@@ -236,8 +245,14 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 
     switch (kindStr) {
       case 'movie':
-        final movie =
-            _pick(fav, id, kindStr, _movies, (m) => m.id, (m) => m.title);
+        final movie = _pick(
+          fav,
+          id,
+          kindStr,
+          _movies,
+          (m) => m.id,
+          (m) => m.title,
+        );
         if (movie == null) return null;
         return GridEntry(
           id: movie.id,
@@ -255,8 +270,14 @@ class FavoritesCubit extends Cubit<FavoritesState> {
       // details all use that key), so resolve both prefixes against series.
       case 'series':
       case 'episode':
-        final show =
-            _pick(fav, id, kindStr, _series, (s) => s.id, (s) => s.title);
+        final show = _pick(
+          fav,
+          id,
+          kindStr,
+          _series,
+          (s) => s.id,
+          (s) => s.title,
+        );
         if (show == null) return null;
         return GridEntry(
           id: show.id,
@@ -268,8 +289,14 @@ class FavoritesCubit extends Cubit<FavoritesState> {
         );
 
       case 'channel':
-        final ch =
-            _pick(fav, id, kindStr, _channels, (c) => c.id, (c) => c.name);
+        final ch = _pick(
+          fav,
+          id,
+          kindStr,
+          _channels,
+          (c) => c.id,
+          (c) => c.name,
+        );
         if (ch == null) return null;
         return GridEntry(
           id: ch.id,

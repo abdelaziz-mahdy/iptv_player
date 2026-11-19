@@ -38,8 +38,16 @@ class GridEntry extends Equatable {
   });
 
   @override
-  List<Object?> get props =>
-      [id, playlistId, title, subtitle, posterUrl, badge, streamUrl, isSeries];
+  List<Object?> get props => [
+    id,
+    playlistId,
+    title,
+    subtitle,
+    posterUrl,
+    badge,
+    streamUrl,
+    isSeries,
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -110,8 +118,9 @@ class GridState extends Equatable {
       loading: loading ?? this.loading,
       items: items ?? this.items,
       categories: categories ?? this.categories,
-      selectedCategoryId:
-          clearCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
+      selectedCategoryId: clearCategory
+          ? null
+          : (selectedCategoryId ?? this.selectedCategoryId),
       recentItems: recentItems ?? this.recentItems,
       favoriteKeys: favoriteKeys ?? this.favoriteKeys,
       progressByKey: progressByKey ?? this.progressByKey,
@@ -128,16 +137,16 @@ class GridState extends Equatable {
 
   @override
   List<Object?> get props => [
-        loading,
-        items,
-        categories,
-        selectedCategoryId,
-        recentItems,
-        favoriteKeys,
-        progressByKey,
-        pinnedCategoryCount,
-        recentCategoryCount,
-      ];
+    loading,
+    items,
+    categories,
+    selectedCategoryId,
+    recentItems,
+    favoriteKeys,
+    progressByKey,
+    pinnedCategoryCount,
+    recentCategoryCount,
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -146,7 +155,7 @@ class GridState extends Equatable {
 
 class GridCubit extends Cubit<GridState> {
   GridCubit(this._content, this._playlists, this.kind, {this._playback})
-      : super(const GridState());
+    : super(const GridState());
 
   final ContentRepository _content;
   final PlaylistRepository _playlists;
@@ -212,14 +221,16 @@ class GridCubit extends Cubit<GridState> {
     _restoredSelection = false;
 
     if (pid == null) {
-      emit(state.copyWith(
-        loading: false,
-        items: const [],
-        categories: const [],
-        recentItems: const [],
-        favoriteKeys: const {},
-        progressByKey: const {},
-      ));
+      emit(
+        state.copyWith(
+          loading: false,
+          items: const [],
+          categories: const [],
+          recentItems: const [],
+          favoriteKeys: const {},
+          progressByKey: const {},
+        ),
+      );
       return;
     }
 
@@ -227,25 +238,32 @@ class GridCubit extends Cubit<GridState> {
     _resolvedCats = await _content.categories(pid, _mediaKind);
 
     // Subscribe to favorites stream.
-    _favoritesSub = _content.favorites(pid).listen(
-      (favs) => emit(
-        state.copyWith(favoriteKeys: favs.map((f) => f.itemKey).toSet()),
-      ),
-    );
+    _favoritesSub = _content
+        .favorites(pid)
+        .listen(
+          (favs) => emit(
+            state.copyWith(favoriteKeys: favs.map((f) => f.itemKey).toSet()),
+          ),
+        );
 
     // Movie progress for the poster indicators (optional dependency).
     if (kind == GridKind.movies) {
       _progressSub = _playback?.progressForPlaylist(pid).listen((rows) {
-        emit(state.copyWith(progressByKey: {
-          for (final r in rows)
-            if (r.itemKey.startsWith('movie:')) r.itemKey: r,
-        }));
+        emit(
+          state.copyWith(
+            progressByKey: {
+              for (final r in rows)
+                if (r.itemKey.startsWith('movie:')) r.itemKey: r,
+            },
+          ),
+        );
       });
     }
 
     // Subscribe to recently-viewed (optional dependency).
-    _recentSub =
-        _playback?.recentlyViewed(pid, prefix: _recentPrefix).listen((keys) {
+    _recentSub = _playback?.recentlyViewed(pid, prefix: _recentPrefix).listen((
+      keys,
+    ) {
       _recentKeys = keys;
       _recompute();
     });
@@ -275,7 +293,9 @@ class GridCubit extends Cubit<GridState> {
   /// the convention used in the details screen.
   Future<void> toggleFavorite(GridEntry entry) async {
     final pid = _playlistId ?? 'p1';
-    final itemKey = entry.isSeries ? 'episode:${entry.id}' : 'movie:${entry.id}';
+    final itemKey = entry.isSeries
+        ? 'episode:${entry.id}'
+        : 'movie:${entry.id}';
     final mediaKind = entry.isSeries ? MediaKind.episode : MediaKind.movie;
     await _content.toggleFavorite(itemKey, pid, mediaKind, title: entry.title);
   }
@@ -289,7 +309,8 @@ class GridCubit extends Cubit<GridState> {
             title: m.title,
             subtitle: m.year,
             posterUrl: m.posterUrl,
-            badge: m.categoryId, // used for filtering; no visible badge for movies
+            badge:
+                m.categoryId, // used for filtering; no visible badge for movies
             streamUrl: m.streamUrl,
             isSeries: false,
           ),
@@ -367,20 +388,23 @@ class GridCubit extends Cubit<GridState> {
 
     // A restored category can vanish when the provider drops it.
     final selected = state.selectedCategoryId;
-    final missing = selected != null &&
+    final missing =
+        selected != null &&
         selected != kRecentCategoryId &&
         selected.isNotEmpty &&
         !cats.any((c) => c.id == selected);
 
-    emit(state.copyWith(
-      loading: false,
-      items: _rawItems,
-      categories: cats,
-      pinnedCategoryCount: pinnedCount,
-      recentCategoryCount: pinnedCats.length,
-      recentItems: recent,
-      clearCategory: missing,
-    ));
+    emit(
+      state.copyWith(
+        loading: false,
+        items: _rawItems,
+        categories: cats,
+        pinnedCategoryCount: pinnedCount,
+        recentCategoryCount: pinnedCats.length,
+        recentItems: recent,
+        clearCategory: missing,
+      ),
+    );
   }
 
   /// Select a category by its id.

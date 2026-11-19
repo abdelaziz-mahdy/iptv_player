@@ -22,10 +22,20 @@ TextTheme buildTextTheme({
 }) {
   TextStyle base(double size, FontWeight w, Color c) {
     if (hyperlegible) {
-      return TextStyle(fontFamily: _hyperlegible, fontSize: size, fontWeight: w, color: c);
+      return TextStyle(
+        fontFamily: _hyperlegible,
+        fontSize: size,
+        fontWeight: w,
+        color: c,
+      );
     }
     if (rtl) {
-      return TextStyle(fontFamily: _arabic, fontSize: size, fontWeight: w, color: c);
+      return TextStyle(
+        fontFamily: _arabic,
+        fontSize: size,
+        fontWeight: w,
+        color: c,
+      );
     }
     return TextStyle(
       fontFamily: _hanken,

@@ -66,10 +66,8 @@ class ChannelTile extends StatelessWidget {
             Flexible(
               child: Text(
                 name,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: p.fg,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: p.fg, fontWeight: FontWeight.w600),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
@@ -77,9 +75,8 @@ class ChannelTile extends StatelessWidget {
             ),
             Text(
               number,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(color: p.dim),
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: p.dim),
             ),
           ],
         ),

@@ -353,8 +353,7 @@ class _ImportViewState extends State<_ImportView> {
   ) {
     return FocusableButton(
       semanticLabel: l10n.importAction,
-      onPressed:
-          state.submitting ? () {} : () => _handleSubmit(context),
+      onPressed: state.submitting ? () {} : () => _handleSubmit(context),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         decoration: BoxDecoration(
@@ -366,10 +365,7 @@ class _ImportViewState extends State<_ImportView> {
                 child: SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: p.fg,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: p.fg),
                 ),
               )
             : Center(
@@ -401,14 +397,9 @@ class _ImportViewState extends State<_ImportView> {
           password: _passwordController.text,
         );
       case ImportTab.m3u:
-        cubit.submit(
-          name: name,
-          serverUrl: _m3uUrlController.text.trim(),
-        );
+        cubit.submit(name: name, serverUrl: _m3uUrlController.text.trim());
       case ImportTab.upload:
-        cubit.submit(
-          name: name,
-        );
+        cubit.submit(name: name);
     }
   }
 }
@@ -463,8 +454,9 @@ class _TabSelector extends StatelessWidget {
                     label,
                     style: textTheme.labelMedium?.copyWith(
                       color: isSelected ? p.onAccent : p.fg,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.normal,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.normal,
                     ),
                   ),
                 ),

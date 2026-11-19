@@ -6,7 +6,17 @@ import 'package:material_ui/material_ui.dart';
 /// palette used when the accessibility "high contrast" toggle is on.
 @immutable
 class AppPalette {
-  final Color bg, bg2, surface, surface2, border, fg, dim, focus, accent, accent2, live;
+  final Color bg,
+      bg2,
+      surface,
+      surface2,
+      border,
+      fg,
+      dim,
+      focus,
+      accent,
+      accent2,
+      live;
 
   /// Text and icons drawn *on* an [accent] or [live] fill. Both are light
   /// enough to need dark ink; screens used to pick `Colors.black` or

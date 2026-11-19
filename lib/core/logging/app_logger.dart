@@ -45,7 +45,7 @@ Future<String?> appLogDirPath() async {
   try {
     final base = Platform.isAndroid
         ? (await getExternalStorageDirectory() ??
-            await getApplicationSupportDirectory())
+              await getApplicationSupportDirectory())
         : await getApplicationSupportDirectory();
     return '${base.path}/logs';
   } catch (_) {
@@ -86,7 +86,8 @@ class _FileLogObserver extends TalkerObserver {
     try {
       Directory base;
       if (Platform.isAndroid) {
-        base = await getExternalStorageDirectory() ??
+        base =
+            await getExternalStorageDirectory() ??
             await getApplicationSupportDirectory();
       } else {
         base = await getApplicationSupportDirectory();

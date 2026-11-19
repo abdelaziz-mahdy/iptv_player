@@ -22,8 +22,10 @@ class _StubM3uSource extends M3uSource {
   _StubM3uSource(this._channels);
 
   @override
-  Future<List<Channel>> parse(String content,
-      {required String playlistId}) async {
+  Future<List<Channel>> parse(
+    String content, {
+    required String playlistId,
+  }) async {
     return _channels;
   }
 }
@@ -56,12 +58,12 @@ AppDatabase _makeDb() => AppDatabase(NativeDatabase.memory());
 const _playlistId = 'p-test';
 
 ChannelsCompanion _channelCompanion(String id) => ChannelsCompanion.insert(
-      id: id,
-      playlistId: _playlistId,
-      name: 'Channel $id',
-      number: '1',
-      streamUrl: 'http://example.com/$id',
-    );
+  id: id,
+  playlistId: _playlistId,
+  name: 'Channel $id',
+  number: '1',
+  streamUrl: 'http://example.com/$id',
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -79,8 +81,10 @@ void main() {
       final repo = DriftContentRepository(db);
 
       // Seed two channels.
-      await db.replaceChannels(
-          _playlistId, [_channelCompanion('c1'), _channelCompanion('c2')]);
+      await db.replaceChannels(_playlistId, [
+        _channelCompanion('c1'),
+        _channelCompanion('c2'),
+      ]);
 
       final channels = await repo.channels(_playlistId).first;
       expect(channels.length, 2);
@@ -101,9 +105,15 @@ void main() {
       const seriesId = '$_playlistId:series:9';
       await db.upsertSeasons([
         SeasonsCompanion.insert(
-            id: '$seriesId:season:1', seriesId: seriesId, number: 1),
+          id: '$seriesId:season:1',
+          seriesId: seriesId,
+          number: 1,
+        ),
         SeasonsCompanion.insert(
-            id: '$seriesId:season:2', seriesId: seriesId, number: 2),
+          id: '$seriesId:season:2',
+          seriesId: seriesId,
+          number: 2,
+        ),
       ]);
       await db.upsertEpisodes([
         EpisodesCompanion.insert(
@@ -116,11 +126,13 @@ void main() {
       ]);
 
       // No playlist row / credentials -> repo returns the cached detail.
-      final result = await repo.loadSeriesDetail(const Series(
-        id: seriesId,
-        playlistId: _playlistId,
-        title: 'Cached series',
-      ));
+      final result = await repo.loadSeriesDetail(
+        const Series(
+          id: seriesId,
+          playlistId: _playlistId,
+          title: 'Cached series',
+        ),
+      );
 
       final detail = (result as Ok<SeriesDetail>).value;
       expect(detail.seasons.map((s) => s.number), [1]);
@@ -210,26 +222,31 @@ void main() {
 
       final repo = DriftPlaybackRepository(db);
 
-      await repo.saveProgress(WatchProgress(
-        itemKey: 'episode:e1',
-        playlistId: _playlistId,
-        kind: MediaKind.episode,
-        positionSec: 100, // partial
-        durationSec: 2700,
-        updatedAt: DateTime.utc(2026, 1, 1),
-      ));
-      await repo.saveProgress(WatchProgress(
-        itemKey: 'episode:e2',
-        playlistId: _playlistId,
-        kind: MediaKind.episode,
-        positionSec: 2650, // ~98% — watched
-        durationSec: 2700,
-        updatedAt: DateTime.utc(2026, 1, 2),
-      ));
+      await repo.saveProgress(
+        WatchProgress(
+          itemKey: 'episode:e1',
+          playlistId: _playlistId,
+          kind: MediaKind.episode,
+          positionSec: 100, // partial
+          durationSec: 2700,
+          updatedAt: DateTime.utc(2026, 1, 1),
+        ),
+      );
+      await repo.saveProgress(
+        WatchProgress(
+          itemKey: 'episode:e2',
+          playlistId: _playlistId,
+          kind: MediaKind.episode,
+          positionSec: 2650, // ~98% — watched
+          durationSec: 2700,
+          updatedAt: DateTime.utc(2026, 1, 2),
+        ),
+      );
 
       final list = await repo.continueWatching(_playlistId).first;
-      expect(list.map((p) => p.itemKey), ['episode:e1'],
-          reason: 'finished items must leave Continue Watching');
+      expect(list.map((p) => p.itemKey), [
+        'episode:e1',
+      ], reason: 'finished items must leave Continue Watching');
     });
 
     test('progressForPlaylist streams every row, watched included', () async {
@@ -238,26 +255,29 @@ void main() {
 
       final repo = DriftPlaybackRepository(db);
 
-      await repo.saveProgress(WatchProgress(
-        itemKey: 'episode:e1',
-        playlistId: _playlistId,
-        kind: MediaKind.episode,
-        positionSec: 100,
-        durationSec: 2700,
-        updatedAt: DateTime.utc(2026, 1, 1),
-      ));
-      await repo.saveProgress(WatchProgress(
-        itemKey: 'episode:e2',
-        playlistId: _playlistId,
-        kind: MediaKind.episode,
-        positionSec: 2650, // watched — still needed for indicators
-        durationSec: 2700,
-        updatedAt: DateTime.utc(2026, 1, 2),
-      ));
+      await repo.saveProgress(
+        WatchProgress(
+          itemKey: 'episode:e1',
+          playlistId: _playlistId,
+          kind: MediaKind.episode,
+          positionSec: 100,
+          durationSec: 2700,
+          updatedAt: DateTime.utc(2026, 1, 1),
+        ),
+      );
+      await repo.saveProgress(
+        WatchProgress(
+          itemKey: 'episode:e2',
+          playlistId: _playlistId,
+          kind: MediaKind.episode,
+          positionSec: 2650, // watched — still needed for indicators
+          durationSec: 2700,
+          updatedAt: DateTime.utc(2026, 1, 2),
+        ),
+      );
 
       final list = await repo.progressForPlaylist(_playlistId).first;
-      expect(list.map((p) => p.itemKey).toSet(),
-          {'episode:e1', 'episode:e2'});
+      expect(list.map((p) => p.itemKey).toSet(), {'episode:e1', 'episode:e2'});
     });
 
     test('continueWatching excludes channel-kind entries', () async {
@@ -267,22 +287,26 @@ void main() {
       final repo = DriftPlaybackRepository(db);
 
       // Save a channel entry and a movie entry.
-      await repo.saveProgress(WatchProgress(
-        itemKey: 'channel:c1',
-        playlistId: _playlistId,
-        kind: MediaKind.channel,
-        positionSec: 10,
-        durationSec: 60,
-        updatedAt: DateTime.utc(2026, 1, 1),
-      ));
-      await repo.saveProgress(WatchProgress(
-        itemKey: 'movie:m1',
-        playlistId: _playlistId,
-        kind: MediaKind.movie,
-        positionSec: 42,
-        durationSec: 120,
-        updatedAt: DateTime.utc(2026, 1, 2),
-      ));
+      await repo.saveProgress(
+        WatchProgress(
+          itemKey: 'channel:c1',
+          playlistId: _playlistId,
+          kind: MediaKind.channel,
+          positionSec: 10,
+          durationSec: 60,
+          updatedAt: DateTime.utc(2026, 1, 1),
+        ),
+      );
+      await repo.saveProgress(
+        WatchProgress(
+          itemKey: 'movie:m1',
+          playlistId: _playlistId,
+          kind: MediaKind.movie,
+          positionSec: 42,
+          durationSec: 120,
+          updatedAt: DateTime.utc(2026, 1, 2),
+        ),
+      );
 
       final list = await repo.continueWatching(_playlistId).first;
       expect(list, hasLength(1));
@@ -298,14 +322,16 @@ void main() {
 
       // Save 25 movie entries with increasing updatedAt.
       for (var i = 1; i <= 25; i++) {
-        await repo.saveProgress(WatchProgress(
-          itemKey: 'movie:m$i',
-          playlistId: _playlistId,
-          kind: MediaKind.movie,
-          positionSec: i,
-          durationSec: 100,
-          updatedAt: DateTime.utc(2026, 1, i),
-        ));
+        await repo.saveProgress(
+          WatchProgress(
+            itemKey: 'movie:m$i',
+            playlistId: _playlistId,
+            kind: MediaKind.movie,
+            positionSec: i,
+            durationSec: 100,
+            updatedAt: DateTime.utc(2026, 1, i),
+          ),
+        );
       }
 
       final list = await repo.continueWatching(_playlistId).first;
@@ -320,14 +346,16 @@ void main() {
 
       final repo = DriftPlaybackRepository(db);
 
-      await repo.saveProgress(WatchProgress(
-        itemKey: 'movie:m1',
-        playlistId: _playlistId,
-        kind: MediaKind.movie,
-        positionSec: 42,
-        durationSec: 120,
-        updatedAt: DateTime.utc(2026),
-      ));
+      await repo.saveProgress(
+        WatchProgress(
+          itemKey: 'movie:m1',
+          playlistId: _playlistId,
+          kind: MediaKind.movie,
+          positionSec: 42,
+          durationSec: 120,
+          updatedAt: DateTime.utc(2026),
+        ),
+      );
 
       // Confirm it exists.
       expect(await repo.progressFor('movie:m1'), isNotNull);
@@ -400,9 +428,17 @@ void main() {
       final repo = DriftPlaylistRepository(db);
 
       const p1 = Playlist(
-          id: 'pl-1', name: 'PL1', type: PlaylistType.m3u, initial: 'P');
+        id: 'pl-1',
+        name: 'PL1',
+        type: PlaylistType.m3u,
+        initial: 'P',
+      );
       const p2 = Playlist(
-          id: 'pl-2', name: 'PL2', type: PlaylistType.m3u, initial: 'Q');
+        id: 'pl-2',
+        name: 'PL2',
+        type: PlaylistType.m3u,
+        initial: 'Q',
+      );
 
       await repo.add(p1);
       await repo.add(p2);
@@ -432,17 +468,19 @@ void main() {
 
       final stubChannels = [
         const Channel(
-            id: 'stub-c1',
-            playlistId: _playlistId,
-            name: 'Stub Ch 1',
-            number: '1',
-            streamUrl: 'http://example.com/1'),
+          id: 'stub-c1',
+          playlistId: _playlistId,
+          name: 'Stub Ch 1',
+          number: '1',
+          streamUrl: 'http://example.com/1',
+        ),
         const Channel(
-            id: 'stub-c2',
-            playlistId: _playlistId,
-            name: 'Stub Ch 2',
-            number: '2',
-            streamUrl: 'http://example.com/2'),
+          id: 'stub-c2',
+          playlistId: _playlistId,
+          name: 'Stub Ch 2',
+          number: '2',
+          streamUrl: 'http://example.com/2',
+        ),
       ];
 
       // Fake Dio that returns an empty body (the stub M3uSource ignores it).
@@ -459,46 +497,52 @@ void main() {
 
       final channelStream = await repo.channels(_playlistId).first;
       expect(channelStream.length, 2);
-      expect(channelStream.map((c) => c.id),
-          containsAll(['stub-c1', 'stub-c2']));
+      expect(
+        channelStream.map((c) => c.id),
+        containsAll(['stub-c1', 'stub-c2']),
+      );
     });
 
-    test('group-title groups become Live categories, in playlist order',
-        () async {
-      final db = _makeDb();
-      addTearDown(db.close);
-      const p = Playlist(
-        id: _playlistId,
-        name: 'M3U Playlist',
-        type: PlaylistType.m3u,
-        serverUrl: 'http://example.com/playlist.m3u',
-        initial: 'M',
-      );
-      Channel ch(String id, String? group) => Channel(
+    test(
+      'group-title groups become Live categories, in playlist order',
+      () async {
+        final db = _makeDb();
+        addTearDown(db.close);
+        const p = Playlist(
+          id: _playlistId,
+          name: 'M3U Playlist',
+          type: PlaylistType.m3u,
+          serverUrl: 'http://example.com/playlist.m3u',
+          initial: 'M',
+        );
+        Channel ch(String id, String? group) => Channel(
           id: id,
           playlistId: _playlistId,
           name: id,
           number: id,
           streamUrl: 'http://example.com/$id',
-          categoryId: group);
-      final repo = DriftContentRepository(
-        db,
-        dio: _FakeDio(''),
-        m3u: _StubM3uSource([
-          ch('a', 'News'),
-          ch('b', 'Sports'),
-          ch('c', 'News'),
-          ch('d', null),
-        ]),
-      );
+          categoryId: group,
+        );
+        final repo = DriftContentRepository(
+          db,
+          dio: _FakeDio(''),
+          m3u: _StubM3uSource([
+            ch('a', 'News'),
+            ch('b', 'Sports'),
+            ch('c', 'News'),
+            ch('d', null),
+          ]),
+        );
 
-      await repo.importPlaylist(p);
+        await repo.importPlaylist(p);
 
-      final cats = await repo.categories(_playlistId, MediaKind.channel);
-      expect(cats.map((c) => (c.id, c.name)),
-          [('News', 'News'), ('Sports', 'Sports')],
-          reason: 'without category rows Live TV only ever shows "All"');
-    });
+        final cats = await repo.categories(_playlistId, MediaKind.channel);
+        expect(cats.map((c) => (c.id, c.name)), [
+          ('News', 'News'),
+          ('Sports', 'Sports'),
+        ], reason: 'without category rows Live TV only ever shows "All"');
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -548,9 +592,17 @@ void main() {
       // Seed two vod categories directly into the db.
       await db.replaceCategories(_playlistId, 'vod', [
         CategoriesCompanion.insert(
-            playlistId: _playlistId, type: 'vod', categoryId: '1', name: 'Action'),
+          playlistId: _playlistId,
+          type: 'vod',
+          categoryId: '1',
+          name: 'Action',
+        ),
         CategoriesCompanion.insert(
-            playlistId: _playlistId, type: 'vod', categoryId: '2', name: 'Drama'),
+          playlistId: _playlistId,
+          type: 'vod',
+          categoryId: '2',
+          name: 'Drama',
+        ),
       ]);
 
       final repo = DriftContentRepository(db);
@@ -575,7 +627,11 @@ void main() {
 
       await db.replaceCategories(_playlistId, 'live', [
         CategoriesCompanion.insert(
-            playlistId: _playlistId, type: 'live', categoryId: '10', name: 'Sports'),
+          playlistId: _playlistId,
+          type: 'live',
+          categoryId: '10',
+          name: 'Sports',
+        ),
       ]);
 
       final repo = DriftContentRepository(db);
@@ -589,7 +645,11 @@ void main() {
 
       await db.replaceCategories(_playlistId, 'series', [
         CategoriesCompanion.insert(
-            playlistId: _playlistId, type: 'series', categoryId: '20', name: 'Sci-Fi'),
+          playlistId: _playlistId,
+          type: 'series',
+          categoryId: '20',
+          name: 'Sci-Fi',
+        ),
       ]);
 
       final repo = DriftContentRepository(db);
@@ -603,8 +663,7 @@ void main() {
   //    DriftCredentialStore, stub XtreamSource, channels persisted
   // -------------------------------------------------------------------------
   group('DriftContentRepository.importPlaylist (xtream)', () {
-    test('channels persisted when credentials are pre-saved in DriftCredentialStore',
-        () async {
+    test('channels persisted when credentials are pre-saved in DriftCredentialStore', () async {
       final db = _makeDb();
       addTearDown(db.close);
 
@@ -616,11 +675,7 @@ void main() {
       const serverUrl = 'http://xtream.example.com';
 
       // Pre-save credentials (simulates what ImportCubit does on write path).
-      await credStore.save(
-        playlistId,
-        username: 'alice',
-        password: 'secret',
-      );
+      await credStore.save(playlistId, username: 'alice', password: 'secret');
 
       // Build stub content to be returned by the XtreamSource.
       final stubChannels = [
@@ -665,8 +720,10 @@ void main() {
 
       final channels = await repo.channels(playlistId).first;
       expect(channels.length, 2);
-      expect(channels.map((c) => c.id),
-          containsAll(['xtream-pl:live:1', 'xtream-pl:live:2']));
+      expect(
+        channels.map((c) => c.id),
+        containsAll(['xtream-pl:live:1', 'xtream-pl:live:2']),
+      );
     });
 
     test('returns Err when credentials are missing', () async {

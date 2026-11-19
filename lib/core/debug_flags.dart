@@ -16,7 +16,6 @@ library;
 /// Enable with: `flutter build apk --release --dart-define=FVP_CAPTURE=true`
 const bool kFvpCaptureBuild = bool.fromEnvironment('FVP_CAPTURE');
 
-
 /// MDK audio backend on Android ("AudioTrack", "AAudio", "OpenSL").
 ///
 /// AudioTrack ships. MDK's default, AAudio, opens a low-latency stream on a
@@ -30,5 +29,7 @@ const bool kFvpCaptureBuild = bool.fromEnvironment('FVP_CAPTURE');
 /// from zero (3/5 starts), freezing the picture while sound plays.
 ///
 /// Override with: `--dart-define=AUDIO_RENDERER=AAudio`
-const String kAudioRenderer =
-    String.fromEnvironment('AUDIO_RENDERER', defaultValue: 'AudioTrack');
+const String kAudioRenderer = String.fromEnvironment(
+  'AUDIO_RENDERER',
+  defaultValue: 'AudioTrack',
+);

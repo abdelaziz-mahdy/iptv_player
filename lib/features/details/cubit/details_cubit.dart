@@ -53,13 +53,13 @@ class DetailsState extends Equatable {
 
   @override
   List<Object?> get props => [
-        loading,
-        seasons,
-        selectedSeasonIndex,
-        episodes,
-        info,
-        progressByKey,
-      ];
+    loading,
+    seasons,
+    selectedSeasonIndex,
+    episodes,
+    info,
+    progressByKey,
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -90,10 +90,7 @@ class DetailsCubit extends Cubit<DetailsState> {
         .listen(_onProgress);
 
     final result = await _content.loadSeriesDetail(series);
-    final detail = result.when(
-      ok: (d) => d,
-      err: (_) => const SeriesDetail(),
-    );
+    final detail = result.when(ok: (d) => d, err: (_) => const SeriesDetail());
 
     _episodesBySeason = detail.episodesBySeason;
     final seasons = detail.seasons;
@@ -101,13 +98,15 @@ class DetailsCubit extends Cubit<DetailsState> {
         ? const <Episode>[]
         : (_episodesBySeason[seasons.first.id] ?? const []);
 
-    emit(state.copyWith(
-      loading: false,
-      seasons: seasons,
-      selectedSeasonIndex: 0,
-      episodes: firstEpisodes,
-      info: detail.info,
-    ));
+    emit(
+      state.copyWith(
+        loading: false,
+        seasons: seasons,
+        selectedSeasonIndex: 0,
+        episodes: firstEpisodes,
+        info: detail.info,
+      ),
+    );
   }
 
   /// Fetches a movie's extended metadata (plot, cast, genre, runtime...).
@@ -117,10 +116,12 @@ class DetailsCubit extends Cubit<DetailsState> {
     emit(state.copyWith(loading: true));
     final result = await _content.loadMovieDetail(movie);
     if (isClosed) return;
-    emit(state.copyWith(
-      loading: false,
-      info: result.when(ok: (d) => d, err: (_) => MediaDetail.empty),
-    ));
+    emit(
+      state.copyWith(
+        loading: false,
+        info: result.when(ok: (d) => d, err: (_) => MediaDetail.empty),
+      ),
+    );
   }
 
   /// Every episode of the series in playback order, seasons concatenated.
@@ -129,8 +130,8 @@ class DetailsCubit extends Cubit<DetailsState> {
   /// a season boundary instead of dead-ending on the last episode of the
   /// season that happened to be on screen.
   List<Episode> get allEpisodes => [
-        for (final s in state.seasons) ...(_episodesBySeason[s.id] ?? const []),
-      ];
+    for (final s in state.seasons) ...(_episodesBySeason[s.id] ?? const []),
+  ];
 
   /// Position of [episode] within [allEpisodes]; -1 when it is not found.
   int indexInSeries(Episode episode) =>
@@ -154,7 +155,8 @@ class DetailsCubit extends Cubit<DetailsState> {
     int episodeNumber,
     bool isResume,
     bool isRestart,
-  })? playTarget() {
+  })?
+  playTarget() {
     if (state.seasons.isEmpty) return null;
 
     WatchProgress? newest;
@@ -201,7 +203,8 @@ class DetailsCubit extends Cubit<DetailsState> {
         .expand((s) => _episodesBySeason[s.id] ?? const <Episode>[])
         .where((e) => state.progressByKey.containsKey('episode:${e.id}'))
         .length;
-    final decision = 'playTarget seasons=${state.seasons.length} '
+    final decision =
+        'playTarget seasons=${state.seasons.length} '
         'progressRows=${state.progressByKey.length} matchedEpisodes=$known '
         'newestAt=$newestAt watched=${newest?.isWatched} -> '
         'season=${target.$1} episode=${target.$2}';
@@ -236,9 +239,7 @@ class DetailsCubit extends Cubit<DetailsState> {
 
   void _onProgress(List<WatchProgress> rows) {
     if (isClosed) return;
-    emit(state.copyWith(
-      progressByKey: {for (final p in rows) p.itemKey: p},
-    ));
+    emit(state.copyWith(progressByKey: {for (final p in rows) p.itemKey: p}));
   }
 
   @override

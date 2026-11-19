@@ -90,30 +90,31 @@ class VideoPlayerControllerAdapter implements PlayerController {
       // maxWidth/maxHeight scale 4K down to 1080p.
       // Audio backend: AudioTrack, see kAudioRenderer.
       fvp.registerWith(
-          options: Platform.isAndroid
-              ? {
-                  'maxWidth': 1920,
-                  'maxHeight': 1088,
-                  // Back to true once fvp#420 is fixed (see above).
-                  'tunnel': false,
-                  'player': {
-                    if (kAudioRenderer.isNotEmpty)
-                      'audio.renderer': kAudioRenderer,
-                    // MDK defaults to 1s min / 4s max buffered ahead — too
-                    // shallow for jittery IPTV providers — fvp starved at
-                    // ~5fps input while the provider burst-served 10MB/s,
-                    // where mpv rode the same links with 10-13s cached.
-                    // Docs: "Large
-                    // value is recommended. Latency is not affected."
-                    'buffer': '2000+30000',
-                  },
-                  // MDK's own log. 'info' ships (decoder open/close, seeks,
-                  // stream info, errors); FVP_CAPTURE raises it to every line
-                  // for upstream reports. main.dart routes both into the
-                  // pullable app log.
-                  'global': {'logLevel': kFvpCaptureBuild ? 'all' : 'info'},
-                }
-              : null);
+        options: Platform.isAndroid
+            ? {
+                'maxWidth': 1920,
+                'maxHeight': 1088,
+                // Back to true once fvp#420 is fixed (see above).
+                'tunnel': false,
+                'player': {
+                  if (kAudioRenderer.isNotEmpty)
+                    'audio.renderer': kAudioRenderer,
+                  // MDK defaults to 1s min / 4s max buffered ahead — too
+                  // shallow for jittery IPTV providers — fvp starved at
+                  // ~5fps input while the provider burst-served 10MB/s,
+                  // where mpv rode the same links with 10-13s cached.
+                  // Docs: "Large
+                  // value is recommended. Latency is not affected."
+                  'buffer': '2000+30000',
+                },
+                // MDK's own log. 'info' ships (decoder open/close, seeks,
+                // stream info, errors); FVP_CAPTURE raises it to every line
+                // for upstream reports. main.dart routes both into the
+                // pullable app log.
+                'global': {'logLevel': kFvpCaptureBuild ? 'all' : 'info'},
+              }
+            : null,
+      );
       _fvpRegistered = true;
     }
 
@@ -165,12 +166,14 @@ class VideoPlayerControllerAdapter implements PlayerController {
     if (_statusCtrl.isClosed) return;
     final ctrl = _controller;
     if (ctrl == null) return;
-    _statusCtrl.add(PlayerStatus(
-      isPlaying: ctrl.value.isPlaying,
-      position: _pendingStart ?? ctrl.value.position,
-      duration: ctrl.value.duration,
-      buffering: ctrl.value.isBuffering,
-    ));
+    _statusCtrl.add(
+      PlayerStatus(
+        isPlaying: ctrl.value.isPlaying,
+        position: _pendingStart ?? ctrl.value.position,
+        duration: ctrl.value.duration,
+        buffering: ctrl.value.isBuffering,
+      ),
+    );
   }
 
   /// Android resume position, applied by [play] once playback is rolling.
@@ -206,14 +209,15 @@ class VideoPlayerControllerAdapter implements PlayerController {
     c.addListener(check);
     check();
     final opened = DateTime.now();
-    await rolling.future
-        .timeout(const Duration(seconds: 15), onTimeout: () {});
+    await rolling.future.timeout(const Duration(seconds: 15), onTimeout: () {});
     c.removeListener(check);
     if (_controller != c) return;
     if (_pendingStart == target) {
-      appLog.info('resume seek to ${target.inSeconds}s after '
-          '${DateTime.now().difference(opened).inMilliseconds} ms '
-          '(at ${c.value.position.inMilliseconds} ms)');
+      appLog.info(
+        'resume seek to ${target.inSeconds}s after '
+        '${DateTime.now().difference(opened).inMilliseconds} ms '
+        '(at ${c.value.position.inMilliseconds} ms)',
+      );
       await c.seekTo(target);
       _pendingStart = null;
     }

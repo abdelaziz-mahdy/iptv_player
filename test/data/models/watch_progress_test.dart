@@ -2,13 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_player/data/models/models.dart';
 
 WatchProgress _p({required int pos, required int dur}) => WatchProgress(
-      itemKey: 'episode:e1',
-      playlistId: 'p1',
-      kind: MediaKind.episode,
-      positionSec: pos,
-      durationSec: dur,
-      updatedAt: DateTime.utc(2026, 1, 1),
-    );
+  itemKey: 'episode:e1',
+  playlistId: 'p1',
+  kind: MediaKind.episode,
+  positionSec: pos,
+  durationSec: dur,
+  updatedAt: DateTime.utc(2026, 1, 1),
+);
 
 void main() {
   group('WatchProgress.fraction', () {

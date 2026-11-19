@@ -66,9 +66,11 @@ void main() {
     await tester.pumpWidget(_wrap(_entries(), 'g9', 0));
     await tester.pump();
     await tester.pump();
-    expect(tester.getTopLeft(find.text('Group g9')).dy,
-        moreOrLessEquals(before, epsilon: 0.5),
-        reason: 'selecting alone must not scroll');
+    expect(
+      tester.getTopLeft(find.text('Group g9')).dy,
+      moreOrLessEquals(before, epsilon: 0.5),
+      reason: 'selecting alone must not scroll',
+    );
 
     // The recency update arrives: g9 is pinned above, rows shift down.
     await tester.pumpWidget(_wrap(_entries(recent: 'g9'), 'g9', 1));

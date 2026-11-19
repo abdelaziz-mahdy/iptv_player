@@ -1,4 +1,5 @@
 import '../../core/logging/app_logger.dart';
+
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart' show debugPrint;
@@ -34,10 +35,10 @@ class DriftContentRepository implements ContentRepository {
     CredentialStore? credentialStore,
     M3uSource? m3u,
     XtreamSource? xtream,
-  })  : _dio = dio ?? Dio(),
-        _credentials = credentialStore ?? InMemoryCredentialStore(),
-        _m3u = m3u ?? M3uSource(),
-        _xtream = xtream ?? XtreamSource();
+  }) : _dio = dio ?? Dio(),
+       _credentials = credentialStore ?? InMemoryCredentialStore(),
+       _m3u = m3u ?? M3uSource(),
+       _xtream = xtream ?? XtreamSource();
 
   final AppDatabase _db;
   final Dio _dio;
@@ -50,55 +51,55 @@ class DriftContentRepository implements ContentRepository {
   // ---------------------------------------------------------------------------
 
   static Channel _channelFromRow(ChannelRow r) => Channel(
-        id: r.id,
-        playlistId: r.playlistId,
-        name: r.name,
-        number: r.number,
-        logoUrl: r.logoUrl,
-        streamUrl: r.streamUrl,
-        categoryId: r.categoryId,
-      );
+    id: r.id,
+    playlistId: r.playlistId,
+    name: r.name,
+    number: r.number,
+    logoUrl: r.logoUrl,
+    streamUrl: r.streamUrl,
+    categoryId: r.categoryId,
+  );
 
   static VodItem _vodFromRow(VodRow r) => VodItem(
-        id: r.id,
-        playlistId: r.playlistId,
-        title: r.title,
-        posterUrl: r.posterUrl,
-        categoryId: r.categoryId,
-        year: r.year,
-        rating: r.rating,
-        streamUrl: r.streamUrl,
-      );
+    id: r.id,
+    playlistId: r.playlistId,
+    title: r.title,
+    posterUrl: r.posterUrl,
+    categoryId: r.categoryId,
+    year: r.year,
+    rating: r.rating,
+    streamUrl: r.streamUrl,
+  );
 
   static Series _seriesFromRow(SeriesRow r) => Series(
-        id: r.id,
-        playlistId: r.playlistId,
-        title: r.title,
-        posterUrl: r.posterUrl,
-        categoryId: r.categoryId,
-        year: r.year,
-        rating: r.rating,
-      );
+    id: r.id,
+    playlistId: r.playlistId,
+    title: r.title,
+    posterUrl: r.posterUrl,
+    categoryId: r.categoryId,
+    year: r.year,
+    rating: r.rating,
+  );
 
   static Season _seasonFromRow(SeasonRow r) =>
       Season(id: r.id, seriesId: r.seriesId, number: r.number);
 
   static Episode _episodeFromRow(EpisodeRow r) => Episode(
-        id: r.id,
-        seasonId: r.seasonId,
-        title: r.title,
-        number: r.number,
-        durationSec: r.durationSec,
-        streamUrl: r.streamUrl,
-      );
+    id: r.id,
+    seasonId: r.seasonId,
+    title: r.title,
+    number: r.number,
+    durationSec: r.durationSec,
+    streamUrl: r.streamUrl,
+  );
 
   static Favorite _favoriteFromRow(FavoriteRow r) => Favorite(
-        itemKey: r.itemKey,
-        playlistId: r.playlistId,
-        kind: MediaKind.values.byName(r.kind),
-        addedAt: r.addedAt,
-        title: r.title,
-      );
+    itemKey: r.itemKey,
+    playlistId: r.playlistId,
+    kind: MediaKind.values.byName(r.kind),
+    addedAt: r.addedAt,
+    title: r.title,
+  );
 
   // ---------------------------------------------------------------------------
   // Model → companion helpers (for importPlaylist)
@@ -143,16 +144,18 @@ class DriftContentRepository implements ContentRepository {
   // ---------------------------------------------------------------------------
 
   @override
-  Stream<List<Channel>> channels(String playlistId) =>
-      _db.watchChannels(playlistId).map((rows) => rows.map(_channelFromRow).toList());
+  Stream<List<Channel>> channels(String playlistId) => _db
+      .watchChannels(playlistId)
+      .map((rows) => rows.map(_channelFromRow).toList());
 
   @override
   Stream<List<VodItem>> movies(String playlistId) =>
       _db.watchMovies(playlistId).map((rows) => rows.map(_vodFromRow).toList());
 
   @override
-  Stream<List<Series>> series(String playlistId) =>
-      _db.watchSeries(playlistId).map((rows) => rows.map(_seriesFromRow).toList());
+  Stream<List<Series>> series(String playlistId) => _db
+      .watchSeries(playlistId)
+      .map((rows) => rows.map(_seriesFromRow).toList());
 
   // ---------------------------------------------------------------------------
   // ContentRepository — seasons / episodes
@@ -191,15 +194,17 @@ class DriftContentRepository implements ContentRepository {
     if (current == null) return null;
     final season = await _db.getSeason(current.seasonId);
     if (season == null) return null;
-    final seasons = (await _db.getSeasons(season.seriesId))
-        .where((s) => s.number >= season.number)
-        .toList()
-      ..sort((a, b) => a.number.compareTo(b.number));
+    final seasons =
+        (await _db.getSeasons(season.seriesId))
+            .where((s) => s.number >= season.number)
+            .toList()
+          ..sort((a, b) => a.number.compareTo(b.number));
     for (final s in seasons) {
-      final eps = (await _db.getEpisodes(s.id))
-          .where((e) => s.id != season.id || e.number > current.number)
-          .toList()
-        ..sort((a, b) => a.number.compareTo(b.number));
+      final eps =
+          (await _db.getEpisodes(s.id))
+              .where((e) => s.id != season.id || e.number > current.number)
+              .toList()
+            ..sort((a, b) => a.number.compareTo(b.number));
       if (eps.isNotEmpty) return _episodeFromRow(eps.first);
     }
     return null;
@@ -208,25 +213,29 @@ class DriftContentRepository implements ContentRepository {
   @override
   Future<Result<SeriesDetail>> loadSeriesDetail(Series series) async {
     debugPrint(
-        '[series-detail] load id="${series.id}" pid="${series.playlistId}"');
+      '[series-detail] load id="${series.id}" pid="${series.playlistId}"',
+    );
     try {
       // Locate the playlist (for server URL + type) and its credentials.
       final playlists = await _db.getPlaylists();
-      final p =
-          playlists.where((r) => r.id == series.playlistId).firstOrNull;
+      final p = playlists.where((r) => r.id == series.playlistId).firstOrNull;
       final serverUrl = p?.serverUrl;
       final creds = await _credentials.read(series.playlistId);
-      debugPrint('[series-detail] playlistFound=${p != null} '
-          'serverUrl=${serverUrl != null && serverUrl.isNotEmpty} '
-          'creds=${creds != null}');
+      debugPrint(
+        '[series-detail] playlistFound=${p != null} '
+        'serverUrl=${serverUrl != null && serverUrl.isNotEmpty} '
+        'creds=${creds != null}',
+      );
 
       // Only Xtream exposes a series-info API. Without a server URL or
       // credentials (e.g. M3U), return whatever is cached locally.
       if (serverUrl == null || serverUrl.isEmpty || creds == null) {
         final cached = await _cachedSeriesDetail(series.id);
-        debugPrint('[series-detail] no url/creds -> cached '
-            'seasons=${cached.seasons.length} '
-            'eps=${cached.episodesBySeason.values.fold(0, (a, b) => a + b.length)}');
+        debugPrint(
+          '[series-detail] no url/creds -> cached '
+          'seasons=${cached.seasons.length} '
+          'eps=${cached.episodesBySeason.values.fold(0, (a, b) => a + b.length)}',
+        );
         return Ok(cached);
       }
 
@@ -241,14 +250,19 @@ class DriftContentRepository implements ContentRepository {
         seriesId: rawId,
         playlistId: series.playlistId,
       );
-      debugPrint('[series-detail] fetched seasons=${detail.seasons.length} '
-          'eps=${detail.episodesBySeason.values.fold(0, (a, b) => a + b.length)}');
+      debugPrint(
+        '[series-detail] fetched seasons=${detail.seasons.length} '
+        'eps=${detail.episodesBySeason.values.fold(0, (a, b) => a + b.length)}',
+      );
 
       // Cache seasons + episodes for offline/repeat views.
       await _db.upsertSeasons([
         for (final s in detail.seasons)
           SeasonsCompanion.insert(
-              id: s.id, seriesId: s.seriesId, number: s.number),
+            id: s.id,
+            seriesId: s.seriesId,
+            number: s.number,
+          ),
       ]);
       for (final entry in detail.episodesBySeason.entries) {
         await _db.upsertEpisodes([
@@ -327,12 +341,17 @@ class DriftContentRepository implements ContentRepository {
   // ---------------------------------------------------------------------------
 
   @override
-  Stream<List<Favorite>> favorites(String playlistId) =>
-      _db.watchFavorites(playlistId).map((rows) => rows.map(_favoriteFromRow).toList());
+  Stream<List<Favorite>> favorites(String playlistId) => _db
+      .watchFavorites(playlistId)
+      .map((rows) => rows.map(_favoriteFromRow).toList());
 
   @override
-  Future<void> toggleFavorite(String itemKey, String playlistId, MediaKind kind,
-      {String title = ''}) async {
+  Future<void> toggleFavorite(
+    String itemKey,
+    String playlistId,
+    MediaKind kind, {
+    String title = '',
+  }) async {
     final exists = await _db.isFavorite(itemKey);
     if (exists) {
       await _db.removeFavorite(itemKey);
@@ -350,10 +369,11 @@ class DriftContentRepository implements ContentRepository {
   }
 
   @override
-  Future<void> repairFavorite(
-      {required String oldItemKey,
-      required String newItemKey,
-      required String title}) async {
+  Future<void> repairFavorite({
+    required String oldItemKey,
+    required String newItemKey,
+    required String title,
+  }) async {
     final row = await _db.getFavorite(oldItemKey);
     if (row == null) return;
     await _db.addFavorite(
@@ -375,15 +395,23 @@ class DriftContentRepository implements ContentRepository {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<List<CategoryRef>> categories(String playlistId, MediaKind kind) async {
+  Future<List<CategoryRef>> categories(
+    String playlistId,
+    MediaKind kind,
+  ) async {
     final type = _kindToType(kind);
     final rows = await _db.getCategories(playlistId, type);
-    return rows.map((r) => CategoryRef(id: r.categoryId, name: r.name)).toList();
+    return rows
+        .map((r) => CategoryRef(id: r.categoryId, name: r.name))
+        .toList();
   }
 
   @override
   Future<void> recordCategoryUse(
-      String playlistId, MediaKind kind, String categoryId) {
+    String playlistId,
+    MediaKind kind,
+    String categoryId,
+  ) {
     return _db.recordCategoryUse(
       CategoryUsageRowsCompanion.insert(
         playlistId: playlistId,
@@ -396,9 +424,9 @@ class DriftContentRepository implements ContentRepository {
 
   @override
   Stream<List<String>> recentCategoryIds(String playlistId, MediaKind kind) {
-    return _db.watchCategoryUse(playlistId, _kindToType(kind)).map(
-          (rows) => rows.map((r) => r.categoryId).toList(),
-        );
+    return _db
+        .watchCategoryUse(playlistId, _kindToType(kind))
+        .map((rows) => rows.map((r) => r.categoryId).toList());
   }
 
   // ---------------------------------------------------------------------------
@@ -426,7 +454,9 @@ class DriftContentRepository implements ContentRepository {
           };
           await Future.wait([
             _db.replaceChannels(
-                p.id, channels.map(_toChannelCompanion).toList()),
+              p.id,
+              channels.map(_toChannelCompanion).toList(),
+            ),
             _db.replaceCategories(p.id, _kindToType(MediaKind.channel), [
               for (final (i, g) in groups.indexed)
                 CategoriesCompanion.insert(
@@ -473,11 +503,17 @@ class DriftContentRepository implements ContentRepository {
 
           await Future.wait([
             _db.replaceChannels(
-                p.id, content.channels.map(_toChannelCompanion).toList()),
+              p.id,
+              content.channels.map(_toChannelCompanion).toList(),
+            ),
             _db.replaceMovies(
-                p.id, content.movies.map(_toVodCompanion).toList()),
+              p.id,
+              content.movies.map(_toVodCompanion).toList(),
+            ),
             _db.replaceSeries(
-                p.id, content.series.map(_toSeriesCompanion).toList()),
+              p.id,
+              content.series.map(_toSeriesCompanion).toList(),
+            ),
             for (final entry in catsByType.entries)
               _db.replaceCategories(p.id, entry.key, entry.value),
           ]);
@@ -492,8 +528,12 @@ class DriftContentRepository implements ContentRepository {
       // only ever sees "Failed to import playlist", which says nothing about
       // whether the server was unreachable, the credentials were rejected or
       // the response would not parse. Log it so the reason is recoverable.
-      appLog.handle(e, st, 'importPlaylist failed type=${p.type.name} '
-          'server=${scrubUrl(p.serverUrl ?? '-')}');
+      appLog.handle(
+        e,
+        st,
+        'importPlaylist failed type=${p.type.name} '
+        'server=${scrubUrl(p.serverUrl ?? '-')}',
+      );
       return Err(Failure('Failed to import playlist', cause: e));
     }
   }

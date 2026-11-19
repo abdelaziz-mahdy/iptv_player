@@ -27,15 +27,15 @@ AppLocalizations _l10n(WidgetTester tester) =>
     AppLocalizations.of(tester.element(find.byType(ImportScreen)))!;
 
 Widget _app() => MaterialApp(
-      theme: buildTheme(
-        palette: AppPalette.standard,
-        hyperlegible: false,
-        rtl: false,
-      ),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: ImportScreen(onImported: () {}),
-    );
+  theme: buildTheme(
+    palette: AppPalette.standard,
+    hyperlegible: false,
+    rtl: false,
+  ),
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: ImportScreen(onImported: () {}),
+);
 
 void main() {
   setUp(() async {
@@ -64,23 +64,24 @@ void main() {
   });
 
   testWidgets(
-      'typing into the server field updates its controller (non-Android platform)',
-      (tester) async {
-    await tester.pumpWidget(_app());
-    await tester.pumpAndSettle();
+    'typing into the server field updates its controller (non-Android platform)',
+    (tester) async {
+      await tester.pumpWidget(_app());
+      await tester.pumpAndSettle();
 
-    // On the test host (non-Android) the field is an editable TextFormField.
-    final serverField = find.byKey(const ValueKey('import-server'));
-    expect(serverField, findsOneWidget);
+      // On the test host (non-Android) the field is an editable TextFormField.
+      final serverField = find.byKey(const ValueKey('import-server'));
+      expect(serverField, findsOneWidget);
 
-    await tester.enterText(serverField, 'http://example.com');
-    await tester.pump();
+      await tester.enterText(serverField, 'http://example.com');
+      await tester.pump();
 
-    final editable = tester.widget<EditableText>(
-      find.descendant(of: serverField, matching: find.byType(EditableText)),
-    );
-    expect(editable.controller.text, 'http://example.com');
-  });
+      final editable = tester.widget<EditableText>(
+        find.descendant(of: serverField, matching: find.byType(EditableText)),
+      );
+      expect(editable.controller.text, 'http://example.com');
+    },
+  );
 
   testWidgets('Import on the M3U tab submits the M3U URL', (tester) async {
     final content = _CapturingContent();
@@ -92,15 +93,21 @@ void main() {
     await tester.tap(find.text('M3U URL'));
     await tester.pumpAndSettle();
     await tester.enterText(
-        find.byKey(const ValueKey('import-m3u')), 'http://host/list.m3u');
+      find.byKey(const ValueKey('import-m3u')),
+      'http://host/list.m3u',
+    );
     await tester.pump();
     await tester.tap(find.text('Import'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(content.imported?.type, PlaylistType.m3u);
-    expect(content.imported?.serverUrl, 'http://host/list.m3u',
-        reason: 'the button must use the tab on screen, not the one it was '
-            'first built with');
+    expect(
+      content.imported?.serverUrl,
+      'http://host/list.m3u',
+      reason:
+          'the button must use the tab on screen, not the one it was '
+          'first built with',
+    );
   });
 }

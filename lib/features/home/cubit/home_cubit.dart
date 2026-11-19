@@ -42,7 +42,7 @@ const int kContinueWatchingLimit = 20;
 
 class HomeCubit extends Cubit<HomeState> {
   HomeCubit(this._content, this._playback, this._playlists)
-      : super(const HomeState());
+    : super(const HomeState());
 
   final ContentRepository _content;
   final PlaybackRepository _playback;
@@ -77,29 +77,36 @@ class HomeCubit extends Cubit<HomeState> {
     _favoritesSub?.cancel();
 
     if (pid == null) {
-      emit(state.copyWith(
-        movies: const [],
-        series: const [],
-        continueWatching: const [],
-        favoriteKeys: const {},
-        loading: false,
-      ));
+      emit(
+        state.copyWith(
+          movies: const [],
+          series: const [],
+          continueWatching: const [],
+          favoriteKeys: const {},
+          loading: false,
+        ),
+      );
       return;
     }
 
-    _moviesSub = _content.movies(pid).listen(
-      (movies) => emit(state.copyWith(movies: movies, loading: false)),
-    );
-    _seriesSub = _content.series(pid).listen(
-      (series) => emit(state.copyWith(series: series)),
-    );
-    _continueSub =
-        _playback.progressForPlaylist(pid).listen(_onContinueWatching);
-    _favoritesSub = _content.favorites(pid).listen(
-      (favs) => emit(
-        state.copyWith(favoriteKeys: favs.map((f) => f.itemKey).toSet()),
-      ),
-    );
+    _moviesSub = _content
+        .movies(pid)
+        .listen(
+          (movies) => emit(state.copyWith(movies: movies, loading: false)),
+        );
+    _seriesSub = _content
+        .series(pid)
+        .listen((series) => emit(state.copyWith(series: series)));
+    _continueSub = _playback
+        .progressForPlaylist(pid)
+        .listen(_onContinueWatching);
+    _favoritesSub = _content
+        .favorites(pid)
+        .listen(
+          (favs) => emit(
+            state.copyWith(favoriteKeys: favs.map((f) => f.itemKey).toSet()),
+          ),
+        );
   }
 
   /// Bumped per progress emission so a slow [_continueFrom] for an older
@@ -124,18 +131,21 @@ class HomeCubit extends Cubit<HomeState> {
         continue;
       }
       if (!p.itemKey.startsWith('episode:')) continue;
-      final next =
-          await _content.episodeAfter(p.itemKey.substring('episode:'.length));
+      final next = await _content.episodeAfter(
+        p.itemKey.substring('episode:'.length),
+      );
       if (isClosed || generation != _continueGeneration) return null;
       if (next == null) continue;
-      cards.add(WatchProgress(
-        itemKey: 'episode:${next.id}',
-        playlistId: p.playlistId,
-        kind: p.kind,
-        positionSec: 0,
-        durationSec: 0,
-        updatedAt: p.updatedAt,
-      ));
+      cards.add(
+        WatchProgress(
+          itemKey: 'episode:${next.id}',
+          playlistId: p.playlistId,
+          kind: p.kind,
+          positionSec: 0,
+          durationSec: 0,
+          updatedAt: p.updatedAt,
+        ),
+      );
     }
     return cards;
   }
@@ -173,8 +183,12 @@ class HomeCubit extends Cubit<HomeState> {
   /// Keyed as `movie:<id>` with [MediaKind.movie].
   Future<void> toggleFavoriteMovie(VodItem movie) async {
     final pid = _playlistId ?? 'p1';
-    await _content.toggleFavorite('movie:${movie.id}', pid, MediaKind.movie,
-        title: movie.title);
+    await _content.toggleFavorite(
+      'movie:${movie.id}',
+      pid,
+      MediaKind.movie,
+      title: movie.title,
+    );
   }
 
   /// Toggles favorite for a series item.
@@ -182,8 +196,12 @@ class HomeCubit extends Cubit<HomeState> {
   /// used in the details screen.
   Future<void> toggleFavoriteSeries(Series series) async {
     final pid = _playlistId ?? 'p1';
-    await _content.toggleFavorite('episode:${series.id}', pid, MediaKind.episode,
-        title: series.title);
+    await _content.toggleFavorite(
+      'episode:${series.id}',
+      pid,
+      MediaKind.episode,
+      title: series.title,
+    );
   }
 
   @override

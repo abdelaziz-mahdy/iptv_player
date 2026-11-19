@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+
 import 'enums.dart';
 
 part 'watch_progress.freezed.dart';

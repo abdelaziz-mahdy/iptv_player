@@ -9,20 +9,26 @@ import 'package:iptv_player/l10n/generated/app_localizations.dart';
 void main() {
   testWidgets('shows title, badge, and is tappable', (tester) async {
     var tapped = false;
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      home: Scaffold(
-        body: PosterCard(
-          title: 'Dune',
-          subtitle: '2021',
-          badge: 'HD',
-          imageUrl: null,
-          onTap: () => tapped = true,
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: buildTheme(
+          palette: AppPalette.standard,
+          hyperlegible: false,
+          rtl: false,
+        ),
+        home: Scaffold(
+          body: PosterCard(
+            title: 'Dune',
+            subtitle: '2021',
+            badge: 'HD',
+            imageUrl: null,
+            onTap: () => tapped = true,
+          ),
         ),
       ),
-    ));
+    );
     expect(find.text('Dune'), findsOneWidget);
     expect(find.text('HD'), findsOneWidget);
     await tester.tap(find.text('Dune'));
@@ -30,73 +36,96 @@ void main() {
   });
 
   testWidgets('no heart icon when onToggleFavorite is null', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      home: const Scaffold(
-        body: PosterCard(
-          title: 'Dune',
-          onTap: null,
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: buildTheme(
+          palette: AppPalette.standard,
+          hyperlegible: false,
+          rtl: false,
         ),
+        home: const Scaffold(body: PosterCard(title: 'Dune', onTap: null)),
       ),
-    ));
+    );
     expect(find.byIcon(Icons.favorite), findsNothing);
     expect(find.byIcon(Icons.favorite_border), findsNothing);
   });
 
-  testWidgets('heart button is shown when onToggleFavorite is provided', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      home: Scaffold(
-        body: PosterCard(
-          title: 'Dune',
-          onTap: () {},
-          onToggleFavorite: () {},
+  testWidgets('heart button is shown when onToggleFavorite is provided', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: buildTheme(
+          palette: AppPalette.standard,
+          hyperlegible: false,
+          rtl: false,
+        ),
+        home: Scaffold(
+          body: PosterCard(
+            title: 'Dune',
+            onTap: () {},
+            onToggleFavorite: () {},
+          ),
         ),
       ),
-    ));
+    );
     // Should show unfilled heart (not favorite)
     expect(find.byIcon(Icons.favorite_border), findsOneWidget);
     expect(find.byIcon(Icons.favorite), findsNothing);
   });
 
   testWidgets('shows filled heart when isFavorite is true', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      home: Scaffold(
-        body: PosterCard(
-          title: 'Dune',
-          onTap: () {},
-          isFavorite: true,
-          onToggleFavorite: () {},
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: buildTheme(
+          palette: AppPalette.standard,
+          hyperlegible: false,
+          rtl: false,
+        ),
+        home: Scaffold(
+          body: PosterCard(
+            title: 'Dune',
+            onTap: () {},
+            isFavorite: true,
+            onToggleFavorite: () {},
+          ),
         ),
       ),
-    ));
+    );
     expect(find.byIcon(Icons.favorite), findsOneWidget);
     expect(find.byIcon(Icons.favorite_border), findsNothing);
   });
 
-  testWidgets('tapping heart invokes onToggleFavorite and NOT onTap', (tester) async {
+  testWidgets('tapping heart invokes onToggleFavorite and NOT onTap', (
+    tester,
+  ) async {
     var tapped = false;
     var heartTapped = false;
 
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      home: Scaffold(
-        body: PosterCard(
-          title: 'Dune',
-          onTap: () => tapped = true,
-          onToggleFavorite: () => heartTapped = true,
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: buildTheme(
+          palette: AppPalette.standard,
+          hyperlegible: false,
+          rtl: false,
+        ),
+        home: Scaffold(
+          body: PosterCard(
+            title: 'Dune',
+            onTap: () => tapped = true,
+            onToggleFavorite: () => heartTapped = true,
+          ),
         ),
       ),
-    ));
+    );
 
     // Tap the heart icon button
     await tester.tap(find.byIcon(Icons.favorite_border));
@@ -106,21 +135,29 @@ void main() {
     expect(tapped, isFalse);
   });
 
-  testWidgets('tapping card still fires onTap when heart is present', (tester) async {
+  testWidgets('tapping card still fires onTap when heart is present', (
+    tester,
+  ) async {
     var tapped = false;
 
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      home: Scaffold(
-        body: PosterCard(
-          title: 'Dune',
-          onTap: () => tapped = true,
-          onToggleFavorite: () {},
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: buildTheme(
+          palette: AppPalette.standard,
+          hyperlegible: false,
+          rtl: false,
+        ),
+        home: Scaffold(
+          body: PosterCard(
+            title: 'Dune',
+            onTap: () => tapped = true,
+            onToggleFavorite: () {},
+          ),
         ),
       ),
-    ));
+    );
 
     // Tap the card title (not the heart)
     await tester.tap(find.text('Dune'));
@@ -130,43 +167,53 @@ void main() {
   });
 
   testWidgets('heart has Semantics label for accessibility', (tester) async {
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      home: Scaffold(
-        body: PosterCard(
-          title: 'Dune',
-          onTap: () {},
-          onToggleFavorite: () {},
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: buildTheme(
+          palette: AppPalette.standard,
+          hyperlegible: false,
+          rtl: false,
+        ),
+        home: Scaffold(
+          body: PosterCard(
+            title: 'Dune',
+            onTap: () {},
+            onToggleFavorite: () {},
+          ),
         ),
       ),
-    ));
+    );
 
     // Verify a semantics label exists for the favorite button
-    expect(
-      find.bySemanticsLabel(RegExp(r'[Ff]av')),
-      findsAtLeastNWidgets(1),
-    );
+    expect(find.bySemanticsLabel(RegExp(r'[Ff]av')), findsAtLeastNWidgets(1));
   });
 
-  testWidgets('heart is NOT a focus stop (read-only during D-pad navigation)',
-      (tester) async {
+  testWidgets('heart is NOT a focus stop (read-only during D-pad navigation)', (
+    tester,
+  ) async {
     var heartActivated = false;
     var cardTapped = false;
 
-    await tester.pumpWidget(MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      theme: buildTheme(palette: AppPalette.standard, hyperlegible: false, rtl: false),
-      home: Scaffold(
-        body: PosterCard(
-          title: 'Dune',
-          onTap: () => cardTapped = true,
-          onToggleFavorite: () => heartActivated = true,
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: buildTheme(
+          palette: AppPalette.standard,
+          hyperlegible: false,
+          rtl: false,
+        ),
+        home: Scaffold(
+          body: PosterCard(
+            title: 'Dune',
+            onTap: () => cardTapped = true,
+            onToggleFavorite: () => heartActivated = true,
+          ),
         ),
       ),
-    ));
+    );
 
     // Only the card itself is a FocusableButton — the heart must not add a
     // second focus stop, so D-pad grid navigation skips over it.
@@ -186,44 +233,52 @@ void main() {
   });
 
   Widget wrapCard(PosterCard card) => MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        theme: buildTheme(
-            palette: AppPalette.standard, hyperlegible: false, rtl: false),
-        home: Scaffold(body: card),
-      );
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    theme: buildTheme(
+      palette: AppPalette.standard,
+      hyperlegible: false,
+      rtl: false,
+    ),
+    home: Scaffold(body: card),
+  );
 
-  testWidgets('in-progress poster shows a bar and the time left',
-      (tester) async {
-    await tester.pumpWidget(wrapCard(const PosterCard(
-      title: 'Dune',
-      progress: 0.62,
-      remainingSec: 38 * 60,
-    )));
+  testWidgets('in-progress poster shows a bar and the time left', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrapCard(
+        const PosterCard(title: 'Dune', progress: 0.62, remainingSec: 38 * 60),
+      ),
+    );
     expect(find.byKey(const Key('poster-progress')), findsOneWidget);
     expect(find.text('38m left'), findsOneWidget);
     expect(find.byKey(const Key('poster-watched')), findsNothing);
   });
 
-  testWidgets('time left over an hour reads hours and minutes',
-      (tester) async {
-    await tester.pumpWidget(wrapCard(const PosterCard(
-      title: 'Dune',
-      progress: 0.15,
-      remainingSec: 92 * 60,
-    )));
+  testWidgets('time left over an hour reads hours and minutes', (tester) async {
+    await tester.pumpWidget(
+      wrapCard(
+        const PosterCard(title: 'Dune', progress: 0.15, remainingSec: 92 * 60),
+      ),
+    );
     expect(find.text('1h 32m left'), findsOneWidget);
   });
 
-  testWidgets('watched poster shows a check and "Watched", no bar',
-      (tester) async {
-    await tester.pumpWidget(wrapCard(const PosterCard(
-      title: 'Dune',
-      subtitle: '2021',
-      progress: 0.98,
-      remainingSec: 60,
-      watched: true,
-    )));
+  testWidgets('watched poster shows a check and "Watched", no bar', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrapCard(
+        const PosterCard(
+          title: 'Dune',
+          subtitle: '2021',
+          progress: 0.98,
+          remainingSec: 60,
+          watched: true,
+        ),
+      ),
+    );
     expect(find.byKey(const Key('poster-watched')), findsOneWidget);
     expect(find.text('Watched'), findsOneWidget);
     expect(find.byKey(const Key('poster-progress')), findsNothing);

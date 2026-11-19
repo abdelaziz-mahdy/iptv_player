@@ -6,7 +6,11 @@ import 'package:iptv_player/core/a11y/caption_style.dart';
 void main() {
   test('maps settings to caption style scaled by text scale', () {
     const s = AccessibilitySettings(
-        captionSize: 32, captionBgOpacity: 0.85, captionColor: 0xFFFFE23D, textScale: 1.25);
+      captionSize: 32,
+      captionBgOpacity: 0.85,
+      captionColor: 0xFFFFE23D,
+      textScale: 1.25,
+    );
     final cs = CaptionStyle.from(s);
 
     expect(cs.fontSize, 40); // 32 * 1.25

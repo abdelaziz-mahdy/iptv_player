@@ -72,6 +72,8 @@ Future<void> runTeardownRepro({
     log('round $round: main isolate held ${maxLag}ms after dispose');
   }
   held.sort();
-  log('done rounds=$rounds players=$players decoder=$decoder gap=${gapMs}ms '
-      'held_ms_sorted=$held');
+  log(
+    'done rounds=$rounds players=$players decoder=$decoder gap=${gapMs}ms '
+    'held_ms_sorted=$held',
+  );
 }

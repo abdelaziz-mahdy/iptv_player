@@ -13,10 +13,7 @@ import '../grid/cubit/grid_cubit.dart' show GridEntry;
 import 'cubit/favorites_cubit.dart';
 
 class FavoritesScreen extends StatelessWidget {
-  const FavoritesScreen({
-    super.key,
-    required this.onOpen,
-  });
+  const FavoritesScreen({super.key, required this.onOpen});
 
   final void Function(GridEntry entry) onOpen;
 
@@ -74,29 +71,26 @@ class _FavoritesView extends StatelessWidget {
                   sliver: SliverGrid(
                     gridDelegate:
                         const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 160,
-                      mainAxisExtent: 260,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 16,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final entry = state.entries[index];
-                        final watch = state.progressFor(entry);
-                        return PosterCard(
-                          progress: watch?.fraction,
-                          remainingSec: watch?.remainingSec,
-                          watched: watch?.isWatched ?? false,
-                          autofocus: index == 0,
-                          title: entry.title,
-                          subtitle: entry.subtitle,
-                          imageUrl: entry.posterUrl,
-                          badge: entry.badge,
-                          onTap: () => onOpen(entry),
-                        );
-                      },
-                      childCount: state.entries.length,
-                    ),
+                          maxCrossAxisExtent: 160,
+                          mainAxisExtent: 260,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 16,
+                        ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final entry = state.entries[index];
+                      final watch = state.progressFor(entry);
+                      return PosterCard(
+                        progress: watch?.fraction,
+                        remainingSec: watch?.remainingSec,
+                        watched: watch?.isWatched ?? false,
+                        autofocus: index == 0,
+                        title: entry.title,
+                        subtitle: entry.subtitle,
+                        imageUrl: entry.posterUrl,
+                        badge: entry.badge,
+                        onTap: () => onOpen(entry),
+                      );
+                    }, childCount: state.entries.length),
                   ),
                 ),
             ],

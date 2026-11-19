@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'core/a11y/accessibility_cubit.dart';
 import 'core/a11y/accessibility_settings.dart';
 import 'core/i18n/locale_cubit.dart';
@@ -30,12 +31,18 @@ class NoorApp extends StatelessWidget {
           return BlocBuilder<AccessibilityCubit, AccessibilitySettings>(
             builder: (context, a11y) {
               final rtl = locale.languageCode == 'ar';
-              final palette = a11y.highContrast ? AppPalette.highContrast : AppPalette.standard;
+              final palette = a11y.highContrast
+                  ? AppPalette.highContrast
+                  : AppPalette.standard;
               return MaterialApp.router(
                 debugShowCheckedModeBanner: false,
                 routerConfig: router,
                 locale: locale,
-                theme: buildTheme(palette: palette, hyperlegible: a11y.hyperlegibleFont, rtl: rtl),
+                theme: buildTheme(
+                  palette: palette,
+                  hyperlegible: a11y.hyperlegibleFont,
+                  rtl: rtl,
+                ),
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
                 supportedLocales: AppLocalizations.supportedLocales,
                 builder: (context, child) {
@@ -46,7 +53,9 @@ class NoorApp extends StatelessWidget {
                       disableAnimations: a11y.reduceMotion,
                     ),
                     child: Directionality(
-                      textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
+                      textDirection: rtl
+                          ? TextDirection.rtl
+                          : TextDirection.ltr,
                       child: child!,
                     ),
                   );

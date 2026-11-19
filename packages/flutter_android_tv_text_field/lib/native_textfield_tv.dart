@@ -338,7 +338,8 @@ class _DpadNativeTextFieldState extends State<AndroidTVTextField> {
               ),
             );
           }),
-          Positioned(right: 10, child: widget.postFixWidget ?? const SizedBox()),
+          Positioned(
+              right: 10, child: widget.postFixWidget ?? const SizedBox()),
         ],
       ),
     );

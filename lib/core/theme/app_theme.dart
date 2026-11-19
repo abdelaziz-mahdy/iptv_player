@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import 'app_palette.dart';
 import 'app_typography.dart';
 
@@ -12,23 +13,29 @@ ThemeData buildTheme({
   required bool hyperlegible,
   required bool rtl,
 }) {
-  final scheme = ColorScheme.fromSeed(
-    seedColor: palette.accent,
-    brightness: Brightness.dark,
-  ).copyWith(
-    primary: palette.accent,
-    secondary: palette.accent2,
-    surface: palette.surface,
-    error: palette.live,
-    onSurface: palette.fg,
-  );
+  final scheme =
+      ColorScheme.fromSeed(
+        seedColor: palette.accent,
+        brightness: Brightness.dark,
+      ).copyWith(
+        primary: palette.accent,
+        secondary: palette.accent2,
+        surface: palette.surface,
+        error: palette.live,
+        onSurface: palette.fg,
+      );
   return ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
     colorScheme: scheme,
     scaffoldBackgroundColor: palette.bg,
     canvasColor: palette.bg,
-    textTheme: buildTextTheme(fg: palette.fg, dim: palette.dim, hyperlegible: hyperlegible, rtl: rtl),
+    textTheme: buildTextTheme(
+      fg: palette.fg,
+      dim: palette.dim,
+      hyperlegible: hyperlegible,
+      rtl: rtl,
+    ),
     dividerColor: palette.border,
     extensions: [PaletteExt(palette)],
   );
@@ -41,7 +48,8 @@ class PaletteExt extends ThemeExtension<PaletteExt> {
   const PaletteExt(this.palette);
 
   @override
-  PaletteExt copyWith({AppPalette? palette}) => PaletteExt(palette ?? this.palette);
+  PaletteExt copyWith({AppPalette? palette}) =>
+      PaletteExt(palette ?? this.palette);
 
   @override
   PaletteExt lerp(ThemeExtension<PaletteExt>? other, double t) => this;

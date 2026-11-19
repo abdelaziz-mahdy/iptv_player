@@ -33,9 +33,9 @@ void main() {
 
   tearDown(() async => sl.reset());
 
-  testWidgets(
-      'PlaylistsScreen has at least one autofocused FocusableButton',
-      (tester) async {
+  testWidgets('PlaylistsScreen has at least one autofocused FocusableButton', (
+    tester,
+  ) async {
     await tester.pumpWidget(_buildTestApp());
     await tester.pumpAndSettle();
 

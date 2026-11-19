@@ -32,19 +32,15 @@ class ChannelListScreen extends StatelessWidget {
         backgroundColor: p.bg2,
         title: Text(
           groupName,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: p.fg,
-                fontWeight: FontWeight.w700,
-              ),
+          style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(color: p.fg, fontWeight: FontWeight.w700),
         ),
       ),
       body: channels.isEmpty
           ? Center(
               child: Text(
                 AppLocalizations.of(context)!.noChannels,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge
+                style: Theme.of(context).textTheme.bodyLarge
                     ?.copyWith(color: p.dim),
               ),
             )
@@ -84,9 +80,7 @@ class _ChannelRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: p.border),
-          ),
+          border: Border(bottom: BorderSide(color: p.border)),
         ),
         child: Row(
           children: [
@@ -118,23 +112,24 @@ class _ChannelRow extends StatelessWidget {
                 children: [
                   Text(
                     channel.name,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: p.fg,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: p.fg, fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     channel.number,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: p.dim,
-                        ),
+                    style: Theme.of(context).textTheme.labelSmall
+                        ?.copyWith(color: p.dim),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.play_circle_outline_rounded, color: p.accent, size: IconSize.md),
+            Icon(
+              Icons.play_circle_outline_rounded,
+              color: p.accent,
+              size: IconSize.md,
+            ),
           ],
         ),
       ),

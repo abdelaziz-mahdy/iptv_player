@@ -15,18 +15,28 @@ import 'teardown_repro.dart';
 /// BENCH_TEARDOWN_GAP_MS, then disposes them. BENCH_URL may list several
 /// comma-separated clips.
 const kMode = String.fromEnvironment('BENCH_MODE');
-const kTeardownPlayers =
-    int.fromEnvironment('BENCH_TEARDOWN_PLAYERS', defaultValue: 4);
-const kTeardownRounds =
-    int.fromEnvironment('BENCH_TEARDOWN_ROUNDS', defaultValue: 12);
-const kTeardownGapMs =
-    int.fromEnvironment('BENCH_TEARDOWN_GAP_MS', defaultValue: 3000);
-const kTeardownDecoder =
-    String.fromEnvironment('BENCH_TEARDOWN_DECODER', defaultValue: 'AMediaCodec');
+const kTeardownPlayers = int.fromEnvironment(
+  'BENCH_TEARDOWN_PLAYERS',
+  defaultValue: 4,
+);
+const kTeardownRounds = int.fromEnvironment(
+  'BENCH_TEARDOWN_ROUNDS',
+  defaultValue: 12,
+);
+const kTeardownGapMs = int.fromEnvironment(
+  'BENCH_TEARDOWN_GAP_MS',
+  defaultValue: 3000,
+);
+const kTeardownDecoder = String.fromEnvironment(
+  'BENCH_TEARDOWN_DECODER',
+  defaultValue: 'AMediaCodec',
+);
 
 /// Which backend renders the clip: 'media_kit' (libmpv) or 'fvp' (MDK).
-const kBackend =
-    String.fromEnvironment('BENCH_BACKEND', defaultValue: 'media_kit');
+const kBackend = String.fromEnvironment(
+  'BENCH_BACKEND',
+  defaultValue: 'media_kit',
+);
 
 /// Clip URL; playback starts automatically on launch. A `bench_url` launch
 /// intent extra (exported by MainActivity as BENCH_URL_OVERRIDE) wins, so one
@@ -42,8 +52,10 @@ final String kUrl = () {
 
 /// Human label for this run, shown in the on-screen HUD and in every
 /// [BENCH_STATS] log line, so captures are self-documenting.
-const kVariant =
-    String.fromEnvironment('BENCH_VARIANT', defaultValue: 'unnamed');
+const kVariant = String.fromEnvironment(
+  'BENCH_VARIANT',
+  defaultValue: 'unnamed',
+);
 
 /// fvp: use MediaCodec in copy-back mode (CPU copy like mpv's
 /// mediacodec-copy) instead of the default zero-copy AImageReader path.
@@ -67,8 +79,10 @@ const kSeekSec = int.fromEnvironment('BENCH_SEEK');
 /// MainActivity from the `direct_surface` launch intent extra) the platform
 /// view additionally bypasses MDK's GL renderer: MediaCodec outputs straight
 /// to the SurfaceView (wang-bin's suggestion on #379).
-const kBenchView =
-    String.fromEnvironment('BENCH_VIEW', defaultValue: 'texture');
+const kBenchView = String.fromEnvironment(
+  'BENCH_VIEW',
+  defaultValue: 'texture',
+);
 
 /// fvp: `tunnel` — MediaCodec decodes straight into the platform view's
 /// SurfaceView, no GL renderer. Upstream carries the direct-surface path under
@@ -106,10 +120,12 @@ final bool kDirectSurface = () {
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // ignore: avoid_print
-  print('[BENCH_META] variant=$kVariant backend=$kBackend url=$kUrl '
-      'view=$kBenchView direct=$kDirectSurface tunnel=$kFvpTunnel '
-      'fvpCopy=$kFvpDecoderCopy fvpAudio=${kFvpAudioBackend.isEmpty ? '-' : kFvpAudioBackend} '
-      'seek=${kSeekSec}s');
+  print(
+    '[BENCH_META] variant=$kVariant backend=$kBackend url=$kUrl '
+    'view=$kBenchView direct=$kDirectSurface tunnel=$kFvpTunnel '
+    'fvpCopy=$kFvpDecoderCopy fvpAudio=${kFvpAudioBackend.isEmpty ? '-' : kFvpAudioBackend} '
+    'seek=${kSeekSec}s',
+  );
   if (kBackend == 'fvp') {
     // MDK logs arrive via package:logging; print() to avoid debugPrint throttling.
     Logger.root.level = Level.ALL;
@@ -117,27 +133,31 @@ void main() {
       // ignore: avoid_print
       print('[mdk] [${r.loggerName}] ${r.level.name}: ${r.message}');
     });
-    fvp.registerWith(options: {
-      'global': {'logLevel': 'all'},
-      if (kFvpTunnel) 'tunnel': true,
-      if (kFvpDecoderCopy) 'video.decoders': ['AMediaCodec:copy=1', 'FFmpeg'],
-      // MDK "audio.renderer" player property == setAudioBackends; stock fvp
-      // forwards every options['player'] entry via setProperty before prepare.
-      if (kFvpAudioBackend.isNotEmpty)
-        'player': {'audio.renderer': kFvpAudioBackend},
-    });
+    fvp.registerWith(
+      options: {
+        'global': {'logLevel': 'all'},
+        if (kFvpTunnel) 'tunnel': true,
+        if (kFvpDecoderCopy) 'video.decoders': ['AMediaCodec:copy=1', 'FFmpeg'],
+        // MDK "audio.renderer" player property == setAudioBackends; stock fvp
+        // forwards every options['player'] entry via setProperty before prepare.
+        if (kFvpAudioBackend.isNotEmpty)
+          'player': {'audio.renderer': kFvpAudioBackend},
+      },
+    );
   } else {
     MediaKit.ensureInitialized();
   }
   if (kMode == 'teardown') {
     runApp(const ColoredBox(color: Colors.black));
-    unawaited(runTeardownRepro(
-      urls: kUrl.split(','),
-      rounds: kTeardownRounds,
-      players: kTeardownPlayers,
-      gapMs: kTeardownGapMs,
-      decoder: kTeardownDecoder,
-    ));
+    unawaited(
+      runTeardownRepro(
+        urls: kUrl.split(','),
+        rounds: kTeardownRounds,
+        players: kTeardownPlayers,
+        gapMs: kTeardownGapMs,
+        decoder: kTeardownDecoder,
+      ),
+    );
     return;
   }
   runApp(const BenchApp());
@@ -196,8 +216,10 @@ class _BenchScreenState extends State<BenchScreen> {
     } else {
       _initMediaKit();
     }
-    _statsTimer =
-        Timer.periodic(const Duration(seconds: 5), (_) => _logStats());
+    _statsTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _logStats(),
+    );
   }
 
   Future<void> _initMediaKit() async {
@@ -277,8 +299,10 @@ class _BenchScreenState extends State<BenchScreen> {
       final disposeMs = sw.elapsedMilliseconds;
       await sleep(1000);
       // ignore: avoid_print
-      print('[BENCH_CYCLE] n=$n closed dispose=${disposeMs}ms '
-          'main_held_max=${maxLag}ms');
+      print(
+        '[BENCH_CYCLE] n=$n closed dispose=${disposeMs}ms '
+        'main_held_max=${maxLag}ms',
+      );
     }
 
     VideoPlayerController? previous;
@@ -341,20 +365,22 @@ class _BenchScreenState extends State<BenchScreen> {
         final bufEnd = v.buffered.isEmpty ? v.position : v.buffered.last.end;
         final ahead = (bufEnd - v.position).inMilliseconds;
         // ignore: avoid_print
-        print('[BENCH_STATS] variant=$kVariant backend=fvp '
-            'pos=${v.position.inMilliseconds}ms '
-            'size=${v.size.width.toInt()}x${v.size.height.toInt()} '
-            'buffered-ahead=${ahead}ms buffering=${v.isBuffering} '
-            'bitrate=${info?.bitRate} video=${video?.codec.codec} '
-            'fps=${video?.codec.frameRate} audio=${audio?.codec.codec}');
+        print(
+          '[BENCH_STATS] variant=$kVariant backend=fvp '
+          'pos=${v.position.inMilliseconds}ms '
+          'size=${v.size.width.toInt()}x${v.size.height.toInt()} '
+          'buffered-ahead=${ahead}ms buffering=${v.isBuffering} '
+          'bitrate=${info?.bitRate} video=${video?.codec.codec} '
+          'fps=${video?.codec.frameRate} audio=${audio?.codec.codec}',
+        );
         final advancing = v.position > _lastPos;
         _lastPos = v.position;
         _updateHud(
           v.isBuffering
               ? 'BUFFERING'
               : advancing
-                  ? 'PLAYING'
-                  : 'STALLED',
+              ? 'PLAYING'
+              : 'STALLED',
           '${_fmt(v.position)}  ${v.size.width.toInt()}x${v.size.height.toInt()}  '
           'ahead ${(ahead / 1000).toStringAsFixed(1)}s',
         );
@@ -387,19 +413,21 @@ class _BenchScreenState extends State<BenchScreen> {
         }
         final s = p.state;
         // ignore: avoid_print
-        print('[BENCH_STATS] variant=$kVariant backend=media_kit '
-            'pos=${s.position.inMilliseconds}ms size=${s.width}x${s.height} '
-            'buffering=${s.buffering} framedrops=$drops vo-delayed=$voDelayed '
-            'hwdec=$hwdec est-vf-fps=$vfFps cache-dur=${cacheDur}s '
-            'cache-speed=$cacheSpeed');
+        print(
+          '[BENCH_STATS] variant=$kVariant backend=media_kit '
+          'pos=${s.position.inMilliseconds}ms size=${s.width}x${s.height} '
+          'buffering=${s.buffering} framedrops=$drops vo-delayed=$voDelayed '
+          'hwdec=$hwdec est-vf-fps=$vfFps cache-dur=${cacheDur}s '
+          'cache-speed=$cacheSpeed',
+        );
         final advancing = s.position > _lastPos;
         _lastPos = s.position;
         _updateHud(
           s.buffering
               ? 'BUFFERING'
               : advancing
-                  ? 'PLAYING'
-                  : 'STALLED',
+              ? 'PLAYING'
+              : 'STALLED',
           '${_fmt(s.position)}  ${s.width ?? 0}x${s.height ?? 0}  '
           'hwdec $hwdec  drops $drops  cache ${double.tryParse(cacheDur)?.toStringAsFixed(1) ?? cacheDur}s',
         );
@@ -437,8 +465,10 @@ class _BenchScreenState extends State<BenchScreen> {
 
   Widget _video() {
     if (_error.isNotEmpty) {
-      return Text(_error,
-          style: const TextStyle(color: Colors.red, fontSize: 24));
+      return Text(
+        _error,
+        style: const TextStyle(color: Colors.red, fontSize: 24),
+      );
     }
     if (kBackend == 'fvp') {
       final c = _fvpController;
@@ -446,11 +476,17 @@ class _BenchScreenState extends State<BenchScreen> {
         return const CircularProgressIndicator();
       }
       return AspectRatio(
-          aspectRatio: c.value.aspectRatio, child: VideoPlayer(c));
+        aspectRatio: c.value.aspectRatio,
+        child: VideoPlayer(c),
+      );
     }
     final mk = _mkController;
     if (mk == null) return const CircularProgressIndicator();
-    return Video(controller: mk, controls: NoVideoControls, fit: BoxFit.contain);
+    return Video(
+      controller: mk,
+      controls: NoVideoControls,
+      fit: BoxFit.contain,
+    );
   }
 
   @override
@@ -464,8 +500,7 @@ class _BenchScreenState extends State<BenchScreen> {
             left: 24,
             top: 24,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.7),
                 border: Border(

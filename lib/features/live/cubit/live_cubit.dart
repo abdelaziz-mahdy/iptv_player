@@ -16,7 +16,7 @@ const kOtherGroupId = 'other';
 
 class LiveCubit extends Cubit<LiveState> {
   LiveCubit(this._content, this._playlists, {this._playback})
-      : super(const LiveState());
+    : super(const LiveState());
 
   final ContentRepository _content;
   final PlaylistRepository _playlists;
@@ -79,11 +79,13 @@ class LiveCubit extends Cubit<LiveState> {
       _allChannels = [];
       _categoryNames = {};
       _categoryOrder = const [];
-      emit(state.copyWith(
-        loading: false,
-        groups: const [],
-        channelsInGroup: const [],
-      ));
+      emit(
+        state.copyWith(
+          loading: false,
+          groups: const [],
+          channelsInGroup: const [],
+        ),
+      );
       return;
     }
 
@@ -93,24 +95,25 @@ class LiveCubit extends Cubit<LiveState> {
     _categoryOrder = [for (final c in cats) c.id];
 
     // Recently-viewed (optional dependency).
-    _recentSub = _playback
-        ?.recentlyViewed(pid, prefix: 'channel:')
-        .listen((keys) {
+    _recentSub = _playback?.recentlyViewed(pid, prefix: 'channel:').listen((
+      keys,
+    ) {
       _recentKeys = keys;
       _recompute();
     });
 
-    _recentGroupSub =
-        _content.recentCategoryIds(pid, MediaKind.channel).listen((ids) {
-      _recentGroupIds = ids;
-      if (!_restoredSelection) {
-        _restoredSelection = true;
-        if (ids.isNotEmpty && state.selectedGroupId == null) {
-          _selectedGroupId = ids.first;
+    _recentGroupSub = _content.recentCategoryIds(pid, MediaKind.channel).listen(
+      (ids) {
+        _recentGroupIds = ids;
+        if (!_restoredSelection) {
+          _restoredSelection = true;
+          if (ids.isNotEmpty && state.selectedGroupId == null) {
+            _selectedGroupId = ids.first;
+          }
         }
-      }
-      _recompute();
-    });
+        _recompute();
+      },
+    );
 
     _channelsSub = _content.channels(pid).listen((channels) {
       _allChannels = channels;
@@ -121,10 +124,12 @@ class LiveCubit extends Cubit<LiveState> {
   /// Changes the active group and filters [channelsInGroup] accordingly.
   void selectGroup(String id) {
     _selectedGroupId = id;
-    emit(state.copyWith(
-      selectedGroupId: id,
-      channelsInGroup: _filterChannels(_allChannels, id),
-    ));
+    emit(
+      state.copyWith(
+        selectedGroupId: id,
+        channelsInGroup: _filterChannels(_allChannels, id),
+      ),
+    );
     final pid = _playlistId;
     if (pid != null && !_isSyntheticGroup(id)) {
       _content.recordCategoryUse(pid, MediaKind.channel, id);
@@ -140,14 +145,16 @@ class LiveCubit extends Cubit<LiveState> {
     // drops a category.
     if (!built.groups.any((g) => g.id == selectedId)) selectedId = kAllGroupId;
     _selectedGroupId = selectedId;
-    emit(state.copyWith(
-      loading: false,
-      groups: built.groups,
-      pinnedGroupCount: built.pinned,
-      recentGroupCount: built.recent,
-      selectedGroupId: selectedId,
-      channelsInGroup: _filterChannels(_allChannels, selectedId),
-    ));
+    emit(
+      state.copyWith(
+        loading: false,
+        groups: built.groups,
+        pinnedGroupCount: built.pinned,
+        recentGroupCount: built.recent,
+        selectedGroupId: selectedId,
+        channelsInGroup: _filterChannels(_allChannels, selectedId),
+      ),
+    );
   }
 
   static bool _isSyntheticGroup(String id) =>
@@ -183,7 +190,8 @@ class LiveCubit extends Cubit<LiveState> {
   /// when at least one named category exists; otherwise they all go into
   /// "All" only).
   ({List<ChannelGroup> groups, int pinned, int recent}) _buildGroups(
-      List<Channel> channels) {
+    List<Channel> channels,
+  ) {
     // Build per-category counts.
     final counts = <String, int>{}; // categoryId → count
     int uncategorised = 0;
@@ -200,16 +208,12 @@ class LiveCubit extends Cubit<LiveState> {
     final recentCount = _recentChannels().length;
     final groups = <ChannelGroup>[
       // Synthetic groups carry no display name — the UI localizes them by id.
-      if (recentCount > 0)
-        (id: kRecentGroupId, name: '', count: recentCount),
+      if (recentCount > 0) (id: kRecentGroupId, name: '', count: recentCount),
       (id: kAllGroupId, name: '', count: channels.length),
     ];
 
-    ChannelGroup group(String id) => (
-          id: id,
-          name: _categoryNames[id] ?? id,
-          count: counts[id] ?? 0,
-        );
+    ChannelGroup group(String id) =>
+        (id: id, name: _categoryNames[id] ?? id, count: counts[id] ?? 0);
 
     final pinned = <String>{};
     for (final id in _recentGroupIds) {
@@ -244,14 +248,14 @@ class LiveCubit extends Cubit<LiveState> {
     if (groupId == kAllGroupId) return List.unmodifiable(channels);
     if (groupId == kOtherGroupId) {
       return channels
-          .where((ch) =>
-              ch.categoryId == null ||
-              !_categoryNames.containsKey(ch.categoryId))
+          .where(
+            (ch) =>
+                ch.categoryId == null ||
+                !_categoryNames.containsKey(ch.categoryId),
+          )
           .toList();
     }
-    return channels
-        .where((ch) => ch.categoryId == groupId)
-        .toList();
+    return channels.where((ch) => ch.categoryId == groupId).toList();
   }
 
   @override
