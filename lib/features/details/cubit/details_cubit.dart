@@ -165,7 +165,7 @@ class DetailsCubit extends Cubit<DetailsState> {
       final eps = _episodesBySeason[state.seasons[s].id] ?? const [];
       for (var e = 0; e < eps.length; e++) {
         final p = state.progressByKey['episode:${eps[e].id}'];
-        if (p == null || (!p.isWatched && p.positionSec <= 0)) continue;
+        if (p == null || !p.isStarted) continue;
         // Ties go to the later episode.
         if (newest == null || !p.updatedAt.isBefore(newest.updatedAt)) {
           newest = p;

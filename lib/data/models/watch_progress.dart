@@ -27,6 +27,11 @@ abstract class WatchProgress with _$WatchProgress {
 /// were left at 92-94% and movies have 5-8 minutes of credits.
 const double kWatchedFraction = 0.90;
 
+/// Seconds an unfinished item must have played to count as started. Shorter
+/// openings (a peek, a stream that failed) leave Play and Continue Watching
+/// where they were.
+const int kStartedSec = 60;
+
 extension WatchProgressX on WatchProgress {
   /// How far through the item this progress is (0..1), or null when the
   /// duration is unknown (stream never reported one).
@@ -47,4 +52,7 @@ extension WatchProgressX on WatchProgress {
   /// Whether the item counts as finished. Finished items replay from the
   /// start and leave Continue Watching (the row is kept for indicators).
   bool get isWatched => (fraction ?? 0) >= kWatchedFraction;
+
+  /// Whether this row should drive Play and Continue Watching.
+  bool get isStarted => isWatched || positionSec >= kStartedSec;
 }

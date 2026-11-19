@@ -178,6 +178,27 @@ void main() {
         expect(target.isResume, isFalse);
       });
 
+      test('openings under a minute do not move Play', () async {
+        // TV DB, اللعبة part 5: E27 finished, then E28-E30 opened for 1-3 s.
+        await playback.saveProgress(
+          _progress('s3-1-e1', 2700, at: DateTime.utc(2026, 1, 1)),
+        );
+        await playback.saveProgress(
+          _progress('s3-1-e2', 3, at: DateTime.utc(2026, 1, 2)),
+        );
+        await playback.saveProgress(
+          _progress('s3-2-e1', 59, at: DateTime.utc(2026, 1, 3)),
+        );
+
+        final cubit = makeCubit();
+        await cubit.loadSeries(_series('s3'));
+        await Future<void>.delayed(Duration.zero);
+
+        final target = cubit.playTarget()!;
+        expect(target.episodes[target.episodeIndex].title, 'S1E2');
+        expect(target.isResume, isFalse);
+      });
+
       test('finishing the last episode starts the series over', () async {
         await playback.saveProgress(
           _progress('s3-1-e2', 900, at: DateTime.utc(2026, 1, 1)),

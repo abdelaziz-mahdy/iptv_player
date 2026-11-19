@@ -159,6 +159,21 @@ void main() {
       },
     );
 
+    test(
+      'a brief opening of the next episode keeps it as the next one',
+      () async {
+        final cubit = await homeWith([
+          ep('p1:series:s4:season:1:ep:41', 2700, 1),
+          ep('p1:series:s4:season:1:ep:42', 3, 2),
+        ]);
+        expect(cubit.state.continueWatching.map((p) => p.itemKey), [
+          'episode:p1:series:s4:season:1:ep:42',
+        ]);
+        expect(cubit.state.continueWatching.single.positionSec, 0);
+        await cubit.close();
+      },
+    );
+
     test('a series whose last episode was finished leaves the row', () async {
       final cubit = await homeWith([
         ep('p1:series:s4:season:1:ep:41', 600, 1),
@@ -229,8 +244,8 @@ void main() {
           itemKey: 'movie:m1',
           playlistId: 'p1',
           kind: MediaKind.movie,
-          positionSec: 42,
-          durationSec: 120,
+          positionSec: 420,
+          durationSec: 1200,
           updatedAt: DateTime.utc(2026),
         ),
       );

@@ -113,16 +113,17 @@ class HomeCubit extends Cubit<HomeState> {
   /// emission cannot overwrite a newer one.
   int _continueGeneration = 0;
 
-  /// Builds Continue Watching from every progress row: one card per movie or
-  /// series, decided by its newest row. Unfinished: that row. A finished
+  /// Builds Continue Watching from every started progress row: one card per
+  /// movie or series, decided by its newest row. Unfinished: that row. A finished
   /// episode: the next episode, or nothing after the series' last one. A
   /// finished movie: nothing.
   Future<List<WatchProgress>?> _continueFrom(
     List<WatchProgress> rows,
     int generation,
   ) async {
-    final newestFirst = rows.where((p) => p.kind != MediaKind.channel).toList()
-      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final newestFirst =
+        rows.where((p) => p.kind != MediaKind.channel && p.isStarted).toList()
+          ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     final cards = <WatchProgress>[];
     for (final p in collapseContinueWatching(newestFirst)) {
       if (cards.length >= kContinueWatchingLimit) break;

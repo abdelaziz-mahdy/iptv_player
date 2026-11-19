@@ -25,6 +25,15 @@ void main() {
     });
   });
 
+  group('WatchProgress.isStarted', () {
+    test('needs a minute of playback unless finished', () {
+      expect(_p(pos: 3, dur: 2169).isStarted, isFalse);
+      expect(_p(pos: 59, dur: 2169).isStarted, isFalse);
+      expect(_p(pos: 60, dur: 2169).isStarted, isTrue);
+      expect(_p(pos: 55, dur: 60).isStarted, isTrue, reason: 'watched');
+    });
+  });
+
   group('WatchProgress.isWatched', () {
     test('true at or above 90%', () {
       expect(_p(pos: 108, dur: 120).isWatched, isTrue);
