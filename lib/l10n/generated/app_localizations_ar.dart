@@ -259,6 +259,9 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get watchAgain => 'إعادة المشاهدة';
+
+  @override
   String resumeSeasonEpisode(int season, int episode) {
     return 'متابعة م$seasonح$episode';
   }

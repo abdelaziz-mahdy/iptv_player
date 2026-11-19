@@ -140,8 +140,13 @@ class VideoPlayerControllerAdapter implements PlayerController {
     );
     await _controller!.initialize();
     _initialized = true;
+    _pendingStart = null;
     if (startAt != null && startAt > Duration.zero) {
-      await _controller!.seekTo(startAt);
+      if (Platform.isAndroid) {
+        _pendingStart = startAt;
+      } else {
+        await _controller!.seekTo(startAt);
+      }
     }
 
     _controller!.addListener(_onControllerUpdate);
@@ -165,15 +170,57 @@ class VideoPlayerControllerAdapter implements PlayerController {
     if (ctrl == null) return;
     _statusCtrl.add(PlayerStatus(
       isPlaying: ctrl.value.isPlaying,
-      position: ctrl.value.position,
+      position: _pendingStart ?? ctrl.value.position,
       duration: ctrl.value.duration,
       buffering: ctrl.value.isBuffering,
     ));
   }
 
+  /// Android resume position, applied by [play] once playback is rolling.
+  ///
+  /// On the TV, seeking while the stream opens left the hardware decoder
+  /// black 4 times in 5 (TV logs 2026-11-17/18, tunnel off): the platform
+  /// view's surface attaches mid-seek. Seeks during playback work, so play
+  /// from 0 muted and seek once the first second has played.
+  Duration? _pendingStart;
+
   @override
   Future<void> play() async {
     await _controller?.play();
+    final target = _pendingStart;
+    if (target != null) unawaited(_resumeOnceRolling(target));
+  }
+
+  Future<void> _resumeOnceRolling(Duration target) async {
+    final c = _controller;
+    if (c == null) return;
+    await c.setVolume(0);
+    final rolling = Completer<void>();
+    void check() {
+      final v = c.value;
+      // A full second in: the surface is attached and frames are flowing.
+      if (v.isPlaying &&
+          !v.isBuffering &&
+          v.position >= const Duration(seconds: 1)) {
+        if (!rolling.isCompleted) rolling.complete();
+      }
+    }
+
+    c.addListener(check);
+    check();
+    final opened = DateTime.now();
+    await rolling.future
+        .timeout(const Duration(seconds: 15), onTimeout: () {});
+    c.removeListener(check);
+    if (_controller != c) return;
+    if (_pendingStart == target) {
+      appLog.info('resume seek to ${target.inSeconds}s after '
+          '${DateTime.now().difference(opened).inMilliseconds} ms '
+          '(at ${c.value.position.inMilliseconds} ms)');
+      await c.seekTo(target);
+      _pendingStart = null;
+    }
+    if (_controller == c) await c.setVolume(_volume);
   }
 
   @override
@@ -183,6 +230,7 @@ class VideoPlayerControllerAdapter implements PlayerController {
 
   @override
   Future<void> seek(Duration position) async {
+    _pendingStart = null;
     await _controller?.seekTo(position);
   }
 
@@ -199,7 +247,8 @@ class VideoPlayerControllerAdapter implements PlayerController {
   Stream<PlayerStatus> get status => _statusCtrl.stream;
 
   @override
-  Duration get position => _controller?.value.position ?? Duration.zero;
+  Duration get position =>
+      _pendingStart ?? _controller?.value.position ?? Duration.zero;
 
   @override
   Duration get duration => _controller?.value.duration ?? Duration.zero;

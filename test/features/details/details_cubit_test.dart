@@ -172,6 +172,7 @@ void main() {
         final target = cubit.playTarget()!;
         expect(target.episodeIndex, 0);
         expect(target.isResume, isFalse);
+        expect(target.isRestart, isTrue, reason: 'button says Watch again');
       });
 
       test('rewatching an earlier episode makes Play continue that one',

@@ -710,6 +710,8 @@ class _SeriesDetailBody extends StatelessWidget {
                     autofocus: true,
                     label: t == null
                         ? null
+                        : t.isRestart
+                        ? l10n.watchAgain
                         : t.isResume
                             ? l10n.resumeSeasonEpisode(
                                 t.seasonNumber, t.episodeNumber)

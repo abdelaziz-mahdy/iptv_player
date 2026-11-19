@@ -78,6 +78,11 @@ class FavoritesCubit extends Cubit<FavoritesState> {
   List<Series> _series = [];
   List<Channel> _channels = [];
 
+  /// Catalogs (movies/series/channels) that have emitted since binding. A
+  /// favorite only counts as unresolvable once all three are in: on the TV
+  /// every favorite was logged "hidden" because favorites arrived first.
+  final Set<MediaKind> _loaded = {};
+
   /// React to the ACTIVE playlist so favorites reflect the imported/switched
   /// playlist live, without an app restart.
   Future<void> load() async {
@@ -101,6 +106,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     _movies = [];
     _series = [];
     _channels = [];
+    _loaded.clear();
 
     if (pid == null) {
       emit(state.copyWith(loading: false, entries: const []));
@@ -114,16 +120,19 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 
     _moviesSub = _content.movies(pid).listen((movies) {
       _movies = movies;
+      _loaded.add(MediaKind.movie);
       _rebuild();
     });
 
     _seriesSub = _content.series(pid).listen((series) {
       _series = series;
+      _loaded.add(MediaKind.episode);
       _rebuild();
     });
 
     _channelsSub = _content.channels(pid).listen((channels) {
       _channels = channels;
+      _loaded.add(MediaKind.channel);
       _rebuild();
     });
 
@@ -150,7 +159,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
           final p = _progress['movie:${entry.id}'];
           if (p != null) movieProgress[entry.id] = p;
         }
-      } else if (_loggedMissing.add(fav.itemKey)) {
+      } else if (_loaded.length == 3 && _loggedMissing.add(fav.itemKey)) {
         appLog.warning(
             'favorites: ${fav.itemKey} title="${fav.title}" unresolvable — hidden');
       }

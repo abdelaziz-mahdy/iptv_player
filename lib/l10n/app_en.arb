@@ -107,6 +107,10 @@
       }
     }
   },
+  "watchAgain": "Watch again",
+  "@watchAgain": {
+    "description": "Series Play button once every episode was watched; starts over from the first episode."
+  },
   "resumeSeasonEpisode": "Resume S{season}E{episode}",
   "@resumeSeasonEpisode": {
     "placeholders": {

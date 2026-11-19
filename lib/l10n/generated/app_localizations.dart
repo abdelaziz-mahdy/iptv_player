@@ -578,6 +578,12 @@ abstract class AppLocalizations {
   /// **'Play S{season}E{episode}'**
   String playSeasonEpisode(int season, int episode);
 
+  /// Series Play button once every episode was watched; starts over from the first episode.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch again'**
+  String get watchAgain;
+
   /// No description provided for @resumeSeasonEpisode.
   ///
   /// In en, this message translates to:

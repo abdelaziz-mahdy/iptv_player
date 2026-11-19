@@ -153,6 +153,7 @@ class DetailsCubit extends Cubit<DetailsState> {
     int seasonNumber,
     int episodeNumber,
     bool isResume,
+    bool isRestart,
   })? playTarget() {
     if (state.seasons.isEmpty) return null;
 
@@ -173,6 +174,7 @@ class DetailsCubit extends Cubit<DetailsState> {
 
     var target = (0, 0);
     final isResume = newest != null && !newest.isWatched;
+    var isRestart = false;
     if (newestAt != null) {
       final (s, e) = newestAt;
       if (isResume) {
@@ -183,8 +185,9 @@ class DetailsCubit extends Cubit<DetailsState> {
           target = (s, e + 1);
         } else if (s + 1 < state.seasons.length) {
           target = (s + 1, 0);
+        } else {
+          isRestart = true; // the last episode was finished: start over.
         }
-        // else: the last episode was finished — start over from the first.
       }
     }
 
@@ -220,6 +223,7 @@ class DetailsCubit extends Cubit<DetailsState> {
       seasonNumber: state.seasons[target.$1].number,
       episodeNumber: seasonEpisodes[target.$2].number,
       isResume: isResume,
+      isRestart: isRestart,
     );
   }
 

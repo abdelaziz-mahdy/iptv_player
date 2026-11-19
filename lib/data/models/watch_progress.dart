@@ -22,14 +22,9 @@ abstract class WatchProgress with _$WatchProgress {
 }
 
 /// Fraction of an item's duration at/above which it counts as watched.
-const double kWatchedFraction = 0.95;
-
-/// Stopping in the end credits also counts as watched: past
-/// [kCreditsFraction] with at most [kCreditsRemainingSec] left. Episodes on
-/// the TV were left at 92-94% with about 2.5 minutes of credits to go and
-/// stayed "unfinished" forever.
-const double kCreditsFraction = 0.90;
-const int kCreditsRemainingSec = 180;
+/// 90% (Plex's default) so stopping in the end credits counts: TV episodes
+/// were left at 92-94% and movies have 5-8 minutes of credits.
+const double kWatchedFraction = 0.90;
 
 extension WatchProgressX on WatchProgress {
   /// How far through the item this progress is (0..1), or null when the
@@ -50,10 +45,5 @@ extension WatchProgressX on WatchProgress {
 
   /// Whether the item counts as finished. Finished items replay from the
   /// start and leave Continue Watching (the row is kept for indicators).
-  bool get isWatched {
-    final f = fraction;
-    if (f == null) return false;
-    if (f >= kWatchedFraction) return true;
-    return f >= kCreditsFraction && remainingSec! <= kCreditsRemainingSec;
-  }
+  bool get isWatched => (fraction ?? 0) >= kWatchedFraction;
 }

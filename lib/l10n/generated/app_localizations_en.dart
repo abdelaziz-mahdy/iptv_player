@@ -260,6 +260,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get watchAgain => 'Watch again';
+
+  @override
   String resumeSeasonEpisode(int season, int episode) {
     return 'Resume S${season}E$episode';
   }

@@ -80,6 +80,7 @@
   "seasonNumber": "الموسم {number}",
   "playEpisode": "تشغيل الحلقة {number}: {title}",
   "playSeasonEpisode": "تشغيل م{season}ح{episode}",
+  "watchAgain": "إعادة المشاهدة",
   "resumeSeasonEpisode": "متابعة م{season}ح{episode}",
   "skipBackward": "إرجاع ١٠ ثوانٍ",
   "skipForward": "تقديم ١٠ ثوانٍ",
