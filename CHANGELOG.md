@@ -7,7 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Posters and episodes show the time left; finished ones are marked Watched.
+- Live TV, Movies and Series list your recent groups at the top.
+
 ### Fixed
+- Sound no longer drops out on the TV.
+- Resuming no longer starts on a black screen.
+- Play picks the episode after the last one you watched; finished shows say Watch again.
+- Closing a video no longer freezes the TV.
+- M3U playlists import from the typed URL, with their groups.
 - **The remote no longer gets stuck in the player on the first or last episode.**
   With no previous (or next) button, pressing right or left from play/pause made
   the highlight vanish and every button stop responding until the controls
